@@ -1,9 +1,11 @@
 import { Component, signal } from '@angular/core';
-import { Home } from './features/home/home';
 import { Sidebar } from './shared/components/sidebar/sidebar';
+import { VideoGrid } from './shared/components/video-grid/video-grid';
+import { Header } from './shared/components/header/header';
 @Component({
   selector: 'app-root',
-  imports: [Home, Sidebar],
+  standalone: true,
+  imports: [ Sidebar, VideoGrid, Header ],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
