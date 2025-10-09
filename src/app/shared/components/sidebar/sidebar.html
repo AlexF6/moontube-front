@@ -1,48 +1,61 @@
+@if (ui.isSidebarOpen()) {
+  <div 
+    class="fixed bg-black/50 z-40 md:hidden transition-opacity duration-500"
+    (click)="ui.close()">
+  </div>
+}
+
 <aside 
-  class="hidden md:flex flex-col z-40 w-[300px] min-h-screen">
+  data-sidebar="root"
+  class="fixed md:static top-0 left-0 z-50 w-[280px] h-full md:h-auto 
+         bg-black transition-transform duration-300 
+         flex flex-col px-4 my-[16px] py-[4px]"
+  [class.-translate-x-full]="!ui.isSidebarOpen() && !isDesktop"
+  [class.translate-x-0]="ui.isSidebarOpen() || isDesktop">
   
-  <div class="flex items-center justify-center mb-4 pt-1">
-    <span class="text-2xl font-bold text-white tracking-widest">
-      MOONTUBE
-    </span>
+  <div data-slot="sidebar-header" class="flex text-center items-center justify-center">
+    <span class="text-2xl font-bold text-white tracking-widest">MOONTUBE</span>
   </div>
 
-  <nav class="flex flex-col space-y-2 font-medium px-2 my-2">
-    
-    <a href="#" class="flex items-center py-2 px-3 text-base rounded-lg 
-      text-white hover:bg-gray-700 transition duration-150 bg-gray-800/80 ">
-      <svg class="h-6 w-6 mr-3" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M220-180h150v-250h220v250h150v-390L480-765 220-570v390Zm-60 60v-480l320-240 320 240v480H530v-250H430v250H160Zm320-353Z"/></svg>
-      <span class="text-xl">Inicio</span>
-    </a>
+  <ul data-slot="sidebar-menu" class="flex flex-col gap-1 p-2">
+    <li data-slot="sidebar-menu-item" class="group/menu-item">
+      <button 
+        data-slot="sidebar-menu-button"
+        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
+               transition-colors duration-300 hover:bg-orange-500/20 hover:text-white
+               data-[active=true]:bg-orange-600/30 data-[active=true]:text-orange-400">
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M220-180h150v-250h220v250h150v-390L480-765 220-570v390Zm-60 60v-480l320-240 320 240v480H530v-250H430v250H160Zm320-353Z"/></svg>
+        <span>Inicio</span>
+      </button>
+    </li>
 
-    <a href="#" class="flex items-center py-2 px-3 text-base rounded-lg 
-      text-white hover:bg-gray-700 transition duration-150">
-      <svg class="h-6 w-6 mr-3"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 -960 960 960" fill="currentColor">
-        <path d="M80-160v-60h800v60H80Zm89-160v-316h60v316h-60Zm159 0v-480h60v480h-60Zm159 0v-480h60v480h-60Zm275 0L597-600l54-30 162 280-51 30Z"/>
-      </svg>
-      <span class="text-xl">My Playlist</span>
-    </a>
+    <li data-slot="sidebar-menu-item" class="group/menu-item">
+      <button
+        data-slot="sidebar-menu-button"
+        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
+               transition-colors duration-300 hover:bg-orange-500/20 hover:text-white">
+        <svg class="h-6 w-6"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 -960 960 960" fill="currentColor">
+          <path d="M80-160v-60h800v60H80Zm89-160v-316h60v316h-60Zm159 0v-480h60v480h-60Zm159 0v-480h60v480h-60Zm275 0L597-600l54-30 162 280-51 30Z"/>
+        </svg>
+        <span>My Playlist</span>
+      </button>
+    </li>
 
-    <a href="#" class="flex items-center justify-between py-2 px-3 text-base rounded-lg 
-      text-white transition duration-150 hover:bg-gray-700">
-      <div class="flex items-center">
-        <svg class="h-6 w-6 mr-3"
+    <li data-slot="sidebar-menu-item" class="group/menu-item">
+      <button
+        data-slot="sidebar-menu-button"
+        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
+               transition-colors duration-300 hover:bg-orange-500/20 hover:text-white">
+        <svg class="h-6 w-6"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 -960 960 960"
             fill="currentColor">
         <path d="M140-80q-24 0-42-18t-18-42v-440q0-24 18-42t42-18h680q24 0 42 18t18 42v440q0 24-18 42t-42 18H140Zm0-60h680v-440H140v440Zm267-71 221-149-221-148v297ZM149-700v-60h662v60H149Zm131-120v-60h400v60H280ZM140-140v-440 440Z"/>
         </svg>
-        <span class="text-xl">Suscripciones</span>
-      </div>
-    </a>
-  </nav>
-
-  <!-- <div class="absolute bottom-0 left-0 w-full p-4 border-t border-gray-700">
-    <a href="#" class="flex items-center p-3 text-sm font-medium rounded-lg text-white hover:bg-gray-700">
-      <img class="w-8 h-8 rounded-full mr-3" src="placeholder-avatar.jpg" alt="Avatar">
-      <span>Perfil de Usuario</span>
-    </a>
-  </div> -->
+        <span>Suscripciones</span>
+      </button>
+    </li>
+  </ul>
 </aside>
