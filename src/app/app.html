@@ -1,9 +1,9 @@
-<div class="min-h-screen text-white bg-black">
-  <sidebar></sidebar> 
-  <app-header></app-header>
-
-  <main class="pt-16 md:ml-[300px] min-h-screen overflow-y-auto">
-    <video-grid></video-grid>
-  </main>
-
+<div class="bg-black root">
+  <div class="flex px-2 ">
+    <app-sidebar></app-sidebar> 
+    <main class="flex-col bg-black">
+      <app-header></app-header>
+      <app-video-grid></app-video-grid>
+    </main>
+  </div>
 </div>
