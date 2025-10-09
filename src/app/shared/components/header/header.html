@@ -1,25 +1,36 @@
-<header
-  class="top-0 left-0 right-0 z-30 h-16
-         backdrop-blur-sm
-         md:left-[300px]">
-  <div class="flex items-center justify-between h-full px-4">
-    <div class="relative flex-1 max-w-lg mr-4">
+<header class="sticky top-0 z-30 backdrop-blur-sm bg-black/80">
+  <div class="flex items-center justify-between px-4">
+    <div class="relative flex-1 max-w-3xl mr-4">
       <input
         type="text"
-        class=" w-full bg-gray-300/10 border border-zinc-700 rounded-full py-2 pl-10 pr-4
-               text-white focus:outline-none focus:ring-2 focus:ring-orange-500" />
-      <span
-        class="material-symbols-outlined absolute left-4 top-5 -translate-y-1/2 w-5 h-5 text-zinc-400"
-        style="font-size: 20px; line-height: 20px;">
-        search
-      </span>
+        placeholder="Search videos here"
+        class="text-zinc-400 header-placeholder w-full bg-gray-300/10 border border-zinc-700 rounded-full py-1.5 pl-4 pr-4
+        text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+      />
+      <svg class="w-6 text-zinc-400 absolute left-182 top-1/2 transform -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M792-120.67 532.67-380q-30 25.33-69.64 39.67Q423.39-326 378.67-326q-108.44 0-183.56-75.17Q120-476.33 120-583.33t75.17-182.17q75.16-75.17 182.5-75.17 107.33 0 182.16 75.17 74.84 75.17 74.84 182.27 0 43.23-14 82.9-14 39.66-40.67 73l260 258.66-48 48Zm-414-272q79.17 0 134.58-55.83Q568-504.33 568-583.33q0-79-55.42-134.84Q457.17-774 378-774q-79.72 0-135.53 55.83-55.8 55.84-55.8 134.84t55.8 134.83q55.81 55.83 135.53 55.83Z"/></svg>
     </div>
 
-    <div class="flex items-center space-x-4">
-      <button class="py-2 px-5 border border-orange-600 rounded-lg hover:bg-orange-600 transition-colors">
-        Login
-      </button>
-      <button class="py-2 px-5 border border-orange-600 rounded-lg bg-orange-600 hover:bg-orange-700 hover:border-orange-700 transition-colors">
+    <div class="flex items-center space-x-4 text-md">
+      <div class="relative flex items-center">
+        <button class="
+            py-2 px-3 rounded-lg border border-gray-500 hover:bg-orange-600 transition-colors
+            text-white/80                   
+            flex items-center space-x-2     
+        ">
+            <svg 
+              class="w-6 h-6"                 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 -960 960 960" 
+              fill="currentColor"
+            >
+                <path d="M222-255q63-44 125-67.5T480-346q71 0 133.5 23.5T739-255q44-54 62.5-109T820-480q0-145-97.5-242.5T480-820q-145 0-242.5 97.5T140-480q0 61 19 116t63 109Zm257.81-195q-57.81 0-97.31-39.69-39.5-39.68-39.5-97.5 0-57.81 39.69-97.31 39.68-39.5 97.5-39.5 57.81 0 97.31 39.69 39.5 39.68 39.5 97.5 0 57.81-39.69 97.31-39.68 39.5-97.5 39.5Zm.66 370Q398-80 325-111.5t-127.5-86q-54.5-54.5-86-127.27Q80-397.53 80-480.27 80-563 111.5-635.5q31.5-72.5 86-127t127.27-86q72.76-31.5 155.5-31.5 82.73 0 155.23 31.5 72.5 31.5 127 86t86 127.03q31.5 72.53 31.5 155T848.5-325q-31.5 73-86 127.5t-127.03 86Q562.94-80 480.47-80Zm-.47-60q55 0 107.5-16T691-212q-51-36-104-55t-107-19q-54 0-107 19t-104 55q51 40 103.5 56T480-140Zm0-370q34 0 55.5-21.5T557-587q0-34-21.5-55.5T480-664q-34 0-55.5 21.5T403-587q0 34 21.5 55.5T480-510Zm0-77Zm0 374Z"/>
+            </svg>
+            
+            <span>Login</span> 
+        </button>
+      </div>
+
+      <button class="py-2 px-5 text-white/80 border border-gray-500 rounded-lg hover:bg-orange-700 hover:border-orange-700 transition-colors">
         Signup
       </button>
     </div>
