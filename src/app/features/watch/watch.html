@@ -1,0 +1,27 @@
+<div class="flex flex-col lg:flex-row gap-6 p-4 text-white">
+  <div class="flex-1">
+    <div class="aspect-video bg-black rounded-lg overflow-hidden">
+      <video controls class="w-full h-full object-cover">
+        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <h1 class="text-xl font-semibold mt-4">{{ title }}</h1>
+    <p class="text-zinc-400 text-sm">{{ views }} vistas • {{ age }}</p>
+  </div>
+
+  <aside class="w-full lg:w-96 flex flex-col gap-4">
+    @for (vid of relatedVideos; track vid.id) {
+      <a class="flex gap-2 items-start hover:bg-white/5 rounded p-1 transition"
+         [routerLink]="['/watch', vid.id]">
+        <img [src]="vid.thumbnail" alt="" class="w-40 h-24 object-cover rounded" />
+        <div>
+          <h3 class="text-sm font-medium line-clamp-2">{{ vid.title }}</h3>
+          <p class="text-xs text-zinc-400">{{ vid.channel }}</p>
+        </div>
+      </a>
+    } @empty {
+      <p class="text-zinc-500">No hay videos relacionados disponibles.</p>
+    }
+  </aside>
+</div>

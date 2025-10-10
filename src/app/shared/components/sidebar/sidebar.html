@@ -19,14 +19,16 @@
 
   <ul data-slot="sidebar-menu" class="flex flex-col gap-1 p-2">
     <li data-slot="sidebar-menu-item" class="group/menu-item">
-      <button 
+      <a [routerLink]="['/']" 
         data-slot="sidebar-menu-button"
         class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 bg-orange-800/40 hover:bg-orange-500/90 border-2 border-orange-500 hover:text-white
-               data-[active=true]:bg-orange-800/40 data-[active=true]:text-orange-400">
+              transition-colors duration-300 bg-orange-800/40 hover:bg-orange-500/90 border-2 border-orange-500 hover:text-white
+              data-[active=true]:bg-orange-800/40 data-[active=true]:text-orange-400">
+        
         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M220-180h150v-250h220v250h150v-390L480-765 220-570v390Zm-60 60v-480l320-240 320 240v480H530v-250H430v250H160Zm320-353Z"/></svg>
-        <span>Inicio</span>
-      </button>
+        
+        Inicio
+      </a>
     </li>
 
     <li data-slot="sidebar-menu-item" class="group/menu-item">

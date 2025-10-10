@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
-import { Login } from '../app/features/login/login';
+import { Home } from '../app/features/home/home';
+import { Watch } from './features/watch/watch';
 
 export const routes: Routes = [
-  // { path: '', component: Login },
-  // { path: 'login', component: Login }
+  { path: '', component: Home },
+  { path: 'watch/:id', component: Watch }
 ];
-

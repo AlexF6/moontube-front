@@ -3,19 +3,15 @@
     <app-sidebar></app-sidebar>
     <main class="flex-col w-full">
       <app-header></app-header>
-      <app-video-grid></app-video-grid>
+
+      <router-outlet></router-outlet>
     </main>
   </div>
 </div>
 
-@if (authUi.isLoginOpen()) {
-  <div class="fixed inset-0 z-40 bg-black/60" (click)="authUi.closeLogin()"></div>
-  <app-login class="z-50"></app-login>
-}
-
 @if (authUi.isLoginOpen() || authUi.isRegisterOpen()) {
   <div class="fixed inset-0 z-40 bg-black/60"
-       (click)="authUi.isLoginOpen() ? authUi.closeLogin() : authUi.closeRegister()">
-  </div>
+       (click)="authUi.isLoginOpen() ? authUi.closeLogin() : authUi.closeRegister()"></div>
 }
+@if (authUi.isLoginOpen())    { <app-login    class="z-50"></app-login> }
 @if (authUi.isRegisterOpen()) { <app-register class="z-50"></app-register> }

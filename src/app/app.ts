@@ -1,15 +1,16 @@
-import { Component, signal, HostListener, effect, inject } from '@angular/core';
+import { Component, signal, HostListener, effect } from '@angular/core';
 import { Sidebar } from './shared/components/sidebar/sidebar';
-import { VideoGrid } from './shared/components/video-grid/video-grid';
 import { Header } from './shared/components/header/header';
+import { RouterOutlet } from '@angular/router';
 import { UiStateService } from "../app/core/ui-state.service";
 import { AuthUiService } from "../app/core/auth-ui.service";
 import { Login } from './features/login/login';
 import { Register } from './features/register/register';
+
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [ Sidebar, VideoGrid, Header, Login, Register ],
+  imports: [ Sidebar, Header, RouterOutlet, Login, Register ],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -19,7 +20,7 @@ export class App {
 
   constructor(public ui: UiStateService, public authUi: AuthUiService) {
     effect(() => {
-      const block = this.ui.isSidebarOpen() || this.authUi.isLoginOpen();
+      const block = this.ui.isSidebarOpen() || this.authUi.isLoginOpen() || this.authUi.isRegisterOpen();
       document.body.classList.toggle('overflow-hidden', block);
     });
   }
@@ -30,8 +31,6 @@ export class App {
     this.isSidebarOpen = this.isDesktop;
   }
 
-  ngOnInit() {
-    this.isSidebarOpen = this.isDesktop;
-  }
+  ngOnInit() { this.isSidebarOpen = this.isDesktop; }
   protected readonly title = signal('moontube');
 }
