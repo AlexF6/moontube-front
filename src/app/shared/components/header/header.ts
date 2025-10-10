@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { UiStateService } from "../../../core/ui-state.service";
+import { AuthUiService } from "../../../core/auth-ui.service";
+
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -7,5 +9,5 @@ import { UiStateService } from "../../../core/ui-state.service";
   styleUrl: "./header.scss"
 })
 export class Header {
-  constructor(public ui: UiStateService) {}
+  constructor(public ui: UiStateService, public authUi: AuthUiService) {}
 }

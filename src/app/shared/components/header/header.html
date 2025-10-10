@@ -9,7 +9,7 @@
   
   <div class="flex items-center justify-between gap-4 px-2">
     <button 
-      class="md:hidden p-2 rounded-lg border border-zinc-700 hover:bg-[#aaaaaa]/30 transition"
+      class="md:hidden p-2 rounded-lg border border-zinc-700 hover:bg-orange-500 transition"
       (click)="ui.toggle()"
       aria-label="Toggle sidebar">
       <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -29,12 +29,10 @@
 
     <div class="flex items-center space-x-4 text-md">
       <div class="relative flex items-center">
-        <button class="
-            py-2 px-3 rounded-lg border border-gray-500 hover:bg-[#aaaaaa]/30 transition-colors
-            text-white/80                   
-            flex items-center space-x-2"
-        >
-          <svg 
+        <button 
+          (click)="authUi.openLogin()"
+          class="py-2 hover:text-white/90 px-3 font-medium rounded-lg border border-orange-500 transition-colors text-orange-500 flex items-center space-x-2">
+            <svg 
             class="w-6 h-6"                 
             xmlns="http://www.w3.org/2000/svg" 
             viewBox="0 -960 960 960" 
@@ -42,14 +40,24 @@
           >
               <path d="M222-255q63-44 125-67.5T480-346q71 0 133.5 23.5T739-255q44-54 62.5-109T820-480q0-145-97.5-242.5T480-820q-145 0-242.5 97.5T140-480q0 61 19 116t63 109Zm257.81-195q-57.81 0-97.31-39.69-39.5-39.68-39.5-97.5 0-57.81 39.69-97.31 39.68-39.5 97.5-39.5 57.81 0 97.31 39.69 39.5 39.68 39.5 97.5 0 57.81-39.69 97.31-39.68 39.5-97.5 39.5Zm.66 370Q398-80 325-111.5t-127.5-86q-54.5-54.5-86-127.27Q80-397.53 80-480.27 80-563 111.5-635.5q31.5-72.5 86-127t127.27-86q72.76-31.5 155.5-31.5 82.73 0 155.23 31.5 72.5 31.5 127 86t86 127.03q31.5 72.53 31.5 155T848.5-325q-31.5 73-86 127.5t-127.03 86Q562.94-80 480.47-80Zm-.47-60q55 0 107.5-16T691-212q-51-36-104-55t-107-19q-54 0-107 19t-104 55q51 40 103.5 56T480-140Zm0-370q34 0 55.5-21.5T557-587q0-34-21.5-55.5T480-664q-34 0-55.5 21.5T403-587q0 34 21.5 55.5T480-510Zm0-77Zm0 374Z"/>
           </svg>
-          
-          <span>Login</span> 
+          <span>Login</span>
         </button>
       </div>
 
-      <button class="py-2 px-5 text-white/80 border border-gray-500 rounded-lg hover:bg-[#aaaaaa]/30 hover:border-[#aaaaaa]/30 transition-colors">
-        Signup
-      </button>
+      <div class="relative flex items-center">
+        <button (click)="authUi.openRegister()" class="py-2 px-3 hover:text-white/90 font-medium rounded-lg border border-orange-500 transition-colors text-orange-500 flex items-center space-x-2">
+          <svg xmlns="http://www.w3.org/2000/svg"
+              class="w-6 h-6"                 
+              xmlns="http://www.w3.org/2000/svg" 
+              viewBox="0 -960 960 960" 
+              fill="currentColor">
+              <path d="M730-400v-130H600v-60h130v-130h60v130h130v60H790v130h-60Zm-370-81q-66 0-108-42t-42-108q0-66 42-108t108-42q66 0 108 42t42 108q0 66-42 108t-108 42ZM40-160v-94q0-35 17.5-63.5T108-360q75-33 133.34-46.5t118.5-13.5Q420-420 478-406.5T611-360q33 15 51 43t18 63v94H40Zm60-60h520v-34q0-16-9-30.5T587-306q-71-33-120-43.5T360-360q-58 0-107.5 10.5T132-306q-15 7-23.5 21.5T100-254v34Zm260-321q39 0 64.5-25.5T450-631q0-39-25.5-64.5T360-721q-39 0-64.5 25.5T270-631q0 39 25.5 64.5T360-541Zm0-90Zm0 411Z"/>
+            </svg>
+            <span>
+              Signup
+            </span>
+        </button>
+      </div>
     </div>
   </div>
 </header>

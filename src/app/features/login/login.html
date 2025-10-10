@@ -1,55 +1,92 @@
-<div 
-  class="fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)]
-         -translate-x-1/2 -translate-y-1/2 gap-4 p-6 sm:max-w-[425px]
-         bg-gradient-to-b from-orange-900 to-black/90
-         border border-orange-500/40 shadow-lg shadow-black/70 rounded-2xl">
+<div
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="login-title"
+  class="fixed left-1/2 top-1/2 z-50 grid w-full max-w-sm -translate-x-1/2 -translate-y-1/2
+         rounded-2xl border border-zinc-800/60 bg-[#0b0b0b] text-white shadow-xl
+         focus:outline-none">
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid gap-4">
-    
-    <!-- Header -->
-    <div class="flex flex-col gap-2 text-center">
-      <h2 class="font-semibold text-2xl font-sans tracking-wide">Login</h2>
-    </div>
+  <div class="p-6 border-b border-zinc-800/60">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 id="login-title" class="text-xl font-semibold">Login to your account</h2>
+        <p class="mt-1 text-sm text-zinc-400">
+          Enter your email below to login to your account
+        </p>
+      </div>
 
-    <!-- Email -->
-    <div class="grid gap-2">
-      <label for="identifier" class="text-sm font-medium">Email or Username</label>
-      <input id="identifier" formControlName="identifier" type="text" 
-             placeholder="Your email/username here..."
-             class="h-9 w-full rounded-md border bg-black/40 px-3 py-1 text-sm
-                    focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/50"/>
-    </div>
-
-    <!-- Password -->
-    <div class="grid gap-2">
-      <label for="password" class="text-sm font-medium">Password</label>
-      <input id="password" formControlName="password" type="password"
-             placeholder="Your password here..."
-             class="h-9 w-full rounded-md border bg-black/40 px-3 py-1 text-sm
-                    focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/50"/>
-    </div>
-
-    <!-- Buttons -->
-    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-      <button type="button" (click)="cancel()"
-              class="rounded-lg border border-red-500/60 bg-black/60 px-5 py-2
-                     text-red-400 hover:border-red-400 hover:bg-red-500 hover:text-white">
-        Cancel
-      </button>
-      <button type="submit"
-              class="rounded-lg border border-orange-500/60 bg-black/60 px-5 py-2
-                     text-orange-400 hover:border-orange-400 hover:bg-orange-500 hover:text-white">
-        Login
+      <button
+        type="button"
+        (click)="authUi.closeLogin(); authUi.openRegister();"
+        class="w-20 text-sm font-medium text-orange-400 hover:underline underline-offset-4"
+      >
+          Sign Up
       </button>
     </div>
-  </form>
+  </div>
 
-  <!-- Footer -->
-  <div class="text-center text-base text-gray-400 mt-2">
-    Don't have an account?
-    <button type="button"
-            class="ml-1 font-bold text-orange-400 hover:underline hover:text-orange-500">
-      Sign up
-    </button>
+  <div class="p-6">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-6">
+      <div class="grid gap-2">
+        <label for="email" class="text-sm font-medium">Email</label>
+        <input
+          #emailInput
+          id="email"
+          type="email"
+          formControlName="identifier"
+          placeholder="example@example.com"
+          class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
+                 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
+                 focus:border-orange-500/60"
+          [class.border-red-500]="form.get('identifier')?.touched && form.get('identifier')?.invalid"
+          required
+        />
+        @if (form.get('identifier')?.dirty && form.get('identifier')?.invalid) {
+          <span class="text-xs text-red-400">Provide a valid email.</span>
+        }
+      </div>
+
+      <div class="grid gap-2">
+        <div class="flex items-center">
+          <label for="password" class="text-sm font-medium">Password</label>
+          <button type="button"
+            class="ml-auto text-sm underline underline-offset-4 hover:text-orange-400">
+            Forgot your password?
+          </button>
+        </div>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          placeholder="••••••••"
+          class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
+                 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
+                 focus:border-orange-500/60"
+          [class.border-red-500]="form.get('password')?.touched && form.get('password')?.invalid"
+          required
+        />
+        @if (form.get('password')?.touched && form.get('password')?.invalid) {
+          <span class="text-xs text-red-400">Min 6 characters.</span>
+        }
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <button
+          type="submit"
+          class="inline-flex h-10 w-full items-center justify-center rounded-md
+                 bg-orange-600 text-white font-medium hover:bg-orange-500 transition"
+        >
+          Login
+        </button>
+        <button
+          type="button"
+          (click)="loginWithGoogle()"
+          class="inline-flex h-10 w-full items-center justify-center rounded-md border
+                 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 transition"
+        >
+          Login with Google
+        </button>
+      </div>
+    </form>
   </div>
 </div>

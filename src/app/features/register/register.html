@@ -1,0 +1,84 @@
+<div role="dialog" aria-modal="true" aria-labelledby="register-title"
+     class="fixed left-1/2 top-1/2 z-50 grid w-full max-w-sm -translate-x-1/2 -translate-y-1/2
+            rounded-2xl border border-zinc-800/60 bg-[#0b0b0b] text-white shadow-xl">
+
+  <div class="p-6 border-b border-zinc-800/60">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 id="register-title" class="text-xl font-semibold">Create an account</h2>
+        <p class="mt-1 text-sm text-zinc-400">Enter your details to sign up</p>
+      </div>
+
+      <button type="button"
+              class="text-sm font-medium text-orange-400 hover:underline underline-offset-4"
+              (click)="authUi.closeRegister(); authUi.openLogin();">
+        Login
+      </button>
+    </div>
+  </div>
+
+  <div class="p-6">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-6">
+      <div class="grid gap-2">
+        <label for="name" class="text-sm font-medium">Name</label>
+        <input #nameInput id="name" type="text" formControlName="name" placeholder="Your name"
+               class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
+                      placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
+                      focus:border-orange-500/60"
+               [class.border-red-500]="form.get('name')?.touched && form.get('name')?.invalid" required />
+        @if (form.get('name')?.dirty && form.get('name')?.invalid) {
+          <span class="text-xs text-red-400">Please enter your name (min 2 chars).</span>
+        }
+      </div>
+
+      <div class="grid gap-2">
+        <label for="email" class="text-sm font-medium">Email</label>
+        <input id="email" type="email" formControlName="email" placeholder="m@example.com"
+               class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
+                      placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
+                      focus:border-orange-500/60"
+               [class.border-red-500]="form.get('email')?.touched && form.get('email')?.invalid" required />
+        @if (form.get('email')?.touched && form.get('email')?.invalid) {
+          <span class="text-xs text-red-400">Provide a valid email.</span>
+        }
+      </div>
+
+      <div class="grid gap-2">
+        <label class="text-sm font-medium">Password</label>
+
+        <input id="password" type="password" [formControl]="passwordControl" placeholder="••••••••"
+               class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
+                      placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
+                      focus:border-orange-500/60"
+               [class.border-red-500]="passwordControl.touched && passwordControl.invalid" required />
+
+        <div class="flex items-center">
+          <label for="confirm" class="text-sm font-medium">Confirm password</label>
+          @if (pwGroup.hasError('mismatch') && (pwGroup.get('confirm')?.touched || pwGroup.get('password')?.touched)) {
+            <span class="ml-auto text-xs text-red-400">Passwords do not match.</span>
+          }
+        </div>
+
+        <input id="confirm" type="password" 
+                [formControl]="confirmControl" placeholder="••••••••"
+                class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
+                      placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
+                      focus:border-orange-500/60"
+                [class.border-red-500]="pwGroup.get('confirm')?.touched && pwGroup.hasError('mismatch')" required />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <button type="submit"
+                class="inline-flex h-10 w-full items-center justify-center rounded-md
+                       bg-orange-600 text-white font-medium hover:bg-orange-500 transition">
+          Create account
+        </button>
+        <button type="button"
+                class="inline-flex h-10 w-full items-center justify-center rounded-md border
+                       border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 transition">
+          Continue with Google
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
