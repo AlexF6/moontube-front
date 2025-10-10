@@ -1,7 +1,10 @@
-import { Component, signal, HostListener } from '@angular/core';
+import { Component, signal, HostListener, effect } from '@angular/core';
 import { Sidebar } from './shared/components/sidebar/sidebar';
 import { VideoGrid } from './shared/components/video-grid/video-grid';
 import { Header } from './shared/components/header/header';
+import { UiStateService } from "../app/core/ui-state.service";
+import { Login } from './features/login/login';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -12,6 +15,16 @@ import { Header } from './shared/components/header/header';
 export class App {
   isSidebarOpen = false;
   isDesktop = window.innerWidth >= 768;
+
+  constructor(public ui: UiStateService) {
+    effect(() => {
+      if (this.ui.isSidebarOpen()) {
+        document.body.classList.add('overflow-hidden');
+      } else {
+        document.body.classList.remove('overflow-hidden');
+      }
+    });
+  }
 
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;

@@ -1,6 +1,6 @@
 @if (ui.isSidebarOpen()) {
   <div 
-    class="fixed bg-black/50 z-40 md:hidden transition-opacity duration-500"
+    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-500 overflow-hidden"
     (click)="ui.close()">
   </div>
 }
@@ -9,7 +9,7 @@
   data-sidebar="root"
   class="fixed md:static top-0 left-0 z-50 w-[280px] h-full md:h-auto 
          bg-black transition-transform duration-300 
-         flex flex-col px-4 my-[16px] py-[4px]"
+         flex flex-col px-4 py-[28px]"
   [class.-translate-x-full]="!ui.isSidebarOpen() && !isDesktop"
   [class.translate-x-0]="ui.isSidebarOpen() || isDesktop">
   
@@ -22,8 +22,8 @@
       <button 
         data-slot="sidebar-menu-button"
         class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 hover:bg-orange-500/20 hover:text-white
-               data-[active=true]:bg-orange-600/30 data-[active=true]:text-orange-400">
+               transition-colors duration-300 bg-[#aaaaaa]/30 hover:text-white
+               data-[active=true]:bg-[#aaaaaa]/30 data-[active=true]:text-orange-400">
         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M220-180h150v-250h220v250h150v-390L480-765 220-570v390Zm-60 60v-480l320-240 320 240v480H530v-250H430v250H160Zm320-353Z"/></svg>
         <span>Inicio</span>
       </button>
@@ -33,7 +33,7 @@
       <button
         data-slot="sidebar-menu-button"
         class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 hover:bg-orange-500/20 hover:text-white">
+               transition-colors duration-300 hover:bg-[#aaaaaa]/30 hover:text-white">
         <svg class="h-6 w-6"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 -960 960 960" fill="currentColor">
@@ -47,7 +47,7 @@
       <button
         data-slot="sidebar-menu-button"
         class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 hover:bg-orange-500/20 hover:text-white">
+               transition-colors duration-300 hover:bg-[#aaaaaa]/30 hover:text-white">
         <svg class="h-6 w-6"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 -960 960 960"

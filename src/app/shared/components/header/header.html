@@ -1,15 +1,15 @@
 @if (ui.isSidebarOpen()) {
   <div 
-    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-500"
+    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
     (click)="ui.close()">
   </div>
 }
 
-<header class="sticky top-0 z-30 backdrop-blur-sm bg-black/80 flex-1 items-center px-4 my-4">
+<header class="sticky top-0 z-30 backdrop-blur-sm bg-black/80 flex-1 items-center px-4 py-2 my-4">
   
   <div class="flex items-center justify-between gap-4 px-2">
     <button 
-      class="md:hidden p-2 rounded-lg border border-zinc-700 hover:bg-zinc-800 transition"
+      class="md:hidden p-2 rounded-lg border border-zinc-700 hover:bg-[#aaaaaa]/30 transition"
       (click)="ui.toggle()"
       aria-label="Toggle sidebar">
       <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -22,7 +22,7 @@
         type="text"
         placeholder="Search videos here"
         class="text-zinc-400 header-placeholder w-full bg-gray-300/10 border border-zinc-700 rounded-full py-1.5 pl-4 pr-12
-        text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+        text-white focus:outline-none focus:ring-2 focus:[#aaaaaa]/30"
       />
       <svg class="w-6 text-zinc-400 absolute right-4 top-1/2 transform -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M792-120.67 532.67-380q-30 25.33-69.64 39.67Q423.39-326 378.67-326q-108.44 0-183.56-75.17Q120-476.33 120-583.33t75.17-182.17q75.16-75.17 182.5-75.17 107.33 0 182.16 75.17 74.84 75.17 74.84 182.27 0 43.23-14 82.9-14 39.66-40.67 73l260 258.66-48 48Zm-414-272q79.17 0 134.58-55.83Q568-504.33 568-583.33q0-79-55.42-134.84Q457.17-774 378-774q-79.72 0-135.53 55.83-55.8 55.84-55.8 134.84t55.8 134.83q55.81 55.83 135.53 55.83Z"/></svg>
     </div>
@@ -30,7 +30,7 @@
     <div class="flex items-center space-x-4 text-md">
       <div class="relative flex items-center">
         <button class="
-            py-2 px-3 rounded-lg border border-gray-500 hover:bg-orange-600 transition-colors
+            py-2 px-3 rounded-lg border border-gray-500 hover:bg-[#aaaaaa]/30 transition-colors
             text-white/80                   
             flex items-center space-x-2"
         >
@@ -47,7 +47,7 @@
         </button>
       </div>
 
-      <button class="py-2 px-5 text-white/80 border border-gray-500 rounded-lg hover:bg-orange-700 hover:border-orange-700 transition-colors">
+      <button class="py-2 px-5 text-white/80 border border-gray-500 rounded-lg hover:bg-[#aaaaaa]/30 hover:border-[#aaaaaa]/30 transition-colors">
         Signup
       </button>
     </div>
