@@ -29,6 +29,12 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.14
         version: 4.1.14
+      hls.js:
+        specifier: ^1.6.13
+        version: 1.6.13
+      plyr:
+        specifier: ^3.8.3
+        version: 3.8.3
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -1465,6 +1471,9 @@ packages:
     resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
 
+  core-js@3.46.0:
+    resolution: {integrity: sha512-vDMm9B0xnqqZ8uSBpZ8sNtRtOdmfShrvT6h2TuQGLs0Is+cR0DYbj/KWP6ALVNbWPpqA/qPLoOuppJN07humpA==}
+
   cors@2.8.5:
     resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
     engines: {node: '>= 0.10'}
@@ -1479,6 +1488,9 @@ packages:
   css-what@7.0.0:
     resolution: {integrity: sha512-wD5oz5xibMOPHzy13CyGmogB3phdvcDaB5t0W/Nr5Z2O/agcB8YwOz6e2Lsp10pNDzBoDO9nVa3RGs/2BttpHQ==}
     engines: {node: '>= 6'}
+
+  custom-event-polyfill@1.0.7:
+    resolution: {integrity: sha512-TDDkd5DkaZxZFM8p+1I3yAlvM3rSr1wbrOliG4yJiwinMZN8z/iGL7BTlDkrJcYTmgUSb4ywVCc3ZaUtOtC76w==}
 
   custom-event@1.0.1:
     resolution: {integrity: sha512-GAj5FOq0Hd+RsCGVJxZuKaIDXDf3h6GQoNEjFgbLLI/trgtavwUbSnZ5pVfg27DVCaWjIohryS0JFwIJyT2cMg==}
@@ -1810,6 +1822,9 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
+  hls.js@1.6.13:
+    resolution: {integrity: sha512-hNEzjZNHf5bFrUNvdS4/1RjIanuJ6szpWNfTaX5I6WfGynWXGT7K/YQLYtemSvFExzeMdgdE4SsyVLJbd5PcZA==}
+
   hosted-git-info@8.1.0:
     resolution: {integrity: sha512-Rw/B2DNQaPBICNXEm8balFz9a6WpZrkCGpcWFpy7nCj+NyhSdqXipmfvtmWt9xGfp0wZnBxB+iVpLmQMYt47Tw==}
     engines: {node: ^18.17.0 || >=20.5.0}
@@ -2113,6 +2128,9 @@ packages:
   lmdb@3.4.2:
     resolution: {integrity: sha512-nwVGUfTBUwJKXd6lRV8pFNfnrCC1+l49ESJRM19t/tFb/97QfJEixe5DYRvug5JO7DSFKoKaVy7oGMt5rVqZvg==}
     hasBin: true
+
+  loadjs@4.3.0:
+    resolution: {integrity: sha512-vNX4ZZLJBeDEOBvdr2v/F+0aN5oMuPu7JTqrMwp+DtgK+AryOlpy6Xtm2/HpNr+azEa828oQjOtWsB6iDtSfSQ==}
 
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
@@ -2449,6 +2467,9 @@ packages:
     resolution: {integrity: sha512-ueGLflrrnvwB3xuo/uGob5pd5FN7l0MsLf0Z87o/UQmRtwjvfylfc9MurIxRAWywCYTgrvpXBcqjV4OfCYGCIQ==}
     engines: {node: '>=16.20.0'}
 
+  plyr@3.8.3:
+    resolution: {integrity: sha512-0+iI5uw0WRvtKBpgPCkmQQv7ucHVQKTEo6UFJjgJ8cy/JZhy0dQqshHQVitHXV6l2O3MzhgnuvQ95VSkWcWeSw==}
+
   postcss-media-query-parser@0.2.3:
     resolution: {integrity: sha512-3sOlxmbKcSHMjlUXQZKQ06jOswE7oVkXPxmZdoB1r5l0q6gTFTQSHxNxOrCccElbW7dxNytifNEo8qidX2Vsig==}
 
@@ -2490,6 +2511,9 @@ packages:
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
     engines: {node: '>= 0.6'}
+
+  rangetouch@2.0.1:
+    resolution: {integrity: sha512-sln+pNSc8NGaHoLzwNBssFSf/rSYkqeBXzX1AtJlkJiUaVSJSbRAWJk+4omsXkN+EJalzkZhWQ3th1m0FpR5xA==}
 
   raw-body@2.5.2:
     resolution: {integrity: sha512-8zGqypfENjCIqGhgXToC8aB2r7YrBX+AQAfIPs/Mlk+BtPTztOvTS01NRW/3Eh60J+a48lt8qsCzirQ6loCVfA==}
@@ -2822,6 +2846,9 @@ packages:
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
+
+  url-polyfill@1.1.14:
+    resolution: {integrity: sha512-p4f3TTAG6ADVF3mwbXw7hGw+QJyw5CnNGvYh5fCuQQZIiuKUswqcznyV3pGDP9j0TSmC4UvRKm8kl1QsX1diiQ==}
 
   utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
@@ -4336,6 +4363,8 @@ snapshots:
 
   cookie@0.7.2: {}
 
+  core-js@3.46.0: {}
+
   cors@2.8.5:
     dependencies:
       object-assign: 4.1.1
@@ -4356,6 +4385,8 @@ snapshots:
       nth-check: 2.1.1
 
   css-what@7.0.0: {}
+
+  custom-event-polyfill@1.0.7: {}
 
   custom-event@1.0.1: {}
 
@@ -4704,6 +4735,8 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  hls.js@1.6.13: {}
+
   hosted-git-info@8.1.0:
     dependencies:
       lru-cache: 10.4.3
@@ -5032,6 +5065,8 @@ snapshots:
       '@lmdb/lmdb-win32-arm64': 3.4.2
       '@lmdb/lmdb-win32-x64': 3.4.2
     optional: true
+
+  loadjs@4.3.0: {}
 
   lodash@4.17.21: {}
 
@@ -5405,6 +5440,14 @@ snapshots:
 
   pkce-challenge@5.0.0: {}
 
+  plyr@3.8.3:
+    dependencies:
+      core-js: 3.46.0
+      custom-event-polyfill: 1.0.7
+      loadjs: 4.3.0
+      rangetouch: 2.0.1
+      url-polyfill: 1.1.14
+
   postcss-media-query-parser@0.2.3: {}
 
   postcss@8.5.6:
@@ -5440,6 +5483,8 @@ snapshots:
       side-channel: 1.1.0
 
   range-parser@1.2.1: {}
+
+  rangetouch@2.0.1: {}
 
   raw-body@2.5.2:
     dependencies:
@@ -5847,6 +5892,8 @@ snapshots:
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
+
+  url-polyfill@1.1.14: {}
 
   utils-merge@1.0.1: {}
 

@@ -1,2 +1,20 @@
 /* You can add global styles to this file, and also import other style files */
 @use "tailwindcss";
+@import "plyr/dist/plyr.css";
+
+:root {
+  // --plyr-color-main: #ffffff;
+  --plyr-video-control-color: #ffffff;
+  --plyr-video-control-background: rgb(0, 178, 255);
+  --plyr-video-control-hover: rgb(0, 178, 255);
+  --plyr-range-fill-background: rgb(0, 178, 255);
+  --plyr-range-track-background: rgba(255,255,255,.15);
+  --plyr-tooltip-background: rgba(0,0,0,.85);
+  --plyr-tooltip-color: #fff;
+}
+
+.plyr--full-ui.plyr--video {
+  background: #000;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}

@@ -1,96 +1,84 @@
-import { Component, signal, computed } from '@angular/core';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { RouterLink } from '@angular/router';
-
-type RelatedVideo = {
-  id: string;
-  title: string;
-  channel: string;
-  views: string;
-  age: string;
-  duration: string;
-  thumbnail: string;
-};
+import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NgOptimizedImage } from '@angular/common';
+import { VideoPlayerPlyr } from '../../shared/components/video-player/video-player';
 
 @Component({
   selector: 'app-watch',
   standalone: true,
-  imports: [CommonModule, RouterLink, NgOptimizedImage],
+  imports: [RouterLink, NgOptimizedImage, VideoPlayerPlyr],
   templateUrl: './watch.html',
 })
 export class Watch {
-  // Datos del video actual
-  title = signal('Black Panther Highlight');
-  views = signal('4');
-  age = signal('hace 2 horas');
+  private route = inject(ActivatedRoute);
 
-  toggleDescriptionExpansion(): void {
-    this.expandedDesc.update(v => !v);
-  }
-  // Autor / canal
-  author = signal({
-    name: 'Ayush Kumar Gupta',
-    handle: '@curator2',
-    avatar: 'https://i.pravatar.cc/80?img=12',
-    subscribers: 4,
+  readonly videoId = signal<string | null>(this.route.snapshot.paramMap.get('id'));
+
+  readonly src = 'https://www.w3schools.com/html/mov_bbb.mp4';
+  readonly poster = '';
+  readonly captionsSrc = '';
+
+  readonly views = signal('1.2M');
+  readonly age = signal('hace 2 semanas');
+  readonly liked = signal(false);
+  readonly savingToPlaylist = signal(false);
+  readonly expandedDesc = signal(false);
+
+  readonly title = computed(() => `Reproduciendo video #${this.videoId()}`);
+  readonly shortDescription = computed(() => {
+    const text = this.description;
+    const max = 160;
+    return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
+  });
+
+  readonly author = signal({
+    avatar:
+      'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=300&auto=format&fit=crop',
+    name: 'Moontube Channel',
+    handle: '@moontube',
+    subscribers: '12.3K',
     isSubscribed: false,
   });
 
-  // Estado UI
-  liked = signal(false);
-  savingToPlaylist = signal(false);
-  expandedDesc = signal(false);
-
-  // Descripción
-  description =
-    `Tremble Before bast\n\n` +
-    `Este highlight fue grabado en 1440p60. Config: RX 6800, R5 5600.`
-
-  // Sugeridos
-  relatedVideos: RelatedVideo[] = [
+  readonly relatedVideos = [
     {
-      id: 'yt-001',
-      title: 'Ichigo and Aizen v Yhwach — Bleach Manga Animation.mp4',
-      channel: 'curator',
-      views: '302',
-      age: 'hace 3 meses',
-      duration: '0:23',
-      thumbnail: 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?q=80&w=800&auto=format&fit=crop',
+      id: 'abc123',
+      title: 'Cómo crear un reproductor con HLS y Angular',
+      thumbnail: 'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg',
+      duration: '12:34',
+      channel: 'DevTube',
+      views: '98K',
+      age: '3 días',
     },
     {
-      id: 'yt-002',
-      title: '“I’m myself” — Soccer manga AMV (edit)',
-      channel: 'tester',
-      views: '273',
-      age: 'hace 3 meses',
-      duration: '0:12',
-      thumbnail: 'https://images.unsplash.com/photo-1522770179533-24471fcdba45?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: 'yt-003',
-      title: 'Sky Whale — cinematic loop',
-      channel: 'looped',
-      views: '1.1k',
-      age: 'hace 1 mes',
-      duration: '2:01',
-      thumbnail: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=800&auto=format&fit=crop',
+      id: 'xyz789',
+      title: 'Tailwind + Angular: diseño tipo YouTube',
+      thumbnail: 'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg',
+      duration: '8:05',
+      channel: 'UI Snacks',
+      views: '54K',
+      age: '1 semana',
     },
   ];
 
-  // Helpers
-  shortDescription = computed(() => {
-    const s = this.description;
-    if (!s) return '';
-    const max = 160;
-    return s.length > max ? s.slice(0, max).trimEnd() + '…' : s;
-  });
+  description = `En este video probamos el reproductor con controles tipo Plyr y soporte para HLS.
+Incluye atajos de teclado, captions y estilos con Tailwind.`;
 
-  toggleLike() { this.liked.update(v => !v); }
+  toggleLike() {
+    this.liked.set(!this.liked());
+  }
+
+  addToPlaylist() {
+    if (this.savingToPlaylist()) return;
+    this.savingToPlaylist.set(true);
+    setTimeout(() => this.savingToPlaylist.set(false), 900);
+  }
+
   toggleSubscribe() {
     this.author.update(a => ({ ...a, isSubscribed: !a.isSubscribed }));
   }
-  addToPlaylist() {
-    this.savingToPlaylist.set(true);
-    setTimeout(() => this.savingToPlaylist.set(false), 1200); // demo
+
+  toggleDescriptionExpansion() {
+    this.expandedDesc.set(!this.expandedDesc());
   }
 }
