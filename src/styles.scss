@@ -4,6 +4,11 @@
 
 :root {
   // --plyr-color-main: #ffffff;
+  --plyr-menu-background: #333333;
+  --plyr-menu-color: #ffffff;
+  --plyr-menu-hover-background: rgba(0, 178, 255, 0.1);
+ 
+  --plyr-menu-hover-color: rgb(0, 178, 255);
   --plyr-video-control-color: #ffffff;
   --plyr-video-control-background: rgb(0, 178, 255);
   --plyr-video-control-hover: rgb(0, 178, 255);

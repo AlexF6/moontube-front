@@ -1,6 +1,6 @@
 import { Component, ElementRef, Input, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
-import * as Plyr from 'plyr'; 
 import Hls from 'hls.js';
+import * as Plyr from 'plyr'; 
 import { CommonModule } from '@angular/common';
 
 @Component({
