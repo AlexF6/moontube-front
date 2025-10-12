@@ -1,16 +1,21 @@
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AuthUiService } from '../../core/auth-ui.service';
+import { AuthService } from '../../core/auth.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login.html',
 })
 export class Login {
   @ViewChild('emailInput') emailInput!: ElementRef<HTMLInputElement>;
   form: FormGroup;
+  private auth = inject(AuthService);
+
+  errorMsg = '';
 
   constructor(private fb: FormBuilder, public authUi: AuthUiService) {
     this.form = this.fb.group({
@@ -27,15 +32,22 @@ export class Login {
   onEsc() { this.authUi.closeLogin(); }
 
   submit() {
-    if (this.form.valid) {
-      console.log('Login data:', this.form.value);
-      this.authUi.closeLogin();
-    } else {
+    if (!this.form.valid) {
       this.form.markAllAsTouched();
+      return;
     }
-  }
 
-  loginWithGoogle() {
-    console.log('Google sign-in');
+    this.errorMsg = '';
+    const { identifier, password } = this.form.value;
+
+    this.auth.login({ email: identifier, password }).subscribe({
+      next: (resp) => {
+        this.auth.setSession(resp);
+        this.authUi.closeLogin();
+      },
+      error: (err) => {
+        this.errorMsg = err?.error?.detail ?? 'Invalid credentials';
+      },
+    });
   }
 }
