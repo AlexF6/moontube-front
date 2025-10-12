@@ -1,23 +1,83 @@
 <div class="flex flex-col lg:flex-row gap-6 p-4 text-white">
-  <div class="flex-1">
-    <div class="aspect-video bg-black rounded-lg overflow-hidden">
+
+  <!-- Columna principal -->
+  <div class="flex-1 max-w-4xl">
+    <div class="aspect-video bg-black rounded-lg overflow-hidden ring-1 ring-white/10">
       <video controls class="w-full h-full object-cover">
-        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
       </video>
     </div>
 
-    <h1 class="text-xl font-semibold mt-4">{{ title }}</h1>
-    <p class="text-zinc-400 text-sm">{{ views }} vistas • {{ age }}</p>
+    <!-- Título + métricas -->
+    <h1 class="text-2xl font-semibold mt-4">{{ title() }}</h1>
+    <p class="text-zinc-400 text-sm">{{ views() }} vistas • {{ age() }}</p>
+
+    <!-- Acciones / autor -->
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition"
+              (click)="toggleLike()">
+        <span class="material-symbols-outlined text-base">{{ liked() ? 'favorite' : 'favorite_check' }}</span>
+        <span>{{ liked() ? 'Liked' : 'Like' }}</span>
+      </button>
+
+      <button class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition"
+              (click)="addToPlaylist()">
+        <span class="material-symbols-outlined text-base">playlist_add</span>
+        <span>@if (savingToPlaylist()) { Guardando… } @else { Add Video to Playlist }</span>
+      </button>
+
+      <div class="mx-2 h-6 w-px bg-white/10"></div>
+
+      <!-- Autor -->
+      <div class="flex items-center gap-3">
+        <img [ngSrc]="author().avatar" width="40" height="40" class="size-10 rounded-full object-cover" alt="avatar" />
+        <div class="leading-tight">
+          <p class="font-medium">{{ author().name }}</p>
+          <p class="text-xs text-zinc-400">{{ author().handle }}</p>
+        </div>
+        <span class="ml-2 text-xs text-zinc-400">
+          Subscribers: <b class="text-white">{{ author().subscribers }}</b>
+        </span>
+
+        <button class="ml-2 rounded-xl px-4 py-2 bg-orange-500 text-black font-semibold hover:brightness-110 transition"
+                (click)="toggleSubscribe()">
+          {{ author().isSubscribed ? 'Subscribed' : 'Subscribe' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Descripción -->
+    <div class="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
+      <h3 class="font-semibold mb-2">Description</h3>
+      <p class="whitespace-pre-line text-zinc-300 text-sm">
+        @if (expandedDesc()) { {{ description }} }
+        @else { {{ shortDescription() }} }
+      </p>
+      @if (description && description.length > shortDescription().length) {
+        <button class="mt-2 text-orange-400 hover:underline text-sm"
+                (click)="toggleDescriptionExpansion()"> {{ expandedDesc() ? 'Show less' : 'Show more' }}
+        </button>
+      }
+    </div>
   </div>
 
+  <!-- Sidebar: Suggested Videos -->
   <aside class="w-full lg:w-96 flex flex-col gap-4">
     @for (vid of relatedVideos; track vid.id) {
-      <a class="flex gap-2 items-start hover:bg-white/5 rounded p-1 transition"
+      <a class="group flex gap-3 items-start hover:bg-white/5 rounded-lg p-2 transition"
          [routerLink]="['/watch', vid.id]">
-        <img [src]="vid.thumbnail" alt="" class="w-40 h-24 object-cover rounded" />
-        <div>
-          <h3 class="text-sm font-medium line-clamp-2">{{ vid.title }}</h3>
-          <p class="text-xs text-zinc-400">{{ vid.channel }}</p>
+        <div class="relative">
+          <img [src]="vid.thumbnail" alt="" class="w-44 h-24 object-cover rounded-lg ring-1 ring-white/10" />
+          <span class="absolute bottom-1 right-1 text-[11px] px-1.5 py-0.5 rounded bg-black/80">
+            {{ vid.duration }}
+          </span>
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm font-medium leading-tight line-clamp-2 group-hover:text-white/90">
+            {{ vid.title }}
+          </h3>
+          <p class="text-xs text-zinc-400 mt-1">{{ vid.channel }}</p>
+          <p class="text-[11px] text-zinc-500">{{ vid.views }} views • {{ vid.age }}</p>
         </div>
       </a>
     } @empty {
