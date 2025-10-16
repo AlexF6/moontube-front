@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angula
 import { AuthUiService } from '../../core/auth-ui.service';
 import { AuthService } from '../../core/auth.service';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -14,6 +15,7 @@ export class Login {
   @ViewChild('emailInput') emailInput!: ElementRef<HTMLInputElement>;
   form: FormGroup;
   private auth = inject(AuthService);
+  private router = inject(Router);
 
   errorMsg = '';
 
@@ -29,7 +31,9 @@ export class Login {
   }
 
   @HostListener('document:keydown.escape')
-  onEsc() { this.authUi.closeLogin(); }
+  onEsc() { 
+    this.authUi.closeLogin(); 
+  }
 
   submit() {
     if (!this.form.valid) {
@@ -44,9 +48,11 @@ export class Login {
       next: (resp) => {
         this.auth.setSession(resp);
         this.authUi.closeLogin();
+        this.router.navigate(['/']);
       },
       error: (err) => {
         this.errorMsg = err?.error?.detail ?? 'Invalid credentials';
+        this.auth.isLoading.set(false);
       },
     });
   }

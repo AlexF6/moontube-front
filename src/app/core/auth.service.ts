@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../enviroment/enviroment';
+import { environment } from '../enviroments/enviroment';
 
 type User = {
   id: string;
@@ -26,9 +26,11 @@ type LoginDto = {
   password: string;
 };
 
-type LoginResponse =
-  | { access_token: string; token_type?: string; user?: User }
-  | User;
+type LoginResponse = {
+  access_token?: string;
+  token_type?: string;
+  user?: User;
+};
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -36,50 +38,82 @@ export class AuthService {
   user = signal<User | null>(null);
   isLoading = signal(false);
 
-  constructor(private http: HttpClient) {}
-
-  register(dto: RegisterDto) {
-    return this.http.post<User>(`${this.base}/users`, {
-      active: true,
-      is_admin: false,
-      ...dto,
-    });
+  constructor(private http: HttpClient) {
+    this.checkAuthStatus();
   }
 
-login(dto: { email: string; password: string }) {
-  this.isLoading.set(true);
+  register(dto: RegisterDto) {
+    return this.http.post<User>(`${this.base}/auth/register`, dto);
+  }
 
-  const body = new URLSearchParams({
-    username: dto.email,
-    password: dto.password,
-  }).toString();
+  login(dto: LoginDto) {
+    this.isLoading.set(true);
 
-  return this.http.post<LoginResponse>(
-    `${this.base}/auth/token`,
-    body,
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-  );
-}
+    const body = new URLSearchParams({
+      username: dto.email,
+      password: dto.password,
+    }).toString();
+
+    return this.http.post<LoginResponse>(
+      `${this.base}/auth/token`,
+      body,
+      { 
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        withCredentials: true
+      }
+    );
+  }
+
   setSession(resp: LoginResponse) {
-    const isTokenShape = (r: any) => typeof r?.access_token === 'string';
-    if (isTokenShape(resp)) {
-      localStorage.setItem('access_token', (resp as any).access_token);
-      if ((resp as any).user) this.user.set((resp as any).user);
+    if (resp.user) {
+      this.user.set(resp.user);
+      this.isLoading.set(false);
     } else {
-      this.user.set(resp as User);
+      this.fetchUser();
     }
   }
 
+  private fetchUser() {
+    this.me().subscribe({
+      next: (user) => {
+        this.user.set(user);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.user.set(null);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  private checkAuthStatus() {
+    this.me().subscribe({
+      next: (user) => this.user.set(user),
+      error: () => this.user.set(null)
+    });
+  }
+
   logout() {
-    localStorage.removeItem('access_token');
+    this.http.post(`${this.base}/auth/logout`, {}, { 
+      withCredentials: true 
+    }).subscribe({
+      next: () => {
+        this.clearLocalSession();
+      },
+      error: () => {
+        this.clearLocalSession();
+      }
+    });
+  }
+
+  private clearLocalSession() {
     this.user.set(null);
   }
 
   me() {
-    return this.http.get<User>(`${this.base}/auth/me`);
+    return this.http.get<User>(`${this.base}/auth/me`, {
+      withCredentials: true
+    });
   }
 
-  get token(): string | null {
-    return localStorage.getItem('access_token');
-  }
 }
