@@ -1,106 +1,135 @@
-# Moontube
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.5.
+# 🌙 Moontube
 
-## Development server
+Moontube is an Angular-based front-end application designed for scalability, modularity, and maintainability.  
+It was generated using [Angular CLI](https://github.com/angular/angular-cli) version **20.1.5**.
 
-To start a local development server, run:
+---
+
+## 🚀 Development Server
+
+Start the local development server with:
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Then open your browser and go to **[http://localhost:4200/](http://localhost:4200/)**.  
+The app will automatically reload whenever you modify any source file.
 
-## Code scaffolding
+---
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## 🧩 Code Scaffolding
+
+Angular CLI provides a powerful set of tools for generating new files.  
+To create a new component, use:
 
 ```bash
 ng generate component component-name
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+To explore all available schematics (components, directives, pipes, etc.), run:
 
 ```bash
 ng generate --help
 ```
 
-## Building
+---
 
-To build the project run:
+## 🏗️ Building the Project
+
+To build the app for production:
 
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The compiled artifacts will be placed in the **dist/** directory.  
+Production builds are automatically optimized for speed and performance.
 
-## Running unit tests
+---
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## 🧪 Running Unit Tests
+
+Run your unit tests using [Karma](https://karma-runner.github.io):
 
 ```bash
 ng test
 ```
 
-## Running end-to-end tests
+---
 
-For end-to-end (e2e) testing, run:
+## 🌐 Running End-to-End Tests
+
+To execute end-to-end (E2E) tests, use:
 
 ```bash
 ng e2e
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+> Note: Angular CLI does not include an E2E testing framework by default.  
+> You can integrate tools like **Cypress** or **Playwright**.
 
-## Additional Resources
+---
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## 📁 Project Structure
 
 ```plaintext
 moontube-front/
-├─ .angular/                 # caché del builder, se ignora en git
-├─ node_modules/             # dependencias (no subir a git)
-├─ public/                   # recursos estáticos (favicon, robots.txt, imágenes)
+├─ .angular/                 # Angular builder cache (ignored by Git)
+├─ node_modules/             # Dependencies (do not commit)
+├─ public/                   # Static assets (favicon, robots.txt, images)
 │   └─ favicon.ico
 │
 ├─ src/
 │   ├─ app/
-│   │   ├─ core/             # servicios globales (auth, http-interceptors, guards)
+│   │   ├─ core/             # Global services (auth, http-interceptors, guards)
 │   │   │   └─ auth.service.ts
-│   │   ├─ shared/           # componentes, pipes y directivas reutilizables
+│   │   ├─ shared/           # Reusable components, pipes, directives
 │   │   │   ├─ components/
 │   │   │   │   └─ button/
 │   │   │   │       ├─ button.component.ts
 │   │   │   │       ├─ button.component.html
 │   │   │   │       └─ button.component.scss
 │   │   │   └─ pipes/
-│   │   ├─ features/         # módulos/páginas grandes (home, dashboard, etc.)
+│   │   ├─ features/         # Large modules/pages (home, dashboard, etc.)
 │   │   │   └─ home/
 │   │   │       ├─ home.component.ts
 │   │   │       ├─ home.component.html
 │   │   │       └─ home.component.scss
-│   │   ├─ app.config.ts     # providers globales (router, http, etc.)
-│   │   ├─ app.routes.ts     # definición de rutas
-│   │   ├─ app.ts            # AppComponent principal
-│   │   ├─ app.html          # plantilla de AppComponent
-│   │   └─ app.scss          # estilos del AppComponent
+│   │   ├─ app.config.ts     # Global providers (router, http, etc.)
+│   │   ├─ app.routes.ts     # Route definitions
+│   │   ├─ app.ts            # Root AppComponent
+│   │   ├─ app.html          # AppComponent template
+│   │   └─ app.scss          # AppComponent styles
 │   │
-│   ├─ assets/               # imágenes, fuentes, data json
+│   ├─ assets/               # Static assets (images, fonts, data)
 │   │   └─ logo.svg
 │   │
-│   ├─ index.html            # documento raíz
-│   ├─ main.ts               # bootstrapApplication(AppComponent)
-│   └─ styles.scss           # estilos globales (reset, variables, tailwind si aplica)
+│   ├─ index.html            # Main HTML entry point
+│   ├─ main.ts               # Application bootstrap (AppComponent)
+│   └─ styles.scss           # Global styles (resets, variables, Tailwind)
 │
-├─ .editorconfig             # opcional para estilo de código
+├─ .editorconfig             # Optional code style configuration
 ├─ .gitignore
 ├─ angular.json
 ├─ package.json
 ├─ tsconfig.json
 ├─ tsconfig.app.json
-├─ tsconfig.spec.json        # si usas tests
-├─ pnpm-lock.yaml            # o package-lock.json, según tu gestor
+├─ tsconfig.spec.json        # Test TypeScript configuration
+├─ pnpm-lock.yaml            # or package-lock.json (depending on your package manager)
 └─ README.md
 ```
+
+---
+
+## 📚 Additional Resources
+
+For detailed Angular CLI documentation, visit:  
+👉 [Angular CLI Overview & Command Reference](https://angular.dev/tools/cli)
+
+---
+
+## 📝 Commit Name Suggestion
+
+**Commit name:** `docs: improve README with detailed structure and setup instructions`
