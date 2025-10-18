@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../enviroments/enviroment';
+import { tap, catchError, of } from 'rxjs';
 
 type User = {
   id: string;
@@ -26,10 +27,9 @@ type LoginDto = {
   password: string;
 };
 
+// Updated: Login response now only contains message, no token
 type LoginResponse = {
-  access_token?: string;
-  token_type?: string;
-  user?: User;
+  message: string;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -59,18 +59,19 @@ export class AuthService {
       body,
       { 
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        withCredentials: true
+        withCredentials: true // Important for cookies
       }
+    ).pipe(
+      tap(() => {
+        // On successful login, fetch user data
+        this.fetchUser();
+      })
     );
   }
 
-  setSession(resp: LoginResponse) {
-    if (resp.user) {
-      this.user.set(resp.user);
-      this.isLoading.set(false);
-    } else {
-      this.fetchUser();
-    }
+  setSession() {
+    // Since token is in cookie, we just need to fetch user data
+    this.fetchUser();
   }
 
   private fetchUser() {
@@ -94,16 +95,17 @@ export class AuthService {
   }
 
   logout() {
-    this.http.post(`${this.base}/auth/logout`, {}, { 
+    return this.http.post<{message: string}>(`${this.base}/auth/logout`, {}, { 
       withCredentials: true 
-    }).subscribe({
-      next: () => {
+    }).pipe(
+      tap(() => {
         this.clearLocalSession();
-      },
-      error: () => {
+      }),
+      catchError((error) => {
         this.clearLocalSession();
-      }
-    });
+        return of(error);
+      })
+    );
   }
 
   private clearLocalSession() {
@@ -115,5 +117,4 @@ export class AuthService {
       withCredentials: true
     });
   }
-
 }

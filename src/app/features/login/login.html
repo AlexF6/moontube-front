@@ -27,6 +27,18 @@
 
   <div class="p-6">
     <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-6">
+      @if (errorMsg) {
+        <div class="rounded-md bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 text-sm"
+             role="alert">
+          <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            {{ errorMsg }}
+          </div>
+        </div>
+      }
+
       <div class="grid gap-2">
         <label for="email" class="text-sm font-medium">Email</label>
         <input
@@ -39,6 +51,7 @@
                  placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
                  focus:border-orange-500/60"
           [class.border-red-500]="form.get('identifier')?.touched && form.get('identifier')?.invalid"
+          [class.border-red-500]="errorMsg"
           required
         />
         @if (form.get('identifier')?.dirty && form.get('identifier')?.invalid) {
@@ -49,10 +62,6 @@
       <div class="grid gap-2">
         <div class="flex items-center">
           <label for="password" class="text-sm font-medium">Password</label>
-          <!-- <button type="button"
-            class="ml-auto text-sm underline underline-offset-4 hover:text-orange-400">
-            Forgot your password?
-          </button> -->
         </div>
         <input
           id="password"
@@ -63,6 +72,7 @@
                  placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
                  focus:border-orange-500/60"
           [class.border-red-500]="form.get('password')?.touched && form.get('password')?.invalid"
+          [class.border-red-500]="errorMsg"
           required
         />
         @if (form.get('password')?.touched && form.get('password')?.invalid) {
@@ -73,19 +83,21 @@
       <div class="flex flex-col gap-2">
         <button
           type="submit"
+          [disabled]="isLoading"
           class="inline-flex h-10 w-full items-center justify-center rounded-md
-                 bg-orange-600 text-white font-medium hover:bg-orange-500 transition"
+                 bg-orange-600 text-white font-medium hover:bg-orange-500 transition
+                 disabled:bg-orange-400 disabled:cursor-not-allowed"
         >
-          Login
+          @if (isLoading) {
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Logging in...
+          } @else {
+            Login
+          }
         </button>
-        <!-- <button
-          type="button"
-          (click)="loginWithGoogle()"
-          class="inline-flex h-10 w-full items-center justify-center rounded-md border
-                 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 transition"
-        >
-          Login with Google
-        </button> -->
       </div>
     </form>
   </div>

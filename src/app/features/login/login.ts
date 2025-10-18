@@ -18,6 +18,7 @@ export class Login {
   private router = inject(Router);
 
   errorMsg = '';
+  isLoading = false;
 
   constructor(private fb: FormBuilder, public authUi: AuthUiService) {
     this.form = this.fb.group({
@@ -42,18 +43,34 @@ export class Login {
     }
 
     this.errorMsg = '';
+    this.isLoading = true;
     const { identifier, password } = this.form.value;
 
     this.auth.login({ email: identifier, password }).subscribe({
-      next: (resp) => {
-        this.auth.setSession(resp);
+      next: () => {
+        // Login successful - user data will be set automatically via the service
+        this.isLoading = false;
         this.authUi.closeLogin();
         this.router.navigate(['/']);
       },
       error: (err) => {
-        this.errorMsg = err?.error?.detail ?? 'Invalid credentials';
-        this.auth.isLoading.set(false);
+        this.isLoading = false;
+        this.handleLoginError(err);
       },
     });
+  }
+
+  private handleLoginError(err: any) {
+    if (err.status === 401 || err.status === 403) {
+      this.errorMsg = 'Invalid email or password. Please try again.';
+    } else if (err.status === 0) {
+      this.errorMsg = 'Network error. Please check your connection.';
+    } else {
+      this.errorMsg = err?.error?.detail ?? err?.error?.message ?? 'An error occurred during login.';
+    }
+    
+    this.form.get('password')?.reset();
+    
+    setTimeout(() => this.emailInput?.nativeElement?.focus(), 100);
   }
 }
