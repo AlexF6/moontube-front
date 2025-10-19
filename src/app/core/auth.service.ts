@@ -27,7 +27,6 @@ type LoginDto = {
   password: string;
 };
 
-// Updated: Login response now only contains message, no token
 type LoginResponse = {
   message: string;
 };
@@ -59,18 +58,16 @@ export class AuthService {
       body,
       { 
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        withCredentials: true // Important for cookies
+        withCredentials: true
       }
     ).pipe(
       tap(() => {
-        // On successful login, fetch user data
         this.fetchUser();
       })
     );
   }
 
   setSession() {
-    // Since token is in cookie, we just need to fetch user data
     this.fetchUser();
   }
 
