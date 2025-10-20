@@ -35,7 +35,7 @@ type LoginResponse = {
 export class AuthService {
   private base = environment.apiUrl;
   user = signal<User | null>(null);
-  isLoading = signal(false);
+  isLoading = signal(true);
 
   constructor(private http: HttpClient) {
     this.checkAuthStatus();
@@ -85,11 +85,17 @@ export class AuthService {
   }
 
   private checkAuthStatus() {
-    this.me().subscribe({
-      next: (user) => this.user.set(user),
-      error: () => this.user.set(null)
-    });
-  }
+      this.me().subscribe({
+        next: (user) => {
+          this.user.set(user);
+          this.isLoading.set(false); // Set to false on success
+        },
+        error: () => {
+          this.user.set(null);
+          this.isLoading.set(false); // Set to false on error
+        }
+      });
+    }
 
   logout() {
     return this.http.post<{message: string}>(`${this.base}/auth/logout`, {}, { 

@@ -1,12 +1,13 @@
-<div class="min-h-screen bg-gray-900 text-white p-6">
+<div class="min-h-screen text-orange-500 p-6">
   <!-- Header -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-    <h1 class="text-3xl font-bold text-white">Admin Dashboard</h1>
+    <h1 class="text-3xl font-bold text-orange-500">Admin Dashboard</h1>
     <div class="flex items-center gap-4">
       <span class="text-gray-300">Welcome, {{ authService.user()?.name }}</span>
       <button 
-        (click)="authService.logout()" 
-        class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+        (click)="authService.logout().subscribe()"
+        routerLink="/" 
+        class="px-4 py-2 border border-orange-500 hover:text-gray-300 text-orange-500 rounded-lg transition-colors"
       >
         Logout
       </button>
@@ -97,35 +98,35 @@
   @if (activeTab() === 'users' && !isLoading()) {
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="text-2xl font-semibold text-white">User Management</h2>
+        <h2 class="text-2xl font-semibold text-orange-500">User Management</h2>
         <button 
           (click)="createUser()"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          class="px-6 py-2 border border-orange-500 hover:text-gray-300 text-orange-500 rounded-lg transition-colors"
         >
           Add User
         </button>
       </div>
       
       <!-- Add User Form -->
-      <div class="bg-gray-800 rounded-lg p-6">
-        <h3 class="text-xl font-medium mb-4 text-white">Create New User</h3>
+      <div class="rounded-lg p-6">
+        <h3 class="text-xl font-medium mb-4 text-orange-500">Create New User</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <input 
             [(ngModel)]="newUser.name" 
             placeholder="Full Name" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-300/10 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newUser.email" 
             type="email" 
             placeholder="Email" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-300/10 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newUser.password" 
             type="password" 
             placeholder="Password" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-300/10 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <div class="flex flex-col gap-2">
             <label class="flex items-center gap-2 text-gray-300">
@@ -150,10 +151,10 @@
       </div>
 
       <!-- Users List -->
-      <div class="bg-gray-800 rounded-lg overflow-hidden">
+      <div class="bg-gray-300/10 rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-gray-700">
+            <thead class="bg-gray-300/10">
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
@@ -166,13 +167,13 @@
             <tbody class="divide-y divide-gray-700">
               @for (user of users(); track user.id) {
                 <tr class="hover:bg-gray-750">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ user.name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ user.name }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ user.email }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span 
                       [class]="user.is_admin 
-                        ? 'bg-red-600 text-white' 
-                        : 'bg-gray-600 text-gray-200'"
+                        ? 'border border-orange-500 text-orange-400' 
+                        : 'border border-gray-300 text-gray-200'"
                       class="px-2 py-1 text-xs font-medium rounded-full"
                     >
                       {{ user.is_admin ? 'Admin' : 'User' }}
@@ -181,8 +182,8 @@
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span 
                       [class]="user.active 
-                        ? 'bg-green-600 text-white cursor-pointer hover:bg-green-500' 
-                        : 'bg-gray-600 text-gray-200 cursor-pointer hover:bg-gray-500'"
+                        ? 'border border-orange-500 text-orange-400 cursor-pointer hover:border-gray-300 hover:text-gray-300' 
+                        : 'border border-gray-300 text-gray-200 cursor-pointer hover:border-orange-500 hover:text-orange-400'"
                       (click)="toggleUserActive(user)"
                       class="px-2 py-1 text-xs font-medium rounded-full transition-colors"
                     >
@@ -195,7 +196,7 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <button 
                       (click)="deleteUser(user.id)"
-                      class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                      class="px-3 py-1 border border-orange-500 rounded-lg hover:border-orange-700 hover:text-gray-300 text-orange-400 text-xs rounded transition-colors"
                     >
                       Delete
                     </button>
@@ -213,10 +214,10 @@
   @if (activeTab() === 'content' && !isLoading()) {
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="text-2xl font-semibold text-white">Content Management</h2>
+        <h2 class="text-2xl font-semibold text-orange-500">Content Management</h2>
         <button 
           (click)="createContent()"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-orange-500 rounded-lg transition-colors"
         >
           Add Content
         </button>
@@ -224,16 +225,16 @@
       
       <!-- Add Content Form -->
       <div class="bg-gray-800 rounded-lg p-6">
-        <h3 class="text-xl font-medium mb-4 text-white">Add New Content</h3>
+        <h3 class="text-xl font-medium mb-4 text-orange-500">Add New Content</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <input 
             [(ngModel)]="newContent.title" 
             placeholder="Title" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <select 
             [(ngModel)]="newContent.type"
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 focus:outline-none focus:border-blue-500"
           >
             <option value="MOVIE">Movie</option>
             <option value="SERIES">Series</option>
@@ -242,30 +243,30 @@
             [(ngModel)]="newContent.release_year" 
             type="number" 
             placeholder="Release Year" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newContent.duration_minutes" 
             type="number" 
             placeholder="Duration (minutes)" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newContent.age_rating" 
             placeholder="Age Rating" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newContent.genres" 
             placeholder="Genres (comma separated)" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
         </div>
         <textarea 
           [(ngModel)]="newContent.description" 
           placeholder="Description" 
           rows="3"
-          class="mt-4 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+          class="mt-4 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
         ></textarea>
       </div>
 
@@ -286,7 +287,7 @@
             <tbody class="divide-y divide-gray-700">
               @for (item of content(); track item.id) {
                 <tr class="hover:bg-gray-750">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ item.title }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-500">{{ item.title }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ item.type }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ item.release_year }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ item.duration_minutes }} min</td>
@@ -294,7 +295,7 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <button 
                       (click)="deleteContent(item.id)" 
-                      class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                      class="px-3 py-1 bg-red-600 hover:bg-red-700 text-orange-500 text-xs rounded transition-colors"
                     >
                       Delete
                     </button>
@@ -312,10 +313,10 @@
   @if (activeTab() === 'plans' && !isLoading()) {
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="text-2xl font-semibold text-white">Subscription Plans</h2>
+        <h2 class="text-2xl font-semibold text-orange-500">Subscription Plans</h2>
         <button 
           (click)="createPlan()"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-orange-500 rounded-lg transition-colors"
         >
           Add Plan
         </button>
@@ -323,35 +324,35 @@
       
       <!-- Add Plan Form -->
       <div class="bg-gray-800 rounded-lg p-6">
-        <h3 class="text-xl font-medium mb-4 text-white">Create New Plan</h3>
+        <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Plan</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <input 
             [(ngModel)]="newPlan.name" 
             placeholder="Plan Name" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newPlan.price" 
             type="number" 
             step="0.01" 
             placeholder="Price" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newPlan.max_profiles" 
             type="number" 
             placeholder="Max Profiles" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newPlan.max_devices" 
             type="number" 
             placeholder="Max Devices" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <select 
             [(ngModel)]="newPlan.video_quality"
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 focus:outline-none focus:border-blue-500"
           >
             <option value="SD">SD</option>
             <option value="HD">HD</option>
@@ -365,7 +366,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @for (plan of plans(); track plan.id) {
           <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors">
-            <h3 class="text-xl font-semibold text-white mb-2">{{ plan.name }}</h3>
+            <h3 class="text-xl font-semibold text-orange-500 mb-2">{{ plan.name }}</h3>
             <div class="text-2xl font-bold text-blue-400 mb-4">{{ formatCurrency(plan.price) }}/month</div>
             <div class="space-y-2 text-gray-300 mb-4">
               <div class="flex justify-between">
@@ -382,12 +383,12 @@
               </div>
             </div>
             <div class="flex gap-2">
-              <button class="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded transition-colors">
+              <button class="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-orange-500 text-sm rounded transition-colors">
                 Edit
               </button>
               <button 
                 (click)="deletePlan(plan.id)"
-                class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-orange-500 text-sm rounded transition-colors"
               >
                 Delete
               </button>
@@ -402,7 +403,7 @@
   @if (activeTab() === 'subscriptions' && !isLoading()) {
     <div class="space-y-6">
       <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-semibold text-white">Subscription Management</h2>
+        <h2 class="text-2xl font-semibold text-orange-500">Subscription Management</h2>
       </div>
 
       <div class="bg-gray-800 rounded-lg overflow-hidden">
@@ -434,7 +435,7 @@
                         'bg-red-600': subscription.status === 'CANCELED', 
                         'bg-yellow-600': subscription.status === 'PAST_DUE'
                       }"
-                      class="px-2 py-1 text-xs font-medium text-white rounded-full"
+                      class="px-2 py-1 text-xs font-medium text-orange-500 rounded-full"
                     >
                       {{ subscription.status }}
                     </span>
@@ -449,7 +450,7 @@
                     @if (subscription.status === 'ACTIVE') {
                       <button 
                         (click)="cancelSubscription(subscription.id)"
-                        class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                        class="px-3 py-1 bg-red-600 hover:bg-red-700 text-orange-500 text-xs rounded transition-colors"
                       >
                         Cancel
                       </button>
@@ -468,7 +469,7 @@
   @if (activeTab() === 'payments' && !isLoading()) {
     <div class="space-y-6">
       <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-semibold text-white">Payment Management</h2>
+        <h2 class="text-2xl font-semibold text-orange-500">Payment Management</h2>
       </div>
 
       <div class="bg-gray-800 rounded-lg overflow-hidden">
@@ -486,7 +487,7 @@
             <tbody class="divide-y divide-gray-700">
               @for (payment of payments(); track payment.id) {
                 <tr class="hover:bg-gray-750">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-500">
                     {{ formatCurrency(payment.amount, payment.currency) }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ payment.currency }}</td>
@@ -498,7 +499,7 @@
                         'bg-red-600': payment.status === 'FAILED',
                         'bg-blue-600': payment.status === 'REFUNDED'
                       }"
-                      class="px-2 py-1 text-xs font-medium text-white rounded-full"
+                      class="px-2 py-1 text-xs font-medium text-orange-500 rounded-full"
                     >
                       {{ payment.status }}
                     </span>
@@ -522,10 +523,10 @@
   @if (activeTab() === 'profiles' && !isLoading()) {
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="text-2xl font-semibold text-white">Profile Management</h2>
+        <h2 class="text-2xl font-semibold text-orange-500">Profile Management</h2>
         <button 
           (click)="createProfile()"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-orange-500 rounded-lg transition-colors"
         >
           Add Profile
         </button>
@@ -533,27 +534,27 @@
       
       <!-- Add Profile Form -->
       <div class="bg-gray-800 rounded-lg p-6">
-        <h3 class="text-xl font-medium mb-4 text-white">Create New Profile</h3>
+        <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Profile</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <input 
             [(ngModel)]="newProfile.user_id" 
             placeholder="User ID" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newProfile.name" 
             placeholder="Profile Name" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newProfile.avatar" 
             placeholder="Avatar URL" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
           <input 
             [(ngModel)]="newProfile.maturity_rating" 
             placeholder="Maturity Rating" 
-            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-orange-500 placeholder-gray-400 focus:outline-none focus:border-blue-500"
           >
         </div>
       </div>
@@ -574,7 +575,7 @@
             <tbody class="divide-y divide-gray-700">
               @for (profile of profiles(); track profile.id) {
                 <tr class="hover:bg-gray-750">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ profile.name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-500">{{ profile.name }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ profile.user_id }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {{ profile.avatar || 'N/A' }}
@@ -585,7 +586,7 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <button 
                       (click)="deleteProfile(profile.id)"
-                      class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                      class="px-3 py-1 bg-red-600 hover:bg-red-700 text-orange-500 text-xs rounded transition-colors"
                     >
                       Delete
                     </button>
