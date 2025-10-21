@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -84,6 +84,8 @@ export class Admin implements OnInit {
   private base = environment.apiUrl;
   
   // State signals
+  isEditModalOpen: WritableSignal<boolean> = signal(false);
+  editingUser: WritableSignal<any> = signal(null);
   activeTab = signal<'users' | 'content' | 'plans' | 'subscriptions' | 'payments' | 'profiles'>('users');
   isLoading = signal(false);
   error = signal<string | null>(null);
@@ -172,6 +174,50 @@ export class Admin implements OnInit {
         break;
     }
   }
+
+openEditModal(user: any) {
+  this.editingUser.set({ ...user }); 
+  this.isEditModalOpen.set(true); 
+}
+
+closeEditModal() {
+  this.isEditModalOpen.set(false); 
+  this.editingUser.set(null);
+}
+
+cancelEdit() {
+  this.closeEditModal(); 
+}
+
+saveUserEdits() {
+  const user = this.editingUser();
+  if (!user) return;
+
+  this.isLoading.set(true);
+
+  const updatePayload = {
+    name: user.name,
+    email: user.email,
+    active: user.active,
+    is_admin: user.is_admin
+  };
+
+  this.http.put<User>(`${this.base}/users/${user.id}`, updatePayload, { withCredentials: true })
+    .subscribe({
+      next: (updatedUser) => {
+        this.users.update(users => 
+          users.map(u => u.id === updatedUser.id ? updatedUser : u)
+        );
+        this.closeEditModal(); 
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        this.error.set(error.error?.detail || 'Failed to update user');
+        this.isLoading.set(false);
+      }
+    });
+}
+
 
   loadUsers() {
     this.isLoading.set(true);
