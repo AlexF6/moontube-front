@@ -69,7 +69,7 @@ export class PlansTabComponent implements OnInit {
       this.isLoading.set(true);
       this.error.set(null);
       
-      const response = await this.plansService.getPlans(this.query()).toPromise();
+      const response = await this.plansService.list(this.query()).toPromise();
       this.items.set(response || []);
       this.total.set(response?.length || 0);
     } catch (err) {
@@ -82,7 +82,7 @@ export class PlansTabComponent implements OnInit {
   async create() {
     try {
       this.error.set(null);
-      await this.plansService.createPlan(this.newPlan()).toPromise();
+      await this.plansService.create(this.newPlan()).toPromise();
       
       // Reset form
       this.newPlan.set({
@@ -102,7 +102,7 @@ export class PlansTabComponent implements OnInit {
   async openEdit(planId: string) {
     try {
       this.error.set(null);
-      const plan = await this.plansService.getPlan(planId).toPromise();
+      const plan = await this.plansService.get(planId).toPromise();
       this.editing.set(plan || null);
       this.editOpen.set(true);
     } catch (err) {
@@ -125,7 +125,7 @@ export class PlansTabComponent implements OnInit {
         video_quality: editingPlan.video_quality
       };
 
-      await this.plansService.updatePlan(editingPlan.id, updateData).toPromise();
+      await this.plansService.update(editingPlan.id, updateData).toPromise();
       
       this.editOpen.set(false);
       this.editing.set(null);
@@ -142,7 +142,7 @@ export class PlansTabComponent implements OnInit {
 
     try {
       this.error.set(null);
-      await this.plansService.deletePlan(planId).toPromise();
+      await this.plansService.delete(planId).toPromise();
       this.loadPlans();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));

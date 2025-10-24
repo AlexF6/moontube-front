@@ -15,8 +15,18 @@
 <!-- Filters -->
 <div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
-    <input [(ngModel)]="query().user_id" placeholder="User ID" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().plan_id" placeholder="Plan ID" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <select [(ngModel)]="query().user_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+      <option [ngValue]="null">All users</option>
+      @for (user of users(); track user.id) {
+        <option [ngValue]="user.id">{{ user.name }}</option>
+      }
+    </select>
+    <select [(ngModel)]="query().plan_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+      <option [ngValue]="null">All plans</option>
+      @for (plan of plans(); track plan.id) {
+        <option [ngValue]="plan.id">{{ plan.name }}</option>
+      }
+    </select>
     <select [(ngModel)]="query().status_q" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
       <option [ngValue]="null">All statuses</option>
       <option [ngValue]="'ACTIVE'">ACTIVE</option>
@@ -36,8 +46,18 @@
 <div class="rounded-lg p-6 bg-gray-800/30 border border-gray-700 mb-6">
   <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Subscription</h3>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    <input [(ngModel)]="newSubscription().user_id" placeholder="User ID" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="newSubscription().plan_id" placeholder="Plan ID" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <select [(ngModel)]="newSubscription().user_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+      <option [ngValue]="''">Select User</option>
+      @for (user of users(); track user.id) {
+        <option [ngValue]="user.id">{{ user.email }} {{ user.name ? '(' + user.name + ')' : '' }}</option>
+      }
+    </select>
+    <select [(ngModel)]="newSubscription().plan_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+      <option [ngValue]="''">Select Plan</option>
+      @for (plan of plans(); track plan.id) {
+        <option [ngValue]="plan.id">{{ plan.name }}</option>
+      }
+    </select>
     <select [(ngModel)]="newSubscription().status" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
       <option [ngValue]="'ACTIVE'">ACTIVE</option>
       <option [ngValue]="'CANCELED'">CANCELED</option>
@@ -58,8 +78,8 @@
     <table class="w-full">
       <thead class="bg-gray-900/40">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User ID</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Plan ID</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Plan</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Start Date</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">End Date</th>
@@ -70,8 +90,8 @@
       <tbody class="divide-y divide-gray-700">
         @for (subscription of items(); track subscription.id) {
           <tr class="hover:bg-gray-700/40 transition">
-            <td class="px-6 py-4 text-sm text-gray-300 font-mono text-xs">{{ subscription.user_id }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300 font-mono text-xs">{{ subscription.plan_id }}</td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ getUserName(subscription.user_id) }}</td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ getPlanName(subscription.plan_id) }}</td>
             <td class="px-6 py-4 text-sm">
               <span [class]="getStatusColor(subscription.status)">{{ subscription.status }}</span>
             </td>
@@ -106,7 +126,18 @@
       <button (click)="editOpen.set(false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl">✕</button>
       <h3 class="text-xl font-medium text-orange-500 mb-4">Edit Subscription</h3>
       <div class="grid grid-cols-1 gap-3">
-        <input [(ngModel)]="subscription.plan_id" placeholder="Plan ID" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">User</label>
+          <div class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+            {{ getUserName(subscription.user_id) }}
+          </div>
+        </div>
+        <select [(ngModel)]="subscription.plan_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+          <option [ngValue]="''">Select Plan</option>
+          @for (plan of plans(); track plan.id) {
+            <option [ngValue]="plan.id">{{ plan.name }}</option>
+          }
+        </select>
         <select [(ngModel)]="subscription.status" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
           <option [ngValue]="'ACTIVE'">ACTIVE</option>
           <option [ngValue]="'CANCELED'">CANCELED</option>

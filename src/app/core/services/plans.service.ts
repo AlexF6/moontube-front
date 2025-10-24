@@ -1,8 +1,8 @@
 // src/app/core/services/plans.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Plan, PlanList, PlanCreate, PlanUpdate, PlanSubscription } from '../../models/plan.model';
+import { environment } from '../../enviroments/enviroment';
+import type { Plan, PlanList, PlanCreate, PlanUpdate, PlanSubscription } from '../../models/plan.model';
 
 interface PlanQueryParams {
   q?: string;
@@ -15,14 +15,12 @@ interface PlanQueryParams {
   offset?: number;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class PlansService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://localhost:8000/plans';
+  private base = environment.apiUrl;
 
-  getPlans(params: PlanQueryParams): Observable<PlanList[]> {
+  list(params: PlanQueryParams) {
     let httpParams = new HttpParams();
     
     Object.keys(params).forEach(key => {
@@ -32,30 +30,44 @@ export class PlansService {
       }
     });
 
-    return this.http.get<PlanList[]>(this.baseUrl, { params: httpParams });
+    return this.http.get<PlanList[]>(`${this.base}/plans`, { 
+      params: httpParams,
+      withCredentials: true 
+    });
   }
 
-  getPlan(id: string): Observable<Plan> {
-    return this.http.get<Plan>(`${this.baseUrl}/${id}`);
+  get(id: string) {
+    return this.http.get<Plan>(`${this.base}/plans/${id}`, { 
+      withCredentials: true 
+    });
   }
 
-  createPlan(plan: PlanCreate): Observable<Plan> {
-    return this.http.post<Plan>(this.baseUrl, plan);
+  create(payload: PlanCreate) {
+    return this.http.post<Plan>(`${this.base}/plans`, payload, { 
+      withCredentials: true 
+    });
   }
 
-  updatePlan(id: string, plan: PlanUpdate): Observable<Plan> {
-    return this.http.put<Plan>(`${this.baseUrl}/${id}`, plan);
+  update(id: string, patch: PlanUpdate) {
+    return this.http.put<Plan>(`${this.base}/plans/${id}`, patch, { 
+      withCredentials: true 
+    });
   }
 
-  deletePlan(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  delete(id: string) {
+    return this.http.delete<void>(`${this.base}/plans/${id}`, { 
+      withCredentials: true 
+    });
   }
 
-  getPlanSubscriptions(planId: string, limit: number = 50, offset: number = 0): Observable<PlanSubscription[]> {
+  getPlanSubscriptions(planId: string, limit: number = 50, offset: number = 0) {
     const params = new HttpParams()
       .set('limit', limit.toString())
       .set('offset', offset.toString());
 
-    return this.http.get<PlanSubscription[]>(`${this.baseUrl}/${planId}/subscriptions`, { params });
+    return this.http.get<PlanSubscription[]>(`${this.base}/plans/${planId}/subscriptions`, { 
+      params,
+      withCredentials: true 
+    });
   }
 }

@@ -3,6 +3,8 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../../../core/services/subscriptions.service';
+import { UsersService } from '../../../../core/services/users.service';
+import { PlansService } from '../../../../core/services/plans.service';
 import {
   Subscription,
   SubscriptionCreate,
@@ -10,6 +12,8 @@ import {
   SubscriptionQuery,
   SubscriptionStatus
 } from '../../../../models/subscription.model';
+import type { User } from '../../../../models/user.model';
+import type { PlanList } from '../../../../models/plan.model';
 
 @Component({
   selector: 'app-subscriptions-tab',
@@ -19,12 +23,18 @@ import {
 })
 export class SubscriptionsTabComponent implements OnInit {
   private subscriptionsService = inject(SubscriptionsService);
+  private usersService = inject(UsersService);
+  private plansService = inject(PlansService);
 
   // State
   items = signal<Subscription[]>([]);
   total = signal(0);
   isLoading = signal(false);
   error = signal<string | null>(null);
+  
+  // Dropdown data
+  users = signal<User[]>([]);
+  plans = signal<PlanList[]>([]);
   
   // Forms
   newSubscription = signal<SubscriptionCreate>(this.getDefaultSubscription());
@@ -45,8 +55,28 @@ export class SubscriptionsTabComponent implements OnInit {
     order_dir: 'desc'
   });
 
-  ngOnInit() {
-    this.loadSubscriptions();
+  async ngOnInit() {
+    await this.loadUsers();
+    await this.loadPlans();
+    await this.loadSubscriptions();
+  }
+
+  private async loadUsers() {
+    try {
+      const users = await this.usersService.list().toPromise();
+      this.users.set(users || []);
+    } catch (err: any) {
+      this.error.set('Failed to load users');
+    }
+  }
+
+  private async loadPlans() {
+    try {
+      const plans = await this.plansService.list({}).toPromise() as PlanList[] | undefined; 
+      this.plans.set(plans || []); 
+    } catch (err: any) {
+      this.error.set('Failed to load plans');
+    }
   }
 
   private getDefaultSubscription(): SubscriptionCreate {
@@ -184,5 +214,15 @@ export class SubscriptionsTabComponent implements OnInit {
       case SubscriptionStatus.PAST_DUE: return 'text-yellow-400';
       default: return 'text-gray-400';
     }
+  }
+
+  getUserName(userId: string): string {
+    const user = this.users().find(u => u.id === userId);
+    return user ? (user.name || user.email) : userId;
+  }
+
+  getPlanName(planId: string): string {
+    const plan: PlanList | undefined = this.plans().find(p => p.id === planId); // <-- Explicitly type the found item
+    return plan ? plan.name : planId;
   }
 }
