@@ -1,12 +1,12 @@
 // src/app/core/services/contents.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Content, ContentList, ContentCreate, ContentUpdate } from '../../models/content.model';
+import { environment } from '../../enviroments/enviroment';
+import type { Content, ContentList, ContentCreate, ContentUpdate } from '../../models/content.model';
 
 interface QueryParams {
   q?: string;
-  type_q?: 'MOVIE' | 'SERIES' | 'VIDEOS' | null; // Added VIDEOS
+  type_q?: 'MOVIE' | 'SERIES' | 'VIDEOS' | null;
   genre_q?: string;
   year_from?: number | null;
   year_to?: number | null;
@@ -19,14 +19,12 @@ interface QueryParams {
   offset?: number;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class ContentsService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://localhost:8000/contents';
+  private base = environment.apiUrl;
 
-  getContents(params: QueryParams): Observable<ContentList[]> {
+  getContents(params: QueryParams) {
     let httpParams = new HttpParams();
     
     Object.keys(params).forEach(key => {
@@ -36,22 +34,33 @@ export class ContentsService {
       }
     });
 
-    return this.http.get<ContentList[]>(this.baseUrl, { params: httpParams });
+    return this.http.get<ContentList[]>(`${this.base}/contents`, { 
+      params: httpParams,
+      withCredentials: true 
+    });
   }
 
-  getContent(id: string): Observable<Content> {
-    return this.http.get<Content>(`${this.baseUrl}/${id}`);
+  getContent(id: string) {
+    return this.http.get<Content>(`${this.base}/contents/${id}`, { 
+      withCredentials: true 
+    });
   }
 
-  createContent(content: ContentCreate): Observable<Content> {
-    return this.http.post<Content>(this.baseUrl, content);
+  createContent(payload: ContentCreate) {
+    return this.http.post<Content>(`${this.base}/contents`, payload, { 
+      withCredentials: true 
+    });
   }
 
-  updateContent(id: string, content: ContentUpdate): Observable<Content> {
-    return this.http.put<Content>(`${this.baseUrl}/${id}`, content);
+  updateContent(id: string, patch: ContentUpdate) {
+    return this.http.put<Content>(`${this.base}/contents/${id}`, patch, { 
+      withCredentials: true 
+    });
   }
 
-  deleteContent(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  deleteContent(id: string) {
+    return this.http.delete<void>(`${this.base}/contents/${id}`, { 
+      withCredentials: true 
+    });
   }
 }
