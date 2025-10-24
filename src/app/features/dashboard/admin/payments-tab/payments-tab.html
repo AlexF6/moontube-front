@@ -1,1 +1,174 @@
-<!-- Reuse your original payments table; use fmt() for amount and fmtDate() for paid_at. -->
+<!-- src/app/features/dashboard/admin/payments-tab/payments-tab.html -->
+<!-- Error -->
+@if (error()) {
+  <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
+    <span class="text-red-200">{{ error() }}</span>
+    <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-xl font-bold">&times;</button>
+  </div>
+}
+
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+  <h2 class="text-2xl font-semibold text-orange-500">Payments Management ({{ total() }})</h2>
+</div>
+
+<!-- Filters -->
+<div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="space-y-2">
+      <select [(ngModel)]="query().user_id" class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+        <option [ngValue]="null">All users</option>
+        @for (user of users(); track user.id) {
+          <option [ngValue]="user.id">{{ user.name }}</option>
+        }
+      </select>
+      <select [(ngModel)]="query().status_q" class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+        <option [ngValue]="null">All statuses</option>
+        <option [ngValue]="'PENDING'">PENDING</option>
+        <option [ngValue]="'PAID'">PAID</option>
+        <option [ngValue]="'FAILED'">FAILED</option>
+        <option [ngValue]="'REFUNDED'">REFUNDED</option>
+      </select>
+    </div>
+    <div class="space-y-2">
+      <input [(ngModel)]="query().provider" placeholder="Provider contains" class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+      <input [(ngModel)]="query().external_id" placeholder="External ID" class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    </div>
+    <div class="space-y-2">
+      <div class="flex gap-2">
+        <input [(ngModel)]="query().amount_min" type="number" placeholder="Min amount" class="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+        <input [(ngModel)]="query().amount_max" type="number" placeholder="Max amount" class="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+      </div>
+      <div class="flex gap-2">
+        <input [(ngModel)]="query().paid_from" type="date" placeholder="Paid from" class="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+        <input [(ngModel)]="query().paid_to" type="date" placeholder="Paid to" class="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+      </div>
+    </div>
+    <div class="flex gap-2 items-end">
+      <button (click)="applyFilters()" class="flex-1 px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition">Apply</button>
+      <button (click)="resetFilters()" class="flex-1 px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create form -->
+<div class="rounded-lg p-6 bg-gray-800/30 border border-gray-700 mb-6">
+  <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Payment</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <select [(ngModel)]="newPayment().user_id" (change)="onUserChange(newPayment().user_id)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+      <option [ngValue]="''">Select User</option>
+      @for (user of users(); track user.id) {
+        <option [ngValue]="user.id">{{ user.email }} {{ user.name ? '(' + user.name + ')' : '' }}</option>
+      }
+    </select>
+    <select [(ngModel)]="newPayment().subscription_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
+      <option [ngValue]="''">Select Subscription</option>
+      @for (subscription of subscriptions(); track subscription.id) {
+        <option [ngValue]="subscription.id" [disabled]="newPayment().user_id && subscription.user_id !== newPayment().user_id">
+          {{ subscription.id.slice(0, 8) }}... ({{ getUserName(subscription.user_id) }})
+        </option>
+      }
+    </select>
+    <select [(ngModel)]="newPayment().status" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+      <option [ngValue]="'PENDING'">PENDING</option>
+      <option [ngValue]="'PAID'">PAID</option>
+      <option [ngValue]="'FAILED'">FAILED</option>
+      <option [ngValue]="'REFUNDED'">REFUNDED</option>
+    </select>
+    <input [(ngModel)]="newPayment().amount" type="number" step="0.01" placeholder="Amount" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <input [(ngModel)]="newPayment().currency" placeholder="Currency (e.g., USD)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <input [(ngModel)]="newPayment().provider" placeholder="Provider" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <input [(ngModel)]="newPayment().external_id" placeholder="External ID" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <input [(ngModel)]="newPayment().paid_at" type="datetime-local" placeholder="Paid At" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+  </div>
+  <div class="mt-4 flex justify-end">
+    <button
+      (click)="create()"
+      [disabled]="!newPayment().user_id || !newPayment().subscription_id || !newPayment().amount || !newPayment().currency"
+      class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+      Create Payment
+    </button>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="bg-gray-800/30 border border-gray-700 rounded-lg overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead class="bg-gray-900/40">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Provider</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">External ID</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Paid At</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        @for (payment of items(); track payment.id) {
+          <tr class="hover:bg-gray-700/40 transition">
+            <td class="px-6 py-4 text-sm text-gray-300">{{ getUserName(payment.user_id) }}</td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ payment.amount }} {{ payment.currency }}</td>
+            <td class="px-6 py-4 text-sm">
+              <span [class]="getStatusColor(payment.status)">{{ payment.status }}</span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ payment.provider }}</td>
+            <td class="px-6 py-4 text-sm text-gray-300 font-mono text-xs">{{ payment.external_id }}</td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDateTime(payment.paid_at) }}</td>
+            <td class="px-6 py-4 text-sm flex items-center gap-2">
+              <button (click)="openEdit(payment)" class="px-3 py-1 border border-yellow-600 text-yellow-500 rounded-lg hover:bg-yellow-600/10 text-xs transition">Edit</button>
+              <button (click)="deletePayment(payment.id)" class="px-3 py-1 border border-red-600 text-red-500 rounded-lg hover:bg-red-600/10 text-xs transition">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (isLoading()) {
+    <div class="p-4 text-center text-gray-400">Loading…</div>
+  }
+  @if (items().length === 0 && !isLoading()) {
+    <div class="p-4 text-center text-gray-400">No payments found</div>
+  }
+</div>
+
+<!-- Edit Modal -->
+@if (editOpen() && editing(); as payment) {
+  <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[4px] z-50">
+    <div class="bg-gray-800/80 border border-gray-700 rounded-xl w-full max-w-xl p-6 relative">
+      <button (click)="editOpen.set(false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl">✕</button>
+      <h3 class="text-xl font-medium text-orange-500 mb-4">Edit Payment</h3>
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">User</label>
+          <div class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+            {{ getUserName(payment.user_id) }}
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-1">Subscription</label>
+          <div class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+            {{ getSubscriptionInfo(payment.subscription_id) }}
+          </div>
+        </div>
+        <input [(ngModel)]="payment.amount" type="number" step="0.01" placeholder="Amount" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+        <input [(ngModel)]="payment.currency" placeholder="Currency" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+        <select [(ngModel)]="payment.status" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+          <option [ngValue]="'PENDING'">PENDING</option>
+          <option [ngValue]="'PAID'">PAID</option>
+          <option [ngValue]="'FAILED'">FAILED</option>
+          <option [ngValue]="'REFUNDED'">REFUNDED</option>
+        </select>
+        <input [(ngModel)]="payment.provider" placeholder="Provider" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+        <input [(ngModel)]="payment.external_id" placeholder="External ID" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+        <input [(ngModel)]="payment.paid_at" type="datetime-local" placeholder="Paid At" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button (click)="editOpen.set(false)" class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">Cancel</button>
+        <button (click)="saveEdits()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">Save</button>
+      </div>
+    </div>
+  </div>
+}
