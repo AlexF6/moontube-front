@@ -68,7 +68,12 @@
     <input [(ngModel)]="newSubscription().renews_at" type="date" placeholder="Renews At" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
   </div>
   <div class="mt-4 flex justify-end">
-    <button (click)="create()" class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors">Create Subscription</button>
+    <button
+      (click)="create()"
+      [disabled]="!newSubscription().user_id || !newSubscription().plan_id"
+      class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+      Create Subscription
+    </button>
   </div>
 </div>
 

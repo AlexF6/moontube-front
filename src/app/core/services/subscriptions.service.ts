@@ -15,23 +15,26 @@ export class SubscriptionsService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
-  list(query: SubscriptionQuery) {
+  list(query: SubscriptionQuery = {}) {
     let params = new HttpParams();
-    
+
+    const limit = Math.min(query.limit ?? 50, 200);
+    params = params.set('limit', String(limit));
+
+    if (query.offset != null) params = params.set('offset', String(query.offset));
     if (query.user_id) params = params.set('user_id', query.user_id);
     if (query.plan_id) params = params.set('plan_id', query.plan_id);
     if (query.status_q) params = params.set('status_q', query.status_q);
-    if (query.active_only !== undefined) params = params.set('active_only', query.active_only.toString());
+    if (query.active_only !== undefined)
+      params = params.set('active_only', String(query.active_only));
     if (query.start_from) params = params.set('start_from', query.start_from);
     if (query.start_to) params = params.set('start_to', query.start_to);
-    if (query.limit) params = params.set('limit', query.limit.toString());
-    if (query.offset) params = params.set('offset', query.offset.toString());
     if (query.order_by) params = params.set('order_by', query.order_by);
     if (query.order_dir) params = params.set('order_dir', query.order_dir);
 
-    return this.http.get<Subscription[]>(`${this.base}/subscriptions`, { 
+    return this.http.get<Subscription[]>(`${this.base}/subscriptions`, {
       params,
-      withCredentials: true 
+      withCredentials: true,
     });
   }
 
