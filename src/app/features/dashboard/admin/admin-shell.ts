@@ -8,17 +8,21 @@ import { PlansTabComponent } from './plans-tab/plans-tab';
 import { SubscriptionsTabComponent } from './subscriptions-tab/subscriptions-tab';
 import { PaymentsTabComponent } from './payments-tab/payments-tab';
 import { ProfilesTabComponent } from './profiles-tab/profiles-tab';
+import { WatchlistsTabComponent } from './watchlists/watchlists-tab';
+import { EpisodesTabComponent } from './episodes/episodes-tab';
+import { PlaybacksTabComponent } from './playbacks/playbacks-tab';
 
 @Component({
   selector: 'app-admin-shell',
   standalone: true,
   imports: [CommonModule, RouterModule,
     UsersTabComponent, ContentTabComponent, PlansTabComponent,
-    SubscriptionsTabComponent, PaymentsTabComponent, ProfilesTabComponent],
+    SubscriptionsTabComponent, PaymentsTabComponent, ProfilesTabComponent, WatchlistsTabComponent,
+    EpisodesTabComponent, PlaybacksTabComponent],
   templateUrl: './admin-shell.html'
 })
 export class AdminShell implements OnInit {
-  activeTab = signal<'users' | 'content' | 'plans' | 'subscriptions' | 'payments' | 'profiles'>('users');
+  activeTab = signal<'users' | 'content' | 'plans' | 'subscriptions' | 'payments' | 'profiles' | 'watchlists' | 'episodes' | 'playbacks'>('users');
   constructor(public authService: AuthService) {}
   ngOnInit(): void {}
   setTab(tab: typeof this.activeTab extends infer T ? any : never) { this.activeTab.set(tab); }

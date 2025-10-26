@@ -29,6 +29,15 @@
       <button class="px-4 py-2 border-b-2 transition-colors"
               [class]="activeTab()==='profiles' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
               (click)="setTab('profiles')">Profiles</button>
+      <button class="px-4 py-2 border-b-2 transition-colors"
+              [class]="activeTab()==='watchlists' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
+              (click)="setTab('watchlists')">watchlists</button>
+      <button class="px-4 py-2 border-b-2 transition-colors"
+              [class]="activeTab()==='episodes' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
+              (click)="setTab('episodes')">episodes</button>
+      <button class="px-4 py-2 border-b-2 transition-colors"
+              [class]="activeTab()==='playbacks' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
+              (click)="setTab('playbacks')">playbacks</button>
     </div>
   </div>
 
@@ -40,5 +49,8 @@
     @case ('subscriptions') { <app-subscriptions-tab /> }
     @case ('payments') { <app-payments-tab /> }
     @case ('profiles') { <app-profiles-tab /> }
+    @case ('watchlists') { <app-watchlists-tab /> }
+    @case ('episodes') { <app-episodes-tab/> }
+    @case ('playbacks') { <app-playbacks-tab/> }
   }
 </div>
