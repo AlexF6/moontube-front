@@ -67,7 +67,7 @@
                     {{ payment.status }}
                   </span>
                   <span class="text-gray-400 text-sm">
-                    {{ payment.id.slice(-8) }}
+                    {{ shortId(payment.id) }}
                   </span>
                   @if (hasProvider(payment)) {
                     <span class="text-gray-400 text-sm">
@@ -93,7 +93,7 @@
             <div>
               <label class="text-gray-400 block mb-1">Subscription</label>
               <div class="text-white font-mono text-sm">
-                {{ payment.subscription_id.slice(-8) }}
+                {{ shortId(payment.id) }}
               </div>
             </div>
             

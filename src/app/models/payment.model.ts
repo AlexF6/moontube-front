@@ -59,3 +59,9 @@ export interface PaymentQuery {
   order_by?: string;
   order_dir?: 'asc' | 'desc';
 }
+
+export type PaginatedPayments = {
+  payments: Payment[];
+  total: number;
+  has_more: boolean;
+};

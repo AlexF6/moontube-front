@@ -7,7 +7,8 @@ import type {
   PaymentCreate,
   PaymentUpdate,
   PaymentQuery,
-  PaymentStatus 
+  PaymentStatus, 
+  PaginatedPayments
 } from '../../models/payment.model';
 
 @Injectable({ providedIn: 'root' })
@@ -64,16 +65,17 @@ export class PaymentsService {
     });
   }
 
-  getMyPayments(status_q?: PaymentStatus, limit: number = 50, offset: number = 0) {
+  getMyPayments(status_q?: PaymentStatus, limit = 50, offset = 0) {
     let params = new HttpParams()
-      .set('limit', limit.toString())
-      .set('offset', offset.toString());
-    
+      .set('limit', String(limit))
+      .set('offset', String(offset));
+
     if (status_q) params = params.set('status_q', status_q);
 
-    return this.http.get<Payment[]>(`${this.base}/payments/me`, { 
+    // ✅ endpoint correcto según tu Swagger
+    return this.http.get<Payment[]>(`${this.base}/payments/me`, {
       params,
-      withCredentials: true 
+      withCredentials: true
     });
   }
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PaymentsService } from '../../../../core/services/payments.service';
 import { Payment, PaymentStatus } from '../../../../models/payment.model';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-payments-tab',
@@ -34,17 +35,21 @@ export class PaymentsTabComponent implements OnInit {
   async loadPayments(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
-
     try {
-      const status = this.selectedStatus() === 'ALL' ? undefined : this.selectedStatus() as PaymentStatus;
-      const payments = await this.paymentsService.getMyPayments(status).toPromise();
-      this.payments.set(payments || []);
+      const status = this.selectedStatus() === 'ALL' ? undefined : (this.selectedStatus() as PaymentStatus);
+      const list = await firstValueFrom(this.paymentsService.getMyPayments(status));
+      this.payments.set(list ?? []);
     } catch (err) {
       this.error.set('Failed to load payment history');
       console.error('Error loading payments:', err);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  shortId(v: unknown): string {
+    return typeof v === 'string' && v.length >= 8 ? v.slice(-8) :
+          typeof v === 'string' ? v : '—';
   }
 
   onStatusChange(event: Event): void {
