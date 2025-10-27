@@ -55,4 +55,28 @@ export class ProfilesService {
       withCredentials: true 
     });
   }
+
+  getMyProfiles() {
+    return this.http.get<ProfileList[]>(`${this.base}/me/profiles`, {
+      withCredentials: true,
+    });
+  }
+
+  createMyProfile(payload: Omit<ProfileCreate, 'user_id'>) {
+    return this.http.post<Profile>(`${this.base}/me/profiles`, payload, {
+      withCredentials: true,
+    });
+  }
+
+  updateMyProfile(id: string, patch: ProfileUpdate) {
+    return this.http.put<Profile>(`${this.base}/me/profiles/${id}`, patch, {
+      withCredentials: true,
+    });
+  }
+
+  deleteMyProfile(id: string) {
+    return this.http.delete<void>(`${this.base}/me/profiles/${id}`, {
+      withCredentials: true,
+    });
+  }
 }

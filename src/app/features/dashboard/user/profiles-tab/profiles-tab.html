@@ -1,0 +1,211 @@
+<div class="space-y-6">
+  <!-- Header and Actions -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-orange-400 mb-2">Manage Profiles</h2>
+      <p class="text-gray-400 text-sm">Create and manage your viewing profiles</p>
+    </div>
+    
+    <button 
+      (click)="openCreateModal()"
+      class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors flex items-center gap-2">
+      <span>+</span>
+      <span>Add New Profile</span>
+    </button>
+  </div>
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && profiles().length === 0) {
+    <div class="text-center py-12">
+      <div class="text-gray-400 text-lg mb-4">No profiles found</div>
+      <p class="text-gray-500 mb-6">Create your first profile to get started with personalized viewing.</p>
+      <button 
+        (click)="openCreateModal()"
+        class="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+        Create Your First Profile
+      </button>
+    </div>
+  }
+
+  <!-- Profiles Grid -->
+  @if (!loading() && profiles().length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (profile of profiles(); track profile.id) {
+        <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors">
+          <!-- Profile Header -->
+          <div class="flex items-center gap-4 mb-4">
+            @if (profile.avatar) {
+              <img 
+                [src]="profile.avatar" 
+                [alt]="profile.name"
+                class="w-16 h-16 rounded-full object-cover border-2 border-gray-600">
+            } @else {
+              <div 
+                [innerHTML]="getDefaultAvatar(profile.name)"
+                class="flex-shrink-0">
+              </div>
+            }
+            <div class="flex-1 min-w-0">
+              <h3 class="text-xl font-semibold text-white truncate">{{ profile.name }}</h3>
+              @if (profile.maturity_rating) {
+                <div class="text-gray-400 text-sm mt-1">
+                  {{ getMaturityRatingLabel(profile.maturity_rating) }}
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-2 pt-4 border-t border-gray-700">
+            <button 
+              (click)="openEditModal(profile)"
+              class="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors text-sm">
+              Edit
+            </button>
+            <button 
+              (click)="deleteProfile(profile)"
+              class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors text-sm">
+              Delete
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Create Profile Modal -->
+  @if (showCreateModal()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+        <h3 class="text-xl font-bold text-orange-400 mb-4">Create New Profile</h3>
+        
+        <form (submit)="createProfile(); $event.preventDefault()" class="space-y-4">
+          <div>
+            <label class="block text-gray-300 text-sm font-medium mb-2">Profile Name</label>
+            <input
+              type="text"
+              [ngModel]="newProfile().name"
+              (ngModelChange)="setNew('name', $event)"
+              name="name"
+              required
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="Enter profile name">
+          </div>
+
+          <div>
+            <label class="block text-gray-300 text-sm font-medium mb-2">Avatar URL (Optional)</label>
+            <input
+              type="url"
+              [ngModel]="newProfile().avatar"
+              (ngModelChange)="setNew('avatar', $event)"
+              name="avatar"
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="https://example.com/avatar.jpg">
+          </div>
+
+          <div>
+            <label class="block text-gray-300 text-sm font-medium mb-2">Maturity Rating</label>
+            <select
+              [ngModel]="newProfile().maturity_rating"
+              (ngModelChange)="setNew('maturity_rating', $event)"
+              name="maturity_rating"
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              @for (rating of maturityRatings; track rating.value) {
+                <option [value]="rating.value">{{ rating.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button
+              type="button"
+              (click)="closeCreateModal()"
+              class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+              Create Profile
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Edit Profile Modal -->
+  @if (showEditModal()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+        <h3 class="text-xl font-bold text-orange-400 mb-4">Edit Profile</h3>
+        
+        <form (submit)="updateProfile(); $event.preventDefault()" class="space-y-4">
+          <div>
+            <label class="block text-gray-300 text-sm font-medium mb-2">Profile Name</label>
+            <input
+              type="text"
+              [ngModel]="editProfile().name"
+              (ngModelChange)="setEdit('name', $event)"
+              name="editName"
+              required
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="Enter profile name">
+          </div>
+
+          <div>
+            <label class="block text-gray-300 text-sm font-medium mb-2">Avatar URL (Optional)</label>
+            <input
+              type="url"
+              [ngModel]="editProfile().avatar"
+              (ngModelChange)="setEdit('avatar', $event)"
+              name="editAvatar"
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="https://example.com/avatar.jpg">
+          </div>
+
+          <div>
+            <label class="block text-gray-300 text-sm font-medium mb-2">Maturity Rating</label>
+            <select
+              [ngModel]="editProfile().maturity_rating"
+              (ngModelChange)="setEdit('maturity_rating', $event)"
+              name="editMaturityRating"
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              @for (rating of maturityRatings; track rating.value) {
+                <option [value]="rating.value">{{ rating.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button
+              type="button"
+              (click)="closeEditModal()"
+              class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+              Update Profile
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

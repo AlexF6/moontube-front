@@ -30,26 +30,17 @@
       </a>
     </li>
 
+    <!-- Single Dashboard Link - Always Visible -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
-      <a [routerLink]="['dashboard/admin']" 
+      <button
+        (click)="navigateToDashboard()"
         data-slot="sidebar-menu-button"
         class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
                transition-colors duration-300 hover:bg-orange-500/90 hover:border-orange-500">
         
         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M510-570v-270h330v270H510ZM120-450v-390h330v390H120Zm390 330v-390h330v390H510Zm-390 0v-270h330v270H120Zm60-390h210v-270H180v270Zm390 330h210v-270H570v270Zm0-450h210v-150H570v150ZM180-180h210v-150H180v150Zm210-330Zm180-120Zm0 180ZM390-330Z"/></svg>
         Dashboard
-      </a>
-    </li>
-
-    <li data-slot="sidebar-menu-item" class="group/menu-item">
-      <a [routerLink]="['dashboard/user']" 
-        data-slot="sidebar-menu-button"
-        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 hover:bg-orange-500/90 hover:border-orange-500">
-        
-        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M510-570v-270h330v270H510ZM120-450v-390h330v390H120Zm390 330v-390h330v390H510Zm-390 0v-270h330v270H120Zm60-390h210v-270H180v270Zm390 330h210v-270H570v270Zm0-450h210v-150H570v150ZM180-180h210v-150H180v150Zm210-330Zm180-120Zm0 180ZM390-330Z"/></svg>
-        Dashboard
-      </a>
+      </button>
     </li>
 
     <li data-slot="sidebar-menu-item" class="group/menu-item">
