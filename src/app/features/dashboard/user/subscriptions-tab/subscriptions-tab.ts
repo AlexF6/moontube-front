@@ -1,3 +1,4 @@
+// src/app/features/dashboard/user/subscriptions-tab/subscriptions-tab.ts
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -59,7 +60,7 @@ export class SubscriptionsTabComponent implements OnInit {
     }
 
     try {
-      await this.subscriptionsService.cancel(subscription.id).toPromise();
+      await this.subscriptionsService.cancelMy(subscription.id).toPromise();
       this.loadSubscriptions(); // Refresh the list
     } catch (err) {
       this.error.set('Failed to cancel subscription');
@@ -73,7 +74,7 @@ export class SubscriptionsTabComponent implements OnInit {
     }
 
     try {
-      await this.subscriptionsService.reactivate(subscription.id).toPromise();
+      await this.subscriptionsService.reactivateMy(subscription.id).toPromise();
       this.loadSubscriptions(); // Refresh the list
     } catch (err) {
       this.error.set('Failed to reactivate subscription');

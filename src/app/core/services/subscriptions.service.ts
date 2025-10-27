@@ -76,18 +76,13 @@ export class SubscriptionsService {
     });
   }
 
-  getMySubscriptions(status_q?: SubscriptionStatus, limit: number = 50, offset: number = 0) {
-    let params = new HttpParams()
-      .set('limit', limit.toString())
-      .set('offset', offset.toString());
-    
-    if (status_q) params = params.set('status_q', status_q);
-
-    return this.http.get<Subscription[]>(`${this.base}/subscriptions/me`, { 
-      params,
-      withCredentials: true 
-    });
-  }
+  getMySubscriptions(status?: SubscriptionStatus) {
+  let params: any = {};
+  if (status) params.status_q = status;
+  return this.http.get<Subscription[]>(`${this.base}/me/subscriptions`, {
+    params, withCredentials: true
+  });
+}
 
   getSubscriptionPayments(subscriptionId: string, limit: number = 50, offset: number = 0) {
     const params = new HttpParams()
@@ -99,4 +94,16 @@ export class SubscriptionsService {
       withCredentials: true 
     });
   }
+
+cancelMy(id: string) {
+  return this.http.post<Subscription>(`${this.base}/me/subscriptions/${id}/cancel`, null, {
+    withCredentials: true
+  });
+}
+
+reactivateMy(id: string) {
+  return this.http.post<Subscription>(`${this.base}/me/subscriptions/${id}/reactivate`, null, {
+    withCredentials: true
+  });
+}
 }
