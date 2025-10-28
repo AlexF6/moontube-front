@@ -45,6 +45,7 @@
 
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
+        (click)="navigateToPlaylist()"
         data-slot="sidebar-menu-button"
         class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
                transition-colors duration-300 hover:bg-orange-500/90 hover:border-orange-500">
@@ -59,6 +60,7 @@
 
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
+        (click)="navigateToSubscriptions()"
         data-slot="sidebar-menu-button"
         class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
                transition-colors duration-300 hover:bg-orange-500/90 hover:text-white">

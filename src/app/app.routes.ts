@@ -13,6 +13,6 @@ export const routes: Routes = [
   { path: 'watch/:id', component: Watch },
   { path: 'dashboard/admin', component: AdminShell, canActivate: [AuthGuard, AdminGuard] },
   { path: 'dashboard/user', component: UserShell, canActivate: [AuthGuard] },
-  { path: 'playlist', component: WatchlistComponent, canActivate: [AuthGuard] },
+  { path: 'playlists', component: WatchlistComponent, canActivate: [AuthGuard] },
   { path: 'subscriptions', component: SubscriptionsTabComponent, canActivate: [AuthGuard] },
 ];

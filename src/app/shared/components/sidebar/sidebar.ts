@@ -44,6 +44,30 @@ export class Sidebar {
     }
   }
 
+    navigateToPlaylist() {
+    const user = this.authService.user();
+    
+    if (user) {
+      this.router.navigate(['playlists']);
+    } else {
+      // User is not logged in - open login modal
+      this.authUi.openLogin();
+      this.ui.close(); // Close sidebar on mobile after clicking
+    }
+  }
+
+  navigateToSubscriptions() {
+    const user = this.authService.user();
+    
+    if (user) {
+      this.router.navigate(['subscriptions']);
+    } else {
+      // User is not logged in - open login modal
+      this.authUi.openLogin();
+      this.ui.close(); // Close sidebar on mobile after clicking
+    }
+  }
+
   getDashboardLink(): string {
     const user = this.authService.user();
     return user?.is_admin ? '/dashboard/admin' : '/dashboard/user';
