@@ -7,6 +7,7 @@ export interface ContentList {
   age_rating: string;
   genres: string; // Added genres to list view
   duration_minutes?: number; // Added duration
+  thumbnail?: string; // Added for future thumbnail support
 }
 
 export interface Content {
@@ -23,6 +24,7 @@ export interface Content {
   age_rating: string;
   genres: string;
   video_url: string; // Added video_url
+  thumbnail?: string; // Added for future thumbnail support
 }
 
 export interface ContentCreate {
@@ -34,6 +36,7 @@ export interface ContentCreate {
   age_rating: string;
   genres: string;
   video_url: string; // Added video_url
+  thumbnail?: string; // Added for future thumbnail support
 }
 
 export interface ContentUpdate {
@@ -45,4 +48,5 @@ export interface ContentUpdate {
   age_rating?: string;
   genres?: string;
   video_url?: string; // Added video_url
+  thumbnail?: string; // Added for future thumbnail support
 }
