@@ -6,7 +6,7 @@ import { SubscriptionsTabComponent } from './subscriptions-tab/subscriptions-tab
 import { PaymentsTabComponent } from './payments-tab/payments-tab';
 import { ProfilesTabComponent } from './profiles-tab/profile-tab';
 // import { WatchlistsTabComponent } from './watchlists-tab/watchlists-tab.component';
-// import { PlaybacksTabComponent } from './playbacks-tab/playbacks-tab.component';
+import { PlaybacksTabComponent } from './playbacks-tab/playbacks-tab';
 
 @Component({
   selector: 'app-user-shell',
@@ -18,7 +18,7 @@ import { ProfilesTabComponent } from './profiles-tab/profile-tab';
     PaymentsTabComponent, 
     ProfilesTabComponent, 
     // WatchlistsTabComponent, 
-    // PlaybacksTabComponent
+    PlaybacksTabComponent
   ],
   templateUrl: './user-shell.html'
 })
