@@ -57,4 +57,44 @@ export class WatchlistService {
       withCredentials: true 
     });
   }
+
+  getMyWatchlists(params: QueryParams) {
+    let httpParams = new HttpParams();
+    
+    Object.keys(params).forEach(key => {
+      const value = params[key as keyof QueryParams];
+      if (value !== null && value !== undefined && value !== '') {
+        httpParams = httpParams.set(key, value.toString());
+      }
+    });
+
+    return this.http.get<WatchlistList[]>(`${this.base}/watchlist/me/watchlist`, { 
+      params: httpParams,
+      withCredentials: true 
+    });
+  }
+
+  getMyWatchlist(id: string) {
+    return this.http.get<Watchlist>(`${this.base}/watchlist/me/watchlist/${id}`, { 
+      withCredentials: true 
+    });
+  }
+
+  createMyWatchlist(payload: WatchlistCreate) {
+    return this.http.post<Watchlist>(`${this.base}/watchlist/me/watchlist`, payload, { 
+      withCredentials: true 
+    });
+  }
+
+  updateMyWatchlist(id: string, patch: WatchlistUpdate) {
+    return this.http.put<Watchlist>(`${this.base}/watchlist/me/watchlist/${id}`, patch, { 
+      withCredentials: true 
+    });
+  }
+
+  deleteMyWatchlist(id: string) {
+    return this.http.delete<void>(`${this.base}/watchlist/me/watchlist/${id}`, { 
+      withCredentials: true 
+    });
+  }
 }
