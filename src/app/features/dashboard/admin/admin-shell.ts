@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/auth.service';
 import { UsersTabComponent } from './users-tab/users-tab';
-import { ContentTabComponent } from './content-tab/content-tab';
+import { ContentTabComponent } from './contents-tab/content-tab';
 import { PlansTabComponent } from './plans-tab/plans-tab';
 import { SubscriptionsTabComponent } from './subscriptions-tab/subscriptions-tab';
 import { PaymentsTabComponent } from './payments-tab/payments-tab';
 import { ProfilesTabComponent } from './profiles-tab/profiles-tab';
-import { WatchlistsTabComponent } from './watchlists/watchlists-tab';
-import { EpisodesTabComponent } from './episodes/episodes-tab';
-import { PlaybacksTabComponent } from './playbacks/playbacks-tab';
+import { WatchlistsTabComponent } from './watchlists-tab/watchlists-tab';
+import { EpisodesTabComponent } from './episodes-tab/episodes-tab';
+import { PlaybacksTabComponent } from './playbacks-tab/playbacks-tab';
 
 @Component({
   selector: 'app-admin-shell',

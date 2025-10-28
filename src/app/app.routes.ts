@@ -6,6 +6,7 @@ import { UserShell } from './features/dashboard/user/user-shell';
 import { AdminGuard } from './core/guards/admin.guard';
 import { AuthGuard } from './core/guards/auth.guard';
 import { WatchlistComponent } from './features/watchlist/watchlist';
+import { SubscriptionsTabComponent } from './features/subscription/subscriptions-tab';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -13,4 +14,5 @@ export const routes: Routes = [
   { path: 'dashboard/admin', component: AdminShell, canActivate: [AuthGuard, AdminGuard] },
   { path: 'dashboard/user', component: UserShell, canActivate: [AuthGuard] },
   { path: 'playlist', component: WatchlistComponent, canActivate: [AuthGuard] },
+  { path: 'subscriptions', component: SubscriptionsTabComponent, canActivate: [AuthGuard] },
 ];

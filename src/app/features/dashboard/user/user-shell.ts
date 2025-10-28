@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/auth.service';
-import { SubscriptionsTabComponent } from './subscriptions-tab/subscriptions-tab';
+// import { SubscriptionsTabComponent } from './subscriptions-tab/subscriptions-tab';
 import { PaymentsTabComponent } from './payments-tab/payments-tab';
 import { ProfilesTabComponent } from './profiles-tab/profile-tab';
 // import { WatchlistsTabComponent } from './watchlists-tab/watchlists-tab.component';
@@ -14,7 +14,7 @@ import { PlaybacksTabComponent } from './playbacks-tab/playbacks-tab';
   imports: [
     CommonModule, 
     RouterModule,
-    SubscriptionsTabComponent, 
+    // SubscriptionsTabComponent, 
     PaymentsTabComponent, 
     ProfilesTabComponent, 
     // WatchlistsTabComponent, 
@@ -23,7 +23,7 @@ import { PlaybacksTabComponent } from './playbacks-tab/playbacks-tab';
   templateUrl: './user-shell.html'
 })
 export class UserShell implements OnInit {
-  activeTab = signal<'subscriptions' | 'payments' | 'profiles' | 'watchlists' | 'playbacks'>('subscriptions');
+  activeTab = signal<'subscriptions' | 'payments' | 'profiles' | 'watchlists' | 'playbacks'>('payments');
   
   constructor(public authService: AuthService) {}
   
