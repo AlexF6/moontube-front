@@ -1,7 +1,7 @@
 // src/app/shared/components/video-grid/video-grid.ts
 import { Component, Input, inject, signal, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, of, tap } from 'rxjs';
+import { catchError, of } from 'rxjs';
 
 import { VideoCard } from '../video-card/video-card';
 import { ContentsService } from '../../../core/services/contents.service';
@@ -85,9 +85,7 @@ export class VideoGrid {
     this.contents
       .getContents(this.query)
       .pipe(
-        tap(() => console.log('Fetching videos...')),
         catchError((err) => {
-          console.error('getContents failed', err);
           this.error.set('Unable to load videos. Please check your connection.');
           return of<ContentList[]>([]);
         })

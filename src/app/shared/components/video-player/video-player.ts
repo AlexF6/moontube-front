@@ -1,3 +1,4 @@
+// src/app/shared/components/video-player/video-player.ts
 import { Component, ElementRef, Input, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
 import Hls from 'hls.js';
 import * as Plyr from 'plyr'; 

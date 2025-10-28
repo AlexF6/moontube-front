@@ -1,84 +1,222 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { NgOptimizedImage } from '@angular/common';
+// src/app/features/watch/watch.ts
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { VideoPlayerPlyr } from '../../shared/components/video-player/video-player';
+import { ContentsService } from '../../core/services/contents.service';
+import type { Content, ContentList } from '../../models/content.model';
 
 @Component({
   selector: 'app-watch',
   standalone: true,
-  imports: [RouterLink, NgOptimizedImage, VideoPlayerPlyr],
+  imports: [VideoPlayerPlyr],
   templateUrl: './watch.html',
 })
-export class Watch {
+export class Watch implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private contentsService = inject(ContentsService);
+  private sanitizer = inject(DomSanitizer);
 
-  readonly videoId = signal<string | null>(this.route.snapshot.paramMap.get('id'));
-
-  readonly src = 'https://www.w3schools.com/html/mov_bbb.mp4';
-  readonly poster = '';
-  readonly captionsSrc = '';
-
-  readonly views = signal('1.2M');
-  readonly age = signal('hace 2 semanas');
-  readonly liked = signal(false);
-  readonly savingToPlaylist = signal(false);
+  // State
+  readonly videoId = signal<string | null>(null);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
   readonly expandedDesc = signal(false);
+  readonly relatedLoading = signal(true);
 
-  readonly title = computed(() => `Reproduciendo video #${this.videoId()}`);
+  // Video data
+  readonly video = signal<Content | null>(null);
+  readonly relatedVideos = signal<ContentList[]>([]);
+
+  // Derived state
+  readonly title = computed(() => this.video()?.title || 'Loading...');
+  readonly description = computed(() => this.video()?.description || '');
   readonly shortDescription = computed(() => {
-    const text = this.description;
+    const text = this.description();
     const max = 160;
     return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
   });
+  
+  readonly shouldShowExpand = computed(() => 
+    this.description().length > this.shortDescription().length
+  );
 
-  readonly author = signal({
-    avatar:
-      'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=300&auto=format&fit=crop',
-    name: 'Moontube Channel',
-    handle: '@moontube',
-    subscribers: '12.3K',
-    isSubscribed: false,
-  });
+  readonly hasRelatedVideos = computed(() => this.relatedVideos().length > 0);
 
-  readonly relatedVideos = [
-    {
-      id: 'abc123',
-      title: 'Cómo crear un reproductor con HLS y Angular',
-      thumbnail: 'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg',
-      duration: '12:34',
-      channel: 'DevTube',
-      views: '98K',
-      age: '3 días',
-    },
-    {
-      id: 'xyz789',
-      title: 'Tailwind + Angular: diseño tipo YouTube',
-      thumbnail: 'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg',
-      duration: '8:05',
-      channel: 'UI Snacks',
-      views: '54K',
-      age: '1 semana',
-    },
+  // Fallback thumbnails for related videos
+  private readonly fallbackThumbnails = [
+    'https://pic.bittopup.com/apiUpload/88feb06a212a7d8b536313cb63a55a2a.jpg',
+    'https://c4.wallpaperflare.com/wallpaper/336/629/188/kafka-honkai-star-rail-blade-honkai-star-rail-honkai-star-rail-hd-wallpaper-preview.jpg',
+    'https://picsum.photos/seed/video3/640/360',
+    'https://picsum.photos/seed/video4/640/360',
+    'https://picsum.photos/seed/video5/640/360',
+    'https://picsum.photos/seed/video6/640/360',
   ];
 
-  description = `En este video probamos el reproductor con controles tipo Plyr y soporte para HLS.
-Incluye atajos de teclado, captions y estilos con Tailwind.`;
+  // Video source analysis
+  readonly videoSource = computed(() => {
+    const url = this.video()?.video_url || '';
+    
+    if (!url) return 'none';
+    
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      return 'youtube';
+    }
+    
+    if (url.includes('vimeo.com')) {
+      return 'vimeo';
+    }
+    
+    if (url.match(/\.(mp4|webm|ogg|mov|avi|mkv|m3u8)(\?.*)?$/i)) {
+      return 'direct';
+    }
+    
+    if (url.includes('embed') || url.includes('player')) {
+      return 'embed';
+    }
+    
+    return 'unknown';
+  });
 
-  toggleLike() {
-    this.liked.set(!this.liked());
+  // Extract YouTube video ID
+  readonly youTubeId = computed(() => {
+    const url = this.video()?.video_url || '';
+    if (this.videoSource() !== 'youtube') return null;
+    
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  });
+
+  // Extract Vimeo video ID
+  readonly vimeoId = computed(() => {
+    const url = this.video()?.video_url || '';
+    if (this.videoSource() !== 'vimeo') return null;
+    
+    const regex = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)([0-9]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  });
+
+  // Safe embed URLs
+  readonly youTubeEmbedUrl = computed((): SafeResourceUrl | null => {
+    const id = this.youTubeId();
+    if (!id) return null;
+    
+    const url = `https://www.youtube.com/embed/${id}?autoplay=0&rel=0&modestbranding=1`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  });
+
+  readonly vimeoEmbedUrl = computed((): SafeResourceUrl | null => {
+    const id = this.vimeoId();
+    if (!id) return null;
+    
+    const url = `https://player.vimeo.com/video/${id}?autoplay=0&title=0&byline=0&portrait=0`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  });
+
+  // For direct video files and other embed URLs
+  readonly safeVideoUrl = computed((): SafeResourceUrl | null => {
+    const url = this.video()?.video_url;
+    if (!url) return null;
+    
+    if (this.videoSource() === 'embed') {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    
+    return null;
+  });
+
+  ngOnInit() {
+    // Subscribe to route parameter changes
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      this.videoId.set(id);
+      this.loadVideo();
+    });
   }
 
-  addToPlaylist() {
-    if (this.savingToPlaylist()) return;
-    this.savingToPlaylist.set(true);
-    setTimeout(() => this.savingToPlaylist.set(false), 900);
+  private loadVideo() {
+    const id = this.videoId();
+    if (!id) {
+      this.error.set('Video ID not found');
+      this.loading.set(false);
+      this.relatedLoading.set(false);
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.contentsService.getContent(id).subscribe({
+      next: (video) => {
+        this.video.set(video);
+        this.loading.set(false);
+        this.loadRelatedVideos();
+      },
+      error: (err) => {
+        console.error('Failed to load video:', err);
+        this.error.set('Failed to load video. Please try again.');
+        this.loading.set(false);
+        this.relatedLoading.set(false);
+      }
+    });
   }
 
-  toggleSubscribe() {
-    this.author.update(a => ({ ...a, isSubscribed: !a.isSubscribed }));
+  private loadRelatedVideos() {
+    this.relatedLoading.set(true);
+
+    this.contentsService.getContents({
+      type_q: 'VIDEOS',
+      limit: 12,
+      order_by: 'created_at',
+      order_dir: 'desc'
+    }).subscribe({
+      next: (videos) => {
+        const currentVideoId = this.videoId();
+        const filteredVideos = videos
+          .filter(video => video.id !== currentVideoId)
+          .slice(0, 6);
+        
+        this.relatedVideos.set(filteredVideos);
+        this.relatedLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load related videos:', err);
+        this.relatedVideos.set([]);
+        this.relatedLoading.set(false);
+      }
+    });
+  }
+
+  // Navigation helper
+  navigateToVideo(videoId: string) {
+    this.router.navigate(['/watch', videoId]);
+  }
+
+  // Helper methods for template
+  getThumbnail(video: ContentList, index: number): string {
+    return video.thumbnail || this.fallbackThumbnails[index % this.fallbackThumbnails.length];
+  }
+
+  formatDuration(minutes: number | undefined): string {
+    if (!minutes) return '00:00';
+    
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}`;
+    }
+    return `${mins.toString().padStart(2, '0')}:00`;
   }
 
   toggleDescriptionExpansion() {
     this.expandedDesc.set(!this.expandedDesc());
+  }
+
+  retry() {
+    this.loadVideo();
   }
 }

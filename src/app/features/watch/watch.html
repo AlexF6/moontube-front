@@ -1,105 +1,222 @@
-<div class="flex flex-col lg:flex-row gap-6 p-4 text-white">
-  <div class="flex-1 max-w-4xl">
-    <div class="aspect-video bg-black rounded-lg overflow-hidden">
-      <app-video-player
-        [src]="src"
-        [poster]="poster"
-      ></app-video-player>
-    </div>
-
-    <h1 class="text-2xl font-semibold mt-4">{{ title() }}</h1>
-    <p class="text-zinc-400 text-sm">{{ views() }} vistas • {{ age() }}</p>
-
-    <div class="mt-4 flex flex-wrap items-center gap-3">
-      <button
-        class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition"
-        (click)="toggleLike()"
-      >
-        <span class="material-symbols-outlined text-base">
-          {{ liked() ? 'favorite' : 'favorite_check' }}
-        </span>
-        <span>{{ liked() ? 'Liked' : 'Like' }}</span>
-      </button>
-
-      <button
-        class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition"
-        (click)="addToPlaylist()"
-      >
-        <span class="material-symbols-outlined text-base">playlist_add</span>
-        <span>
-          @if (savingToPlaylist()) { Guardando… } @else { Add Video to Playlist }
-        </span>
-      </button>
-
-      <div class="mx-2 h-6 w-px bg-white/10"></div>
-
-      <div class="flex items-center gap-3">
-        <img
-          [ngSrc]="author().avatar"
-          width="40"
-          height="40"
-          class="size-10 rounded-full object-cover"
-          alt="avatar"
-        />
-        <div class="leading-tight">
-          <p class="font-medium">{{ author().name }}</p>
-          <p class="text-xs text-zinc-400">{{ author().handle }}</p>
+<!-- src/app/features/watch/watch.html -->
+<div class="flex flex-col lg:flex-row gap-6 p-4 text-white min-h-screen">
+  <!-- Main Content -->
+  <main class="flex-1 max-w-4xl">
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="space-y-6">
+        <div class="aspect-video bg-gradient-to-br from-zinc-800 to-zinc-700 rounded-xl animate-pulse"></div>
+        <div class="space-y-3">
+          <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-8 w-3/4 animate-pulse"></div>
+          <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-4 w-1/4 animate-pulse"></div>
         </div>
-        <span class="ml-2 text-xs text-zinc-400">
-          Subscribers: <b class="text-white">{{ author().subscribers }}</b>
-        </span>
+      </div>
+    }
 
-        <button
-          class="ml-2 rounded-xl px-4 py-2 bg-orange-500 text-black font-semibold hover:brightness-110 transition"
-          (click)="toggleSubscribe()"
+    <!-- Error State -->
+    @if (error() && !loading()) {
+      <div class="text-center py-12">
+        <div class="text-6xl mb-4">📺</div>
+        <h3 class="text-xl font-semibold text-white mb-2">Video Not Available</h3>
+        <p class="text-zinc-400 mb-6">{{ error() }}</p>
+        <button 
+          (click)="retry()"
+          class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 font-medium"
         >
-          {{ author().isSubscribed ? 'Subscribed' : 'Subscribe' }}
+          🔄 Try Again
         </button>
       </div>
-    </div>
+    }
 
-    <div class="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
-      <h3 class="font-semibold mb-2">Description</h3>
-      <p class="whitespace-pre-line text-zinc-300 text-sm">
-        @if (expandedDesc()) { {{ description }} } @else { {{ shortDescription() }} }
-      </p>
-      @if (description && description.length > shortDescription().length) {
+    <!-- Success State -->
+    @if (video() && !loading()) {
+      <div class="space-y-6">
+        <!-- Video Player -->
+        <div class="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+          <!-- YouTube Embed -->
+          @if (videoSource() === 'youtube' && youTubeEmbedUrl()) {
+            <iframe
+              [src]="youTubeEmbedUrl()"
+              class="w-full h-full"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+              [title]="title()"
+            ></iframe>
+          }
+          
+          <!-- Vimeo Embed -->
+          @else if (videoSource() === 'vimeo' && vimeoEmbedUrl()) {
+            <iframe
+              [src]="vimeoEmbedUrl()"
+              class="w-full h-full"
+              frameborder="0"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowfullscreen
+              [title]="title()"
+            ></iframe>
+          }
+          
+          <!-- Generic Embed (other platforms) -->
+          @else if (videoSource() === 'embed' && safeVideoUrl()) {
+            <iframe
+              [src]="safeVideoUrl()"
+              class="w-full h-full"
+              frameborder="0"
+              allowfullscreen
+              [title]="title()"
+            ></iframe>
+          }
+          
+          <!-- Direct Video Files (MP4, WebM, HLS, etc.) -->
+          @else if (videoSource() === 'direct' && video()!.video_url) {
+            <app-video-player
+              [src]="video()!.video_url"
+              [poster]="''"
+            ></app-video-player>
+          }
+          
+          <!-- Fallback for unknown/unsupported video sources -->
+          @else {
+            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-700">
+              <div class="text-center p-6">
+                <div class="text-6xl mb-4">🔗</div>
+                <h3 class="text-xl font-semibold text-white mb-2">Video Link</h3>
+                <p class="text-zinc-400 mb-4">This content is hosted externally</p>
+                <a 
+                  [href]="video()!.video_url" 
+                  target="_blank"
+                  class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                >
+                  Open Video ↗
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Video Info -->
+        <div class="space-y-4">
+          <h1 class="text-2xl font-bold text-white leading-tight">{{ title() }}</h1>
+          
+          <!-- Metadata -->
+          <div class="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
+            @if (video()!.release_year) {
+              <span>Released: {{ video()!.release_year }}</span>
+            }
+            @if (video()!.duration_minutes) {
+              <span>Duration: {{ video()!.duration_minutes }}min</span>
+            }
+            @if (video()!.age_rating) {
+              <span class="px-2 py-1 bg-zinc-700 rounded text-xs">{{ video()!.age_rating }}</span>
+            }
+          </div>
+
+          <!-- Genres -->
+          @if (video()!.genres) {
+            <div class="flex flex-wrap gap-2">
+              @for (genre of video()!.genres.split(','); track genre) {
+                <span class="px-3 py-1 bg-zinc-800 rounded-full text-xs text-zinc-300">
+                  {{ genre.trim() }}
+                </span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Description -->
+        @if (description()) {
+          <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6 backdrop-blur-sm">
+            <h3 class="font-semibold text-lg mb-3">Description</h3>
+            <p class="whitespace-pre-line text-zinc-300 leading-relaxed">
+              @if (expandedDesc()) { 
+                {{ description() }} 
+              } @else { 
+                {{ shortDescription() }} 
+              }
+            </p>
+            @if (shouldShowExpand()) {
+              <button
+                class="mt-3 text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors"
+                (click)="toggleDescriptionExpansion()"
+              >
+                {{ expandedDesc() ? 'Show less' : 'Show more' }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Related Videos Sidebar -->
+  <aside class="w-full lg:w-80 xl:w-96 flex flex-col gap-3">
+    <h3 class="text-lg font-semibold text-white mb-2">More Videos</h3>
+    
+    <!-- Related Videos Loading -->
+    @if (relatedLoading()) {
+      <div class="space-y-3">
+        @for (item of [1,2,3,4]; track $index) {
+          <div class="flex gap-3 items-start p-3">
+            <div class="w-40 h-24 bg-gradient-to-br from-zinc-800 to-zinc-700 rounded-lg animate-pulse flex-shrink-0"></div>
+            <div class="flex-1 space-y-2">
+              <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-4 w-full animate-pulse"></div>
+              <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-3 w-2/3 animate-pulse"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Related Videos Content -->
+    @if (!relatedLoading()) {
+      @for (video of relatedVideos(); track video.id; let index = $index) {
         <button
-          class="mt-2 text-orange-400 hover:underline text-sm"
-          (click)="toggleDescriptionExpansion()"
+          (click)="navigateToVideo(video.id)"
+          class="group flex gap-3 items-start hover:bg-zinc-800/50 rounded-xl p-3 transition-all duration-200 hover:scale-105 active:scale-95 text-left w-full"
         >
-          {{ expandedDesc() ? 'Show less' : 'Show more' }}
+          <div class="relative flex-shrink-0">
+            <img
+              [src]="getThumbnail(video, index)"
+              [alt]="video.title"
+              class="w-40 h-24 object-cover rounded-lg ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all"
+            />
+            @if (video.duration_minutes) {
+              <span class="absolute bottom-2 right-2 text-xs px-1.5 py-0.5 rounded bg-black/90 backdrop-blur-sm">
+                {{ formatDuration(video.duration_minutes) }}
+              </span>
+            }
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-sm font-medium leading-tight line-clamp-2 group-hover:text-white/90 text-white">
+              {{ video.title }}
+            </h3>
+            <div class="flex flex-wrap items-center gap-2 mt-2">
+              @if (video.release_year) {
+                <span class="text-xs text-zinc-400">{{ video.release_year }}</span>
+              }
+              @if (video.duration_minutes) {
+                <span class="text-xs text-zinc-500">•</span>
+                <span class="text-xs text-zinc-400">{{ video.duration_minutes }}min</span>
+              }
+            </div>
+            @if (video.genres) {
+              <p class="text-xs text-zinc-500 mt-1 line-clamp-1">
+                {{ video.genres.split(',')[0].trim() }}
+              </p>
+            }
+          </div>
         </button>
+      } 
+      
+      <!-- Empty Related Videos State -->
+      @if (!hasRelatedVideos()) {
+        <div class="text-center py-8">
+          <div class="text-4xl mb-3">🎬</div>
+          <p class="text-zinc-500 text-sm">No other videos available</p>
+        </div>
       }
-    </div>
-  </div>
-
-  <aside class="w-full lg:w-96 flex flex-col gap-4">
-    @for (vid of relatedVideos; track vid.id) {
-      <a
-        class="group flex gap-3 items-start hover:bg-white/5 rounded-lg p-2 transition"
-        [routerLink]="['/watch', vid.id]"
-      >
-        <div class="relative">
-          <img
-            [src]="vid.thumbnail"
-            alt=""
-            class="w-44 h-24 object-cover rounded-lg ring-1 ring-white/10"
-          />
-          <span class="absolute bottom-1 right-1 text-[11px] px-1.5 py-0.5 rounded bg-black/80">
-            {{ vid.duration }}
-          </span>
-        </div>
-        <div class="min-w-0">
-          <h3 class="text-sm font-medium leading-tight line-clamp-2 group-hover:text-white/90">
-            {{ vid.title }}
-          </h3>
-          <p class="text-xs text-zinc-400 mt-1">{{ vid.channel }}</p>
-          <p class="text-[11px] text-zinc-500">{{ vid.views }} views • {{ vid.age }}</p>
-        </div>
-      </a>
-    } @empty {
-      <p class="text-zinc-500">No hay videos relacionados disponibles.</p>
     }
   </aside>
 </div>
