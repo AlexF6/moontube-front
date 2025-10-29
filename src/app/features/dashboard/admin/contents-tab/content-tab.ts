@@ -191,6 +191,22 @@ export class ContentTabComponent implements OnInit {
     return genres && genres.trim() ? genres : '-';
   }
 
+  prevPage() {
+    const q = this.query();
+    const newOffset = Math.max(0, q.offset - q.limit);
+    if (newOffset !== q.offset) {
+      this.query.update(v => ({ ...v, offset: newOffset }));
+    }
+    this.loadContents();
+  }
+
+  nextPage() {
+    const q = this.query();
+    const newOffset = q.offset + q.limit;
+    this.query.update(v => ({ ...v, offset: newOffset }));
+    this.loadContents();
+  }
+
   formatDurationSeconds(val?: number | null): string {
     if (!val) return '-';
     const mins = Math.round(val / 60);

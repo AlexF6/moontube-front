@@ -149,7 +149,7 @@ export class Watch implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.contentsService.getContent(id).subscribe({
+    this.contentsService.getSmartContent(id).subscribe({
       next: (video) => {
         this.video.set(video);
         this.loading.set(false);
@@ -167,7 +167,8 @@ export class Watch implements OnInit {
   private loadRelatedVideos() {
     this.relatedLoading.set(true);
 
-    this.contentsService.getContents({
+    // ✅ Cambiado a smart (o getPublicContents)
+    this.contentsService.getSmartContents({
       type_q: 'VIDEOS',
       limit: 12,
       order_by: 'created_at',
@@ -178,7 +179,7 @@ export class Watch implements OnInit {
         const filteredVideos = videos
           .filter(video => video.id !== currentVideoId)
           .slice(0, 6);
-        
+
         this.relatedVideos.set(filteredVideos);
         this.relatedLoading.set(false);
       },
@@ -200,16 +201,14 @@ export class Watch implements OnInit {
     return video.thumbnail || this.fallbackThumbnails[index % this.fallbackThumbnails.length];
   }
 
-  formatDuration(minutes: number | undefined): string {
-    if (!minutes) return '00:00';
-    
-    const hrs = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    
-    if (hrs > 0) {
-      return `${hrs}:${mins.toString().padStart(2, '0')}`;
-    }
-    return `${mins.toString().padStart(2, '0')}:00`;
+  formatDuration(seconds?: number): string {
+    if (!seconds || seconds <= 0) return '00:00';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return h > 0
+      ? `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`
+      : `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
   }
 
   toggleDescriptionExpansion() {

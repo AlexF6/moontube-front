@@ -106,7 +106,7 @@
               <span>Released: {{ video()!.release_year }}</span>
             }
             @if (video()!.duration_seconds) {
-              <span>Duration: {{ video()!.duration_seconds }}min</span>
+              <span>Duration: {{ formatDuration(video()!.duration_seconds ?? undefined) }}</span>
             }
             @if (video()!.age_rating) {
               <span class="px-2 py-1 bg-zinc-700 rounded text-xs">{{ video()!.age_rating }}</span>
@@ -198,7 +198,7 @@
               }
               @if (video.duration_seconds) {
                 <span class="text-xs text-zinc-500">•</span>
-                <span class="text-xs text-zinc-400">{{ video.duration_seconds }}min</span>
+                <span class="text-xs text-zinc-400">{{ formatDuration(video.duration_seconds) }}</span>
               }
             </div>
             @if (video.genres) {
