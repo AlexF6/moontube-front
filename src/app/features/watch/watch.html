@@ -98,15 +98,15 @@
 
         <!-- Video Info -->
         <div class="space-y-4">
-          <h1 class="text-2xl font-bold text-white leading-tight">{{ title() }}</h1>
+          <h1 class="text-2xl font-bold text-white leading-tight">{{ title() }}</h1>|
           
           <!-- Metadata -->
           <div class="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
             @if (video()!.release_year) {
               <span>Released: {{ video()!.release_year }}</span>
             }
-            @if (video()!.duration_minutes) {
-              <span>Duration: {{ video()!.duration_minutes }}min</span>
+            @if (video()!.duration_seconds) {
+              <span>Duration: {{ video()!.duration_seconds }}min</span>
             }
             @if (video()!.age_rating) {
               <span class="px-2 py-1 bg-zinc-700 rounded text-xs">{{ video()!.age_rating }}</span>
@@ -182,9 +182,9 @@
               [alt]="video.title"
               class="w-40 h-24 object-cover rounded-lg ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all"
             />
-            @if (video.duration_minutes) {
+            @if (video.duration_seconds) {
               <span class="absolute bottom-2 right-2 text-xs px-1.5 py-0.5 rounded bg-black/90 backdrop-blur-sm">
-                {{ formatDuration(video.duration_minutes) }}
+                {{ formatDuration(video.duration_seconds) }}
               </span>
             }
           </div>
@@ -196,9 +196,9 @@
               @if (video.release_year) {
                 <span class="text-xs text-zinc-400">{{ video.release_year }}</span>
               }
-              @if (video.duration_minutes) {
+              @if (video.duration_seconds) {
                 <span class="text-xs text-zinc-500">•</span>
-                <span class="text-xs text-zinc-400">{{ video.duration_minutes }}min</span>
+                <span class="text-xs text-zinc-400">{{ video.duration_seconds }}min</span>
               }
             </div>
             @if (video.genres) {

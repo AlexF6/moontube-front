@@ -1,4 +1,3 @@
-<!-- src/app/features/dashboard/admin/content-tab/content-tab.html -->
 <!-- Error -->
 @if (error()) {
   <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
@@ -21,7 +20,7 @@
       <option [ngValue]="null">All types</option>
       <option [ngValue]="'MOVIE'">MOVIE</option>
       <option [ngValue]="'SERIES'">SERIES</option>
-      <option [ngValue]="'VIDEOS'">VIDEOS</option> <!-- Added VIDEOS -->
+      <option [ngValue]="'VIDEOS'">VIDEOS</option>
     </select>
     <input [(ngModel)]="query().genre_q" placeholder="Genre contains..." class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
     <select [(ngModel)]="query().order_by" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
@@ -48,13 +47,13 @@
     <select [(ngModel)]="newContent().type" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
       <option [ngValue]="'MOVIE'">MOVIE</option>
       <option [ngValue]="'SERIES'">SERIES</option>
-      <option [ngValue]="'VIDEOS'">VIDEOS</option> <!-- Added VIDEOS -->
+      <option [ngValue]="'VIDEOS'">VIDEOS</option>
     </select>
     <input [(ngModel)]="newContent().release_year" type="number" placeholder="Year" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-    <input [(ngModel)]="newContent().duration_minutes" type="number" placeholder="Duration (min)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+    <input [(ngModel)]="newContent().duration_seconds" type="number" placeholder="Duration (sec)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
     <input [(ngModel)]="newContent().age_rating" placeholder="Age rating (e.g. PG-13)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
     <input [(ngModel)]="newContent().genres" placeholder="Genres (comma separated)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"/>
-    <input [(ngModel)]="newContent().video_url" placeholder="Video URL" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" /> <!-- Added video_url -->
+    <input [(ngModel)]="newContent().video_url" placeholder="Video URL" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
     <textarea [(ngModel)]="newContent().description" rows="2" placeholder="Description" class="md:col-span-2 lg:col-span-4 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"></textarea>
   </div>
 </div>
@@ -80,7 +79,7 @@
             <td class="px-6 py-4 text-sm text-gray-300">{{ c.title }}</td>
             <td class="px-6 py-4 text-sm text-gray-300">{{ c.type }}</td>
             <td class="px-6 py-4 text-sm text-gray-300">{{ c.release_year }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ c.duration_minutes || '-' }} min</td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDurationSeconds(c.duration_seconds) }}</td>
             <td class="px-6 py-4 text-sm text-gray-300">{{ c.age_rating }}</td>
             <td class="px-6 py-4 text-sm text-gray-300">{{ formatGenres(c.genres) }}</td>
             <td class="px-6 py-4 text-sm flex items-center gap-2">
@@ -111,10 +110,10 @@
           <option [ngValue]="'VIDEOS'">VIDEOS</option>
         </select>
         <input [(ngModel)]="u.release_year" type="number" placeholder="Year" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="u.duration_minutes" type="number" placeholder="Duration (min)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+        <input [(ngModel)]="u.duration_seconds" type="number" placeholder="Duration (sec)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <input [(ngModel)]="u.age_rating" placeholder="Age rating" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <input [(ngModel)]="u.genres" placeholder="Genres (comma separated)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"/>
-        <input [(ngModel)]="u.video_url" placeholder="Video URL" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" /> <!-- Added video_url -->
+        <input [(ngModel)]="u.video_url" placeholder="Video URL" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <textarea [(ngModel)]="u.description" rows="3" placeholder="Description" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"></textarea>
       </div>
       <div class="mt-6 flex justify-end gap-2">

@@ -54,7 +54,7 @@ export class VideoGrid {
     this.items().map((video, index) => ({
       ...video,
       thumbnail: this.getThumbnail(video, index),
-      duration: this.formatDuration(video.duration_minutes),
+      duration: this.formatDuration(video.duration_seconds),
       route: ['/watch', video.id]
     }))
   );

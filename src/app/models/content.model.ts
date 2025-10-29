@@ -5,7 +5,7 @@ export interface ContentList {
   release_year?: number;
   age_rating?: string;
   genres?: string;
-  duration_minutes?: number;
+  duration_seconds?: number;
   thumbnail?: string;
 }
 
@@ -17,9 +17,9 @@ export interface Content {
   updated_at: string | null;
   title: string;
   type: 'MOVIE' | 'SERIES' | 'VIDEOS';
-  description: string | null;         // ⬅️ can be null from API
+  description: string | null;          // can be null from API
   release_year: number | null;
-  duration_minutes: number | null;
+  duration_seconds: number | null;
   age_rating: string | null;
   genres: string | null;
   video_url: string | null;
@@ -31,11 +31,11 @@ export interface ContentCreate {
   type: 'MOVIE' | 'SERIES' | 'VIDEOS';
   description?: string;
   release_year?: number;
-  duration_minutes?: number;
+  duration_seconds?: number;
   age_rating?: string;
   genres?: string;
   video_url?: string;
-  thumbnail?: string;                 // ready to send
+  thumbnail?: string;                  // ready to send
 }
 
 export interface ContentUpdate {
@@ -43,9 +43,9 @@ export interface ContentUpdate {
   type?: 'MOVIE' | 'SERIES' | 'VIDEOS';
   description?: string;
   release_year?: number;
-  duration_minutes?: number;
+  duration_seconds?: number;
   age_rating?: string;
   genres?: string;
   video_url?: string;
-  thumbnail?: string;                 // ⬅️ include in updates too
+  thumbnail?: string;                  // include in updates too
 }

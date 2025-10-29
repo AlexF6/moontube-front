@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';                         // ⬅️ use firstValueFrom instead of toPromise()
+import { firstValueFrom } from 'rxjs';
 import { ContentsService } from '../../../../core/services/contents.service';
 import { Content, ContentList, ContentCreate, ContentUpdate } from '../../../../models/content.model';
 
@@ -11,8 +11,8 @@ interface QueryParams {
   genre_q: string;
   year_from: number | null;
   year_to: number | null;
-  min_duration: number | null;
-  max_duration: number | null;
+  min_duration_seconds: number | null;
+  max_duration_seconds: number | null;
   age_rating: string | null;
   order_by: 'created_at' | 'title' | 'release_year';
   order_dir: 'asc' | 'desc';
@@ -35,7 +35,7 @@ export class ContentTabComponent implements OnInit {
   total = signal<number>(0);
   isLoading = signal<boolean>(false);
   editOpen = signal<boolean>(false);
-  
+
   // Query and form signals
   query = signal<QueryParams>({
     q: '',
@@ -43,8 +43,8 @@ export class ContentTabComponent implements OnInit {
     genre_q: '',
     year_from: null,
     year_to: null,
-    min_duration: null,
-    max_duration: null,
+    min_duration_seconds: null,
+    max_duration_seconds: null,
     age_rating: null,
     order_by: 'created_at',
     order_dir: 'desc',
@@ -52,16 +52,17 @@ export class ContentTabComponent implements OnInit {
     offset: 0
   });
 
+  // We keep the form using seconds to match API
   newContent = signal<ContentCreate>({
     title: '',
     type: 'MOVIE',
     description: '',
     release_year: new Date().getFullYear(),
-    duration_minutes: 60,
+    duration_seconds: 3600,
     age_rating: '',
     genres: '',
     video_url: '',
-    thumbnail: ''                        // ⬅️ include thumbnail in form
+    thumbnail: ''
   });
 
   editing = signal<Content | null>(null);
@@ -88,20 +89,20 @@ export class ContentTabComponent implements OnInit {
     try {
       this.error.set(null);
       await firstValueFrom(this.contentsService.createContent(this.newContent()));
-      
+
       // Reset form
       this.newContent.set({
         title: '',
         type: 'MOVIE',
         description: '',
         release_year: new Date().getFullYear(),
-        duration_minutes: 60,
+        duration_seconds: 3600,
         age_rating: '',
         genres: '',
         video_url: '',
-        thumbnail: ''                    // ⬅️ keep thumbnail in reset
+        thumbnail: ''
       });
-      
+
       this.loadContents();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
@@ -130,15 +131,15 @@ export class ContentTabComponent implements OnInit {
         type: editingContent.type ?? undefined,
         description: editingContent.description ?? undefined,
         release_year: editingContent.release_year ?? undefined,
-        duration_minutes: editingContent.duration_minutes ?? undefined,
+        duration_seconds: editingContent.duration_seconds ?? undefined,
         age_rating: editingContent.age_rating ?? undefined,
         genres: editingContent.genres ?? undefined,
         video_url: editingContent.video_url ?? undefined,
-        thumbnail: editingContent.thumbnail ?? undefined   // ⬅️ send thumbnail on update
+        thumbnail: editingContent.thumbnail ?? undefined
       };
 
       await firstValueFrom(this.contentsService.updateContent(editingContent.id, updateData));
-      
+
       this.editOpen.set(false);
       this.editing.set(null);
       this.loadContents();
@@ -171,8 +172,8 @@ export class ContentTabComponent implements OnInit {
       genre_q: '',
       year_from: null,
       year_to: null,
-      min_duration: null,
-      max_duration: null,
+      min_duration_seconds: null,
+      max_duration_seconds: null,
       age_rating: null,
       order_by: 'created_at',
       order_dir: 'desc',
@@ -186,8 +187,14 @@ export class ContentTabComponent implements OnInit {
     this.error.set(null);
   }
 
-  formatGenres(genres?: string | null): string { // ⬅️ nullable-safe
+  formatGenres(genres?: string | null): string {
     return genres && genres.trim() ? genres : '-';
+  }
+
+  formatDurationSeconds(val?: number | null): string {
+    if (!val) return '-';
+    const mins = Math.round(val / 60);
+    return `${mins} min`;
   }
 
   private getErrorMessage(error: any): string {
