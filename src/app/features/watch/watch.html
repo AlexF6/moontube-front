@@ -72,7 +72,7 @@
           <!-- Direct Video Files (MP4, WebM, HLS, etc.) -->
           @else if (videoSource() === 'direct' && video()!.video_url) {
             <app-video-player
-              [src]="video()!.video_url"
+              [src]="video()!.video_url ?? ''"
               [poster]="''"
             ></app-video-player>
           }
@@ -116,7 +116,7 @@
           <!-- Genres -->
           @if (video()!.genres) {
             <div class="flex flex-wrap gap-2">
-              @for (genre of video()!.genres.split(','); track genre) {
+              @for (genre of (video()!.genres ?? '').split(','); track genre) {
                 <span class="px-3 py-1 bg-zinc-800 rounded-full text-xs text-zinc-300">
                   {{ genre.trim() }}
                 </span>

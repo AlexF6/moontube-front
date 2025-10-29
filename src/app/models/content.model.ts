@@ -1,13 +1,12 @@
-// src/app/models/content.model.ts
 export interface ContentList {
   id: string;
   title: string;
-  type: 'MOVIE' | 'SERIES' | 'VIDEOS'; // Added VIDEOS
-  release_year: number;
-  age_rating: string;
-  genres: string; // Added genres to list view
-  duration_minutes?: number; // Added duration
-  thumbnail?: string; // Added for future thumbnail support
+  type: 'MOVIE' | 'SERIES' | 'VIDEOS';
+  release_year?: number;
+  age_rating?: string;
+  genres?: string;
+  duration_minutes?: number;
+  thumbnail?: string;
 }
 
 export interface Content {
@@ -17,36 +16,36 @@ export interface Content {
   created_at: string;
   updated_at: string | null;
   title: string;
-  type: 'MOVIE' | 'SERIES' | 'VIDEOS'; // Added VIDEOS
-  description: string;
-  release_year: number;
-  duration_minutes: number;
-  age_rating: string;
-  genres: string;
-  video_url: string; // Added video_url
-  thumbnail?: string; // Added for future thumbnail support
+  type: 'MOVIE' | 'SERIES' | 'VIDEOS';
+  description: string | null;         // ⬅️ can be null from API
+  release_year: number | null;
+  duration_minutes: number | null;
+  age_rating: string | null;
+  genres: string | null;
+  video_url: string | null;
+  thumbnail?: string;
 }
 
 export interface ContentCreate {
   title: string;
-  type: 'MOVIE' | 'SERIES' | 'VIDEOS'; // Added VIDEOS
-  description: string;
-  release_year: number;
-  duration_minutes: number;
-  age_rating: string;
-  genres: string;
-  video_url: string; // Added video_url
-  thumbnail?: string; // Added for future thumbnail support
-}
-
-export interface ContentUpdate {
-  title?: string;
-  type?: 'MOVIE' | 'SERIES' | 'VIDEOS'; // Added VIDEOS
+  type: 'MOVIE' | 'SERIES' | 'VIDEOS';
   description?: string;
   release_year?: number;
   duration_minutes?: number;
   age_rating?: string;
   genres?: string;
-  video_url?: string; // Added video_url
-  thumbnail?: string; // Added for future thumbnail support
+  video_url?: string;
+  thumbnail?: string;                 // ready to send
+}
+
+export interface ContentUpdate {
+  title?: string;
+  type?: 'MOVIE' | 'SERIES' | 'VIDEOS';
+  description?: string;
+  release_year?: number;
+  duration_minutes?: number;
+  age_rating?: string;
+  genres?: string;
+  video_url?: string;
+  thumbnail?: string;                 // ⬅️ include in updates too
 }

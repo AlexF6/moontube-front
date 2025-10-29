@@ -1,13 +1,13 @@
-// src/app/features/dashboard/admin/content-tab/content-tab.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';                         // ⬅️ use firstValueFrom instead of toPromise()
 import { ContentsService } from '../../../../core/services/contents.service';
 import { Content, ContentList, ContentCreate, ContentUpdate } from '../../../../models/content.model';
 
 interface QueryParams {
   q: string;
-  type_q: 'MOVIE' | 'SERIES' | 'VIDEOS' | null; // Added VIDEOS
+  type_q: 'MOVIE' | 'SERIES' | 'VIDEOS' | null;
   genre_q: string;
   year_from: number | null;
   year_to: number | null;
@@ -60,7 +60,8 @@ export class ContentTabComponent implements OnInit {
     duration_minutes: 60,
     age_rating: '',
     genres: '',
-    video_url: '' // Added video_url
+    video_url: '',
+    thumbnail: ''                        // ⬅️ include thumbnail in form
   });
 
   editing = signal<Content | null>(null);
@@ -73,8 +74,7 @@ export class ContentTabComponent implements OnInit {
     try {
       this.isLoading.set(true);
       this.error.set(null);
-      
-      const response = await this.contentsService.getContents(this.query()).toPromise();
+      const response = await firstValueFrom(this.contentsService.getContents(this.query()));
       this.items.set(response || []);
       this.total.set(response?.length || 0);
     } catch (err) {
@@ -87,7 +87,7 @@ export class ContentTabComponent implements OnInit {
   async create() {
     try {
       this.error.set(null);
-      await this.contentsService.createContent(this.newContent()).toPromise();
+      await firstValueFrom(this.contentsService.createContent(this.newContent()));
       
       // Reset form
       this.newContent.set({
@@ -98,7 +98,8 @@ export class ContentTabComponent implements OnInit {
         duration_minutes: 60,
         age_rating: '',
         genres: '',
-        video_url: '' // Added video_url
+        video_url: '',
+        thumbnail: ''                    // ⬅️ keep thumbnail in reset
       });
       
       this.loadContents();
@@ -110,7 +111,7 @@ export class ContentTabComponent implements OnInit {
   async openEdit(contentId: string) {
     try {
       this.error.set(null);
-      const content = await this.contentsService.getContent(contentId).toPromise();
+      const content = await firstValueFrom(this.contentsService.getContent(contentId));
       this.editing.set(content || null);
       this.editOpen.set(true);
     } catch (err) {
@@ -122,21 +123,21 @@ export class ContentTabComponent implements OnInit {
     try {
       this.error.set(null);
       const editingContent = this.editing();
-      
       if (!editingContent?.id) return;
 
       const updateData: ContentUpdate = {
-        title: editingContent.title,
-        type: editingContent.type,
-        description: editingContent.description,
-        release_year: editingContent.release_year,
-        duration_minutes: editingContent.duration_minutes,
-        age_rating: editingContent.age_rating,
-        genres: editingContent.genres,
-        video_url: editingContent.video_url // Added video_url
+        title: editingContent.title ?? undefined,
+        type: editingContent.type ?? undefined,
+        description: editingContent.description ?? undefined,
+        release_year: editingContent.release_year ?? undefined,
+        duration_minutes: editingContent.duration_minutes ?? undefined,
+        age_rating: editingContent.age_rating ?? undefined,
+        genres: editingContent.genres ?? undefined,
+        video_url: editingContent.video_url ?? undefined,
+        thumbnail: editingContent.thumbnail ?? undefined   // ⬅️ send thumbnail on update
       };
 
-      await this.contentsService.updateContent(editingContent.id, updateData).toPromise();
+      await firstValueFrom(this.contentsService.updateContent(editingContent.id, updateData));
       
       this.editOpen.set(false);
       this.editing.set(null);
@@ -147,13 +148,11 @@ export class ContentTabComponent implements OnInit {
   }
 
   async remove(contentId: string) {
-    if (!confirm('Are you sure you want to delete this content?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this content?')) return;
 
     try {
       this.error.set(null);
-      await this.contentsService.deleteContent(contentId).toPromise();
+      await firstValueFrom(this.contentsService.deleteContent(contentId));
       this.loadContents();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
@@ -187,8 +186,8 @@ export class ContentTabComponent implements OnInit {
     this.error.set(null);
   }
 
-  formatGenres(genres: string): string {
-    return genres || '-';
+  formatGenres(genres?: string | null): string { // ⬅️ nullable-safe
+    return genres && genres.trim() ? genres : '-';
   }
 
   private getErrorMessage(error: any): string {
