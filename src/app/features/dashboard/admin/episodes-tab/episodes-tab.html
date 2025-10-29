@@ -1,4 +1,3 @@
-<!-- src/app/features/dashboard/admin/episodes-tab/episodes-tab.html -->
 <!-- Error -->
 @if (error()) {
   <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
@@ -27,8 +26,8 @@
     <input [(ngModel)]="query().q_title" placeholder="Search title" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-    <input [(ngModel)]="query().min_duration" type="number" min="1" placeholder="Min duration" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().max_duration" type="number" min="1" placeholder="Max duration" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <input [(ngModel)]="query().min_duration" type="number" min="1" placeholder="Min duration (s)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <input [(ngModel)]="query().max_duration" type="number" min="1" placeholder="Max duration (s)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
     <input [(ngModel)]="query().year_from" type="number" min="1800" max="2100" placeholder="Year from" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
     <input [(ngModel)]="query().year_to" type="number" min="1800" max="2100" placeholder="Year to" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
   </div>
@@ -66,7 +65,7 @@
     <input [(ngModel)]="newEpisode().title" placeholder="Title" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-    <input [(ngModel)]="newEpisode().duration_minutes" type="number" min="0" placeholder="Duration (minutes)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+    <input [(ngModel)]="newEpisode().duration_seconds" type="number" min="1" placeholder="Duration (seconds)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
     <input [(ngModel)]="newEpisode().release_date" type="date" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
     <input [(ngModel)]="newEpisode().video_url" placeholder="Video URL" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
   </div>
@@ -99,8 +98,8 @@
             <td class="px-6 py-4 text-sm text-gray-300">{{ item.season_number }}</td>
             <td class="px-6 py-4 text-sm text-gray-300">{{ item.episode_number }}</td>
             <td class="px-6 py-4 text-sm text-gray-300">{{ item.title }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ item.duration_minutes }} min</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ item.release_date }}</td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDuration(item.duration_seconds) }}</td>
+            <td class="px-6 py-4 text-sm text-gray-300">{{ item.release_date || '—' }}</td>
             <td class="px-6 py-4 text-sm flex items-center gap-2">
               <button (click)="openEdit(item.id)" class="px-3 py-1 border border-yellow-600 text-yellow-500 rounded-lg hover:bg-yellow-600/10 text-xs transition">Edit</button>
               <button (click)="remove(item.id)" class="px-3 py-1 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 text-xs transition">Delete</button>
@@ -125,7 +124,7 @@
         <input [(ngModel)]="item.season_number" type="number" min="1" placeholder="Season Number" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <input [(ngModel)]="item.episode_number" type="number" min="1" placeholder="Episode Number" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <input [(ngModel)]="item.title" placeholder="Title" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.duration_minutes" type="number" min="0" placeholder="Duration (minutes)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+        <input [(ngModel)]="item.duration_seconds" type="number" min="1" placeholder="Duration (seconds)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <input [(ngModel)]="item.release_date" type="date" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <input [(ngModel)]="item.video_url" placeholder="Video URL" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
         <div class="mt-2">

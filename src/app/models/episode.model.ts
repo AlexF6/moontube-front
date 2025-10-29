@@ -1,27 +1,19 @@
-// src/app/models/episode.model.ts
 export interface EpisodeList {
   id: string;
   content_id: string;
   season_number: number;
   episode_number: number;
   title: string;
-  duration_minutes: number;
-  release_date: string;
+  duration_seconds: number | null;
+  release_date: string | null;
 }
 
-export interface Episode {
-  id: string;
+export interface Episode extends EpisodeList {
   created_by: string;
   updated_by: string | null;
   created_at: string;
   updated_at: string | null;
-  content_id: string;
-  season_number: number;
-  episode_number: number;
-  title: string;
-  duration_minutes: number;
-  release_date: string;
-  video_url: string;
+  video_url: string | null;
 }
 
 export interface EpisodeCreate {
@@ -29,16 +21,16 @@ export interface EpisodeCreate {
   season_number: number;
   episode_number: number;
   title: string;
-  duration_minutes: number;
-  release_date: string;
-  video_url: string;
+  duration_seconds?: number | null;
+  release_date?: string | null;
+  video_url?: string | null;
 }
 
 export interface EpisodeUpdate {
   season_number?: number;
   episode_number?: number;
   title?: string;
-  duration_minutes?: number;
-  release_date?: string;
-  video_url?: string;
+  duration_seconds?: number | null;
+  release_date?: string | null;
+  video_url?: string | null;
 }

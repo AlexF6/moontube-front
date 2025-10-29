@@ -1,19 +1,19 @@
-// src/app/features/dashboard/admin/episodes-tab/episodes-tab.ts
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EpisodesService } from '../../../../core/services/episodes.service';
 import { ContentsService } from '../../../../core/services/contents.service';
-import type { Content, ContentList } from '../../../../models/content.model';
+import type { ContentList } from '../../../../models/content.model';
 import { Episode, EpisodeList, EpisodeCreate, EpisodeUpdate } from '../../../../models/episode.model';
+import { firstValueFrom } from 'rxjs';
 
 interface QueryParams {
   content_id: string | null;
   season: number | null;
   ep: number | null;
   q_title: string | null;
-  min_duration: number | null;
-  max_duration: number | null;
+  min_duration: number | null; // seconds
+  max_duration: number | null; // seconds
   year_from: number | null;
   year_to: number | null;
   order_by: 'season' | 'episode' | 'title' | 'created_at' | 'release_date';
@@ -32,14 +32,12 @@ export class EpisodesTabComponent implements OnInit {
   private episodesService = inject(EpisodesService);
   private contentsService = inject(ContentsService);
 
-  // State signals
   error = signal<string | null>(null);
   items = signal<EpisodeList[]>([]);
   total = signal<number>(0);
   isLoading = signal<boolean>(false);
   editOpen = signal<boolean>(false);
-  
-  // Query and form signals
+
   query = signal<QueryParams>({
     content_id: null,
     season: null,
@@ -71,9 +69,9 @@ export class EpisodesTabComponent implements OnInit {
     season_number: 1,
     episode_number: 1,
     title: '',
-    duration_minutes: 0,
-    release_date: '',
-    video_url: ''
+    duration_seconds: null,
+    release_date: null,
+    video_url: null
   });
 
   editing = signal<Episode | null>(null);
@@ -86,7 +84,7 @@ export class EpisodesTabComponent implements OnInit {
   private async loadContent() {
     try {
       this.isContentLoading.set(true);
-      const content = await this.contentsService.getContents({}).toPromise();
+      const content = await firstValueFrom(this.contentsService.getContents({}));
       this.contentItems.set(content || []);
     } catch (err: any) {
       this.error.set('Failed to load content: ' + this.getErrorMessage(err));
@@ -99,8 +97,8 @@ export class EpisodesTabComponent implements OnInit {
     try {
       this.isLoading.set(true);
       this.error.set(null);
-      
-      const response = await this.episodesService.getEpisodes(this.query()).toPromise();
+
+      const response = await firstValueFrom(this.episodesService.getEpisodes(this.query()));
       this.items.set(response || []);
       this.total.set(response?.length || 0);
     } catch (err) {
@@ -110,34 +108,68 @@ export class EpisodesTabComponent implements OnInit {
     }
   }
 
+  // --- Helpers ---
+  private sanitizeCreatePayload(src: EpisodeCreate): EpisodeCreate {
+    return {
+      content_id: src.content_id,
+      season_number: src.season_number,
+      episode_number: src.episode_number,
+      title: src.title.trim(),
+      duration_seconds:
+        src.duration_seconds && src.duration_seconds >= 1 ? src.duration_seconds : undefined,
+      release_date: src.release_date && src.release_date !== '' ? src.release_date : undefined,
+      video_url: src.video_url && src.video_url.trim() !== '' ? src.video_url.trim() : undefined
+    };
+  }
+
+  private sanitizeUpdatePayload(src: Episode): EpisodeUpdate {
+    return {
+      season_number: src.season_number,
+      episode_number: src.episode_number,
+      title: src.title?.trim() || undefined,
+      // usa undefined si no quieres tocar el campo
+      duration_seconds:
+        src.duration_seconds && src.duration_seconds >= 1 ? src.duration_seconds : undefined,
+      release_date: src.release_date && src.release_date !== '' ? src.release_date : undefined,
+      video_url: src.video_url && src.video_url.trim() !== '' ? src.video_url.trim() : undefined
+    };
+  }
+
+  formatDuration(seconds: number | null): string {
+    if (!seconds || seconds < 1) return '—';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    if (m <= 0) return `${s}s`;
+    return `${m}m ${s}s`;
+  }
+
   async create() {
     try {
       this.error.set(null);
-      
-      // Validate required fields
-      if (!this.newEpisode().content_id || !this.newEpisode().title) {
+      const ep = this.newEpisode();
+
+      if (!ep.content_id || !ep.title?.trim()) {
         this.error.set('Content and Title are required');
         return;
       }
-
-      if (this.newEpisode().season_number < 1 || this.newEpisode().episode_number < 1) {
+      if (ep.season_number < 1 || ep.episode_number < 1) {
         this.error.set('Season and Episode numbers must be at least 1');
         return;
       }
-      
-      await this.episodesService.createEpisode(this.newEpisode()).toPromise();
-      
-      // Reset form
+
+      const payload = this.sanitizeCreatePayload(ep);
+      await firstValueFrom(this.episodesService.createEpisode(payload));
+
       this.newEpisode.set({
         content_id: '',
         season_number: 1,
         episode_number: 1,
         title: '',
-        duration_minutes: 0,
-        release_date: '',
-        video_url: ''
+        duration_seconds: null,
+        release_date: null,
+        video_url: null
       });
-      
+
       this.loadEpisodes();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
@@ -147,7 +179,7 @@ export class EpisodesTabComponent implements OnInit {
   async openEdit(episodeId: string) {
     try {
       this.error.set(null);
-      const episode = await this.episodesService.getEpisode(episodeId).toPromise();
+      const episode = await firstValueFrom(this.episodesService.getEpisode(episodeId));
       this.editing.set(episode || null);
       this.editOpen.set(true);
     } catch (err) {
@@ -159,20 +191,11 @@ export class EpisodesTabComponent implements OnInit {
     try {
       this.error.set(null);
       const editingEpisode = this.editing();
-      
       if (!editingEpisode?.id) return;
 
-      const updateData: EpisodeUpdate = {
-        season_number: editingEpisode.season_number,
-        episode_number: editingEpisode.episode_number,
-        title: editingEpisode.title,
-        duration_minutes: editingEpisode.duration_minutes,
-        release_date: editingEpisode.release_date,
-        video_url: editingEpisode.video_url
-      };
+      const updateData = this.sanitizeUpdatePayload(editingEpisode);
+      await firstValueFrom(this.episodesService.updateEpisode(editingEpisode.id, updateData));
 
-      await this.episodesService.updateEpisode(editingEpisode.id, updateData).toPromise();
-      
       this.editOpen.set(false);
       this.editing.set(null);
       this.loadEpisodes();
@@ -188,7 +211,7 @@ export class EpisodesTabComponent implements OnInit {
 
     try {
       this.error.set(null);
-      await this.episodesService.deleteEpisode(episodeId).toPromise();
+      await firstValueFrom(this.episodesService.deleteEpisode(episodeId));
       this.loadEpisodes();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
