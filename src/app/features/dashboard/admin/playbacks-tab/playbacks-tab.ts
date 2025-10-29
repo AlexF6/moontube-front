@@ -2,14 +2,17 @@
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+
 import { PlaybacksService } from '../../../../core/services/playbacks.service';
 import { ProfilesService } from '../../../../core/services/profiles.service';
 import { ContentsService } from '../../../../core/services/contents.service';
 import { EpisodesService } from '../../../../core/services/episodes.service';
-import type { Profile, ProfileList } from '../../../../models/profile.model';
-import type { Content, ContentList } from '../../../../models/content.model';
-import type { Episode, EpisodeList } from '../../../../models/episode.model';
-import { Playback, PlaybackList, PlaybackCreate, PlaybackUpdate } from '../../../../models/playback.model';
+
+import type { ProfileList } from '../../../../models/profile.model';
+import type { ContentList } from '../../../../models/content.model';
+import type { EpisodeList } from '../../../../models/episode.model';
+import type { Playback, PlaybackCreate, PlaybackUpdate, PlaybackListItem } from '../../../../models/playback.model';
 
 interface QueryParams {
   profile_id: string | null;
@@ -31,7 +34,7 @@ interface QueryParams {
   selector: 'app-playbacks-tab',
   templateUrl: './playbacks-tab.html',
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule],
 })
 export class PlaybacksTabComponent implements OnInit {
   private playbacksService = inject(PlaybacksService);
@@ -41,12 +44,12 @@ export class PlaybacksTabComponent implements OnInit {
 
   // State signals
   error = signal<string | null>(null);
-  items = signal<PlaybackList[]>([]);
+  items = signal<PlaybackListItem[]>([]);
   total = signal<number>(0);
   isLoading = signal<boolean>(false);
   editOpen = signal<boolean>(false);
-  
-  // Query and form signals
+
+  // Query & lists
   query = signal<QueryParams>({
     profile_id: null,
     content_id: null,
@@ -60,7 +63,7 @@ export class PlaybacksTabComponent implements OnInit {
     min_progress: null,
     max_progress: null,
     limit: 50,
-    offset: 0
+    offset: 0,
   });
 
   profiles = signal<ProfileList[]>([]);
@@ -70,54 +73,50 @@ export class PlaybacksTabComponent implements OnInit {
   isContentLoading = signal<boolean>(false);
   isEpisodesLoading = signal<boolean>(false);
 
+  // denormalized display maps
   profileNameMap = computed(() => {
     const map = new Map<string, string>();
-    this.profiles().forEach(profile => {
-      map.set(profile.id, profile.name);
-    });
+    for (const p of this.profiles()) map.set(p.id, p.name);
     return map;
   });
 
   contentTitleMap = computed(() => {
     const map = new Map<string, string>();
-    this.contentItems().forEach(content => {
-      map.set(content.id, content.title);
-    });
+    for (const c of this.contentItems()) map.set(c.id, c.title);
     return map;
   });
 
   episodeTitleMap = computed(() => {
     const map = new Map<string, string>();
-    this.episodes().forEach(episode => {
-      map.set(episode.id, `${episode.title} (S${episode.season_number}E${episode.episode_number})`);
-    });
+    for (const e of this.episodes()) {
+      map.set(e.id, `${e.title} (S${e.season_number}E${e.episode_number})`);
+    }
     return map;
   });
 
+  // Create form – match backend optional fields
   newPlayback = signal<PlaybackCreate>({
     profile_id: '',
     content_id: '',
-    episode_id: '',
-    started_at: new Date().toISOString(),
-    ended_at: new Date().toISOString(),
+    episode_id: null,
+    started_at: undefined,
+    ended_at: null,
     progress_seconds: 0,
     completed: false,
-    device: ''
+    device: null,
   });
 
   editing = signal<Playback | null>(null);
 
   async ngOnInit() {
-    await this.loadProfiles();
-    await this.loadContent();
-    await this.loadEpisodes();
+    await Promise.all([this.loadProfiles(), this.loadContent(), this.loadEpisodes()]);
     await this.loadPlaybacks();
   }
 
   private async loadProfiles() {
     try {
       this.isProfilesLoading.set(true);
-      const profiles = await this.profilesService.getProfiles({}).toPromise();
+      const profiles = await firstValueFrom(this.profilesService.getProfiles({}));
       this.profiles.set(profiles || []);
     } catch (err: any) {
       this.error.set('Failed to load profiles: ' + this.getErrorMessage(err));
@@ -129,7 +128,7 @@ export class PlaybacksTabComponent implements OnInit {
   private async loadContent() {
     try {
       this.isContentLoading.set(true);
-      const content = await this.contentsService.getContents({}).toPromise();
+      const content = await firstValueFrom(this.contentsService.getContents({}));
       this.contentItems.set(content || []);
     } catch (err: any) {
       this.error.set('Failed to load content: ' + this.getErrorMessage(err));
@@ -141,7 +140,7 @@ export class PlaybacksTabComponent implements OnInit {
   private async loadEpisodes() {
     try {
       this.isEpisodesLoading.set(true);
-      const episodes = await this.episodesService.getEpisodes({}).toPromise();
+      const episodes = await firstValueFrom(this.episodesService.getEpisodes({}));
       this.episodes.set(episodes || []);
     } catch (err: any) {
       this.error.set('Failed to load episodes: ' + this.getErrorMessage(err));
@@ -154,10 +153,9 @@ export class PlaybacksTabComponent implements OnInit {
     try {
       this.isLoading.set(true);
       this.error.set(null);
-      
-      const response = await this.playbacksService.getPlaybacks(this.query()).toPromise();
-      this.items.set(response || []);
-      this.total.set(response?.length || 0);
+      const list = await firstValueFrom(this.playbacksService.getPlaybacks(this.query()));
+      this.items.set(list || []);
+      this.total.set(list?.length ?? 0);
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
     } finally {
@@ -168,33 +166,33 @@ export class PlaybacksTabComponent implements OnInit {
   async create() {
     try {
       this.error.set(null);
-      
-      // Validate required fields
-      if (!this.newPlayback().profile_id || !this.newPlayback().content_id || !this.newPlayback().episode_id) {
-        this.error.set('Profile, Content, and Episode are required');
+      const np = this.newPlayback();
+
+      // Required by backend
+      if (!np.profile_id || !np.content_id) {
+        this.error.set('Profile and Content are required');
         return;
       }
-
-      if (this.newPlayback().progress_seconds < 0) {
+      if ((np.progress_seconds ?? 0) < 0) {
         this.error.set('Progress seconds cannot be negative');
         return;
       }
-      
-      await this.playbacksService.createPlayback(this.newPlayback()).toPromise();
-      
-      // Reset form
+
+      await firstValueFrom(this.playbacksService.createPlayback(np));
+
+      // Reset form to clean defaults
       this.newPlayback.set({
         profile_id: '',
         content_id: '',
-        episode_id: '',
-        started_at: new Date().toISOString(),
-        ended_at: new Date().toISOString(),
+        episode_id: null,
+        started_at: undefined,
+        ended_at: null,
         progress_seconds: 0,
         completed: false,
-        device: ''
+        device: null,
       });
-      
-      this.loadPlaybacks();
+
+      await this.loadPlaybacks();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
     }
@@ -203,7 +201,7 @@ export class PlaybacksTabComponent implements OnInit {
   async openEdit(playbackId: string) {
     try {
       this.error.set(null);
-      const playback = await this.playbacksService.getPlayback(playbackId).toPromise();
+      const playback = await firstValueFrom(this.playbacksService.getPlayback(playbackId));
       this.editing.set(playback || null);
       this.editOpen.set(true);
     } catch (err) {
@@ -214,44 +212,40 @@ export class PlaybacksTabComponent implements OnInit {
   async saveEdits() {
     try {
       this.error.set(null);
-      const editingPlayback = this.editing();
-      
-      if (!editingPlayback?.id) return;
+      const pb = this.editing();
+      if (!pb?.id) return;
 
       const updateData: PlaybackUpdate = {
-        ended_at: editingPlayback.ended_at,
-        progress_seconds: editingPlayback.progress_seconds,
-        completed: editingPlayback.completed,
-        device: editingPlayback.device
+        ended_at: pb.ended_at ?? null,
+        progress_seconds: pb.progress_seconds,
+        completed: pb.completed,
+        device: pb.device ?? null,
       };
 
-      await this.playbacksService.updatePlayback(editingPlayback.id, updateData).toPromise();
-      
+      await firstValueFrom(this.playbacksService.updatePlayback(pb.id, updateData));
       this.editOpen.set(false);
       this.editing.set(null);
-      this.loadPlaybacks();
+      await this.loadPlaybacks();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
     }
   }
 
   async remove(playbackId: string) {
-    if (!confirm('Are you sure you want to delete this playback record?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this playback record?')) return;
 
     try {
       this.error.set(null);
-      await this.playbacksService.deletePlayback(playbackId).toPromise();
-      this.loadPlaybacks();
+      await firstValueFrom(this.playbacksService.deletePlayback(playbackId));
+      await this.loadPlaybacks();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
     }
   }
 
   applyFilters() {
-    this.query().offset = 0;
-    this.loadPlaybacks();
+    this.query.update((q) => ({ ...q, offset: 0 }));
+    void this.loadPlaybacks();
   }
 
   resetFilters() {
@@ -268,39 +262,39 @@ export class PlaybacksTabComponent implements OnInit {
       min_progress: null,
       max_progress: null,
       limit: 50,
-      offset: 0
+      offset: 0,
     });
-    this.loadPlaybacks();
+    void this.loadPlaybacks();
   }
 
   clearError() {
     this.error.set(null);
   }
 
-  getProfileName(profileId: string): string {
-    return this.profileNameMap().get(profileId) || 'Unknown Profile';
+  getEpisodeTitle(episodeId?: string | null): string {
+    if (!episodeId) return '—';
+    return this.episodeTitleMap().get(episodeId) ?? 'Unknown Episode';
   }
 
-  getContentTitle(contentId: string): string {
-    return this.contentTitleMap().get(contentId) || 'Unknown Content';
+  getProfileName(profileId?: string | null): string {
+    if (!profileId) return '—';
+    return this.profileNameMap().get(profileId) ?? 'Unknown Profile';
   }
 
-  getEpisodeTitle(episodeId: string): string {
-    return this.episodeTitleMap().get(episodeId) || 'Unknown Episode';
+  getContentTitle(contentId?: string | null): string {
+    if (!contentId) return '—';
+    return this.contentTitleMap().get(contentId) ?? 'Unknown Content';
   }
 
   formatProgress(progressSeconds: number): string {
-    const hours = Math.floor(progressSeconds / 3600);
-    const minutes = Math.floor((progressSeconds % 3600) / 60);
-    const seconds = progressSeconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    } else {
-      return `${seconds}s`;
-    }
+    const s = progressSeconds ?? 0;
+    const hours = Math.floor(s / 3600);
+    const minutes = Math.floor((s % 3600) / 60);
+    const seconds = s % 60;
+
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
   }
 
   private getErrorMessage(error: any): string {

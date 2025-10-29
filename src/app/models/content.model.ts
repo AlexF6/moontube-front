@@ -1,3 +1,4 @@
+// src/app/models/content.model.ts
 export interface ContentList {
   id: string;
   title: string;

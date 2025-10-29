@@ -16,15 +16,9 @@ export class VideoCard {
   @Input() views = '';
   @Input() date = '';
 
-  // Image loading state
   imageLoaded = false;
   imageError = false;
 
-  onImageLoad() {
-    this.imageLoaded = true;
-  }
-
-  onImageError() {
-    this.imageError = true;
-  }
+  onImageLoad() { this.imageLoaded = true; }
+  onImageError() { this.imageError = true; }
 }

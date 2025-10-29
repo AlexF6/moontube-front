@@ -1,7 +1,9 @@
+// src/app/core/services/contents.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../enviroments/enviroment';
 import type { Content, ContentList, ContentCreate, ContentUpdate } from '../../models/content.model';
+import { catchError, throwError } from 'rxjs';
 
 interface QueryParams {
   q?: string;
@@ -62,4 +64,46 @@ export class ContentsService {
       withCredentials: true,
     });
   }
+
+  // ---------- Public (no auth) ----------
+  getPublicContents(params: QueryParams) {
+    let httpParams = new HttpParams();
+    Object.keys(params).forEach((key) => {
+      const value = params[key as keyof QueryParams];
+      if (value !== null && value !== undefined && value !== '') {
+        httpParams = httpParams.set(key, String(value));
+      }
+    });
+    return this.http.get<ContentList[]>(`${this.base}/public/contents`, {
+      params: httpParams,
+    });
+  }
+
+  getPublicContent(id: string) {
+    return this.http.get<Content>(`${this.base}/public/contents/${id}`);
+  }
+
+  // ---------- Smart (try admin, fallback to public) ----------
+  getSmartContents(params: QueryParams) {
+    return this.getContents(params).pipe(
+      catchError((err) => {
+        if (err?.status === 401 || err?.status === 403) {
+          return this.getPublicContents(params);
+        }
+        return throwError(() => err);
+      })
+    );
+  }
+
+  getSmartContent(id: string) {
+    return this.getContent(id).pipe(
+      catchError((err) => {
+        if (err?.status === 401 || err?.status === 403) {
+          return this.getPublicContent(id);
+        }
+        return throwError(() => err);
+      })
+    );
+  }
+
 }
