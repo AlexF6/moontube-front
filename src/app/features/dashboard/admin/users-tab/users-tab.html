@@ -9,28 +9,40 @@
 <!-- Header + Add button -->
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
   <h2 class="text-2xl font-semibold text-orange-500">User Management ({{ totalUsers() }})</h2>
-  <button (click)="create()" class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors">Add User</button>
+  <button (click)="create()" [disabled]="isLoading()" class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors disabled:opacity-50">Add User</button>
 </div>
 
 <!-- Filters -->
 <div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
   <h3 class="text-lg font-medium mb-3 text-orange-500">Filters</h3>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-    <input [(ngModel)]="query().q" placeholder="Search by name or email" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    
+    <input
+      [ngModel]="query().q"
+      (ngModelChange)="onQueryChange({ q: $event })"
+      placeholder="Search by name or email"
+      class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+
     <div class="flex items-center gap-2">
-      <input type="checkbox" [(ngModel)]="query().include_deleted" id="include_deleted" class="h-4 w-4 appearance-none rounded-md border border-gray-400 bg-gray-300 checked:bg-orange-600 checked:border-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 transition-all duration-200" />
+      <input type="checkbox"
+        [ngModel]="query().include_deleted"
+        (ngModelChange)="onQueryChange({ include_deleted: $event })"
+        id="include_deleted"
+        class="h-4 w-4 appearance-none rounded-md border border-gray-400 bg-gray-300 checked:bg-orange-600 checked:border-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 transition-all duration-200" />
       <label for="include_deleted" class="text-sm text-gray-300">Include Deleted</label>
     </div>
-    
+
     <div class="flex items-center gap-2">
-      <input type="checkbox" [(ngModel)]="query().only_active" id="only_active" class="h-4 w-4 appearance-none rounded-md border border-gray-400 bg-gray-300 checked:bg-orange-600 checked:border-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 transition-all duration-200" />
+      <input type="checkbox"
+        [ngModel]="query().only_active"
+        (ngModelChange)="onQueryChange({ only_active: $event })"
+        id="only_active"
+        class="h-4 w-4 appearance-none rounded-md border border-gray-400 bg-gray-300 checked:bg-orange-600 checked:border-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 transition-all duration-200" />
       <label for="only_active" class="text-sm text-gray-300">Only Active</label>
     </div>
-    
+
     <div class="flex gap-2">
-      <button (click)="applyFilters()" class="px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition">Apply</button>
-      <button (click)="resetFilters()" class="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition">Reset</button>
+      <button (click)="applyFilters()" [disabled]="isLoading()" class="px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition disabled:opacity-50">Apply</button>
+      <button (click)="resetFilters()" [disabled]="isLoading()" class="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition disabled:opacity-50">Reset</button>
     </div>
   </div>
 </div>
@@ -80,7 +92,7 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ user.email }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <span [class]="user.is_admin ? 'border border-orange-500 text-orange-400' : 'border border-gray-400 text-gray-300'" 
+              <span [class]="user.is_admin ? 'border border-orange-500 text-orange-400' : 'border border-gray-400 text-gray-300'"
                     class="px-2 py-1 text-xs font-medium rounded-full">
                 {{ user.is_admin ? 'Admin' : 'User' }}
               </span>
@@ -138,7 +150,7 @@
       </div>
       <div class="mt-6 flex justify-end gap-2">
         <button (click)="closeEditModal()" class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">Cancel</button>
-        <button (click)="saveEdits()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">Save</button>
+        <button (click)="saveEdits()" [disabled]="isLoading()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition disabled:opacity-50">Save</button>
       </div>
     </div>
   </div>
@@ -155,7 +167,7 @@
       </div>
       <div class="mt-6 flex justify-end gap-2">
         <button (click)="closePasswordModal()" class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">Cancel</button>
-        <button (click)="setPassword()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">Set Password</button>
+        <button (click)="setPassword()" [disabled]="isLoading() || !newPassword" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition disabled:opacity-50">Set Password</button>
       </div>
     </div>
   </div>
