@@ -1,3 +1,4 @@
+<!-- src/app/features/dashboard/user/payments-tab/payments-tab.html -->
 <div class="space-y-6">
   <!-- Header and Filters -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -93,15 +94,15 @@
             <div>
               <label class="text-gray-400 block mb-1">Subscription</label>
               <div class="text-white font-mono text-sm">
-                {{ shortId(payment.id) }}
+                {{ shortId(payment.subscription_name) }}
               </div>
             </div>
-            
+
             <div>
               <label class="text-gray-400 block mb-1">Currency</label>
               <div class="text-white">{{ payment.currency }}</div>
             </div>
-            
+
             @if (hasExternalId(payment)) {
               <div>
                 <label class="text-gray-400 block mb-1">Transaction ID</label>
@@ -134,7 +135,11 @@
     <!-- Summary -->
     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <div class="flex justify-between items-center text-sm">
-        <span class="text-gray-400">Total payments displayed:</span>
+        <span class="text-gray-400">Total payments (all pages):</span>
+        <span class="text-white font-medium">{{ total() }}</span>
+      </div>
+      <div class="flex justify-between items-center text-sm mt-1">
+        <span class="text-gray-400">Currently displayed:</span>
         <span class="text-white font-medium">{{ payments().length }}</span>
       </div>
     </div>
