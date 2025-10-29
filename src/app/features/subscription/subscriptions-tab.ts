@@ -1,10 +1,8 @@
-// src/app/features/dashboard/user/subscriptions-tab/subscriptions-tab.ts
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SubscriptionsService } from '../../core/services/subscriptions.service';
-import { Subscription, SubscriptionStatus } from '../../models/subscription.model';
-import { AuthService } from '../../core/auth.service';
+import { SubscriptionListItem, SubscriptionStatus } from '../../models/subscription.model';
 
 @Component({
   selector: 'app-subscriptions-tab',
@@ -14,9 +12,8 @@ import { AuthService } from '../../core/auth.service';
 })
 export class SubscriptionsTabComponent implements OnInit {
   private subscriptionsService = inject(SubscriptionsService);
-  private authService = inject(AuthService);
 
-  subscriptions = signal<Subscription[]>([]);
+  subscriptions = signal<SubscriptionListItem[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
   selectedStatus = signal<SubscriptionStatus | 'ALL'>('ALL');
@@ -26,7 +23,7 @@ export class SubscriptionsTabComponent implements OnInit {
     { value: SubscriptionStatus.ACTIVE, label: 'Active' },
     { value: SubscriptionStatus.CANCELED, label: 'Canceled' },
     { value: SubscriptionStatus.PAST_DUE, label: 'Past Due' }
-  ];
+  ] as const;
 
   ngOnInit(): void {
     this.loadSubscriptions();
@@ -37,11 +34,18 @@ export class SubscriptionsTabComponent implements OnInit {
     this.error.set(null);
 
     try {
-      const status = this.selectedStatus() === 'ALL' ? undefined : (this.selectedStatus() as SubscriptionStatus);
-      const subscriptions = await this.subscriptionsService.getMySubscriptions(status).toPromise();
+      const status =
+        this.selectedStatus() === 'ALL'
+          ? undefined
+          : (this.selectedStatus() as SubscriptionStatus);
+
+      const subscriptions = await this.subscriptionsService
+        .getMySubscriptions(status)
+        .toPromise();
+
       this.subscriptions.set(subscriptions || []);
-    } catch (err) {
-      this.error.set('Failed to load subscriptions');
+    } catch (err: any) {
+      this.error.set(err?.error?.detail || 'Failed to load subscriptions');
       console.error('Error loading subscriptions:', err);
     } finally {
       this.loading.set(false);
@@ -54,36 +58,34 @@ export class SubscriptionsTabComponent implements OnInit {
     this.loadSubscriptions();
   }
 
-  async cancelSubscription(subscription: Subscription): Promise<void> {
-    if (!confirm('Are you sure you want to cancel this subscription?')) {
-      return;
-    }
+  async cancelSubscription(subscription: SubscriptionListItem): Promise<void> {
+    if (!confirm('Are you sure you want to cancel this subscription?')) return;
 
     try {
       await this.subscriptionsService.cancelMy(subscription.id).toPromise();
       this.loadSubscriptions(); // Refresh the list
-    } catch (err) {
-      this.error.set('Failed to cancel subscription');
+    } catch (err: any) {
+      this.error.set(err?.error?.detail || 'Failed to cancel subscription');
       console.error('Error canceling subscription:', err);
     }
   }
 
-  async reactivateSubscription(subscription: Subscription): Promise<void> {
-    if (!confirm('Are you sure you want to reactivate this subscription?')) {
-      return;
-    }
+  async reactivateSubscription(subscription: SubscriptionListItem): Promise<void> {
+    if (!confirm('Are you sure you want to reactivate this subscription?')) return;
 
     try {
       await this.subscriptionsService.reactivateMy(subscription.id).toPromise();
       this.loadSubscriptions(); // Refresh the list
-    } catch (err) {
-      this.error.set('Failed to reactivate subscription');
+    } catch (err: any) {
+      this.error.set(err?.error?.detail || 'Failed to reactivate subscription');
       console.error('Error reactivating subscription:', err);
     }
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
   }
 
   getStatusBadgeClass(status: SubscriptionStatus): string {
@@ -99,11 +101,11 @@ export class SubscriptionsTabComponent implements OnInit {
     }
   }
 
-  isActive(subscription: Subscription): boolean {
-    return subscription.status === SubscriptionStatus.ACTIVE;
+  isActive(s: SubscriptionListItem): boolean {
+    return s.status === SubscriptionStatus.ACTIVE;
   }
 
-  isCanceled(subscription: Subscription): boolean {
-    return subscription.status === SubscriptionStatus.CANCELED;
+  isCanceled(s: SubscriptionListItem): boolean {
+    return s.status === SubscriptionStatus.CANCELED;
   }
 }
