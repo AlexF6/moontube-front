@@ -1,11 +1,17 @@
-// src/app/features/dashboard/admin/profiles-tab/profiles-tab.ts
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+
 import { ProfilesService } from '../../../../core/services/profiles.service';
 import { UsersService } from '../../../../core/services/users.service';
 import type { User } from '../../../../models/user.model';
-import { Profile, ProfileList, ProfileCreate, ProfileUpdate } from '../../../../models/profile.model';
+import {
+  Profile,
+  ProfileList,
+  ProfileCreate,
+  ProfileUpdate,
+} from '../../../../models/profile.model';
 
 interface QueryParams {
   user_id: string | null;
@@ -18,7 +24,7 @@ interface QueryParams {
   selector: 'app-profiles-tab',
   templateUrl: './profiles-tab.html',
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule],
 })
 export class ProfilesTabComponent implements OnInit {
   private profilesService = inject(ProfilesService);
@@ -30,13 +36,13 @@ export class ProfilesTabComponent implements OnInit {
   total = signal<number>(0);
   isLoading = signal<boolean>(false);
   editOpen = signal<boolean>(false);
-  
+
   // Query and form signals
   query = signal<QueryParams>({
     user_id: null,
     q: null,
     limit: 50,
-    offset: 0
+    offset: 0,
   });
 
   users = signal<User[]>([]);
@@ -44,7 +50,7 @@ export class ProfilesTabComponent implements OnInit {
 
   userNameMap = computed(() => {
     const map = new Map<string, string>();
-    this.users().forEach(user => {
+    this.users().forEach((user) => {
       map.set(user.id, `${user.name} (${user.email})`);
     });
     return map;
@@ -53,8 +59,8 @@ export class ProfilesTabComponent implements OnInit {
   newProfile = signal<ProfileCreate>({
     user_id: '',
     name: '',
-    avatar: '',
-    maturity_rating: ''
+    avatar: null,
+    maturity_rating: null,
   });
 
   editing = signal<Profile | null>(null);
@@ -67,8 +73,8 @@ export class ProfilesTabComponent implements OnInit {
   private async loadUsers() {
     try {
       this.isUsersLoading.set(true);
-      const users = await this.usersService.list().toPromise();
-      this.users.set(users || []);
+      const users = await firstValueFrom(this.usersService.list());
+      this.users.set(users ?? []);
     } catch (err: any) {
       this.error.set('Failed to load users: ' + this.getErrorMessage(err));
     } finally {
@@ -80,10 +86,12 @@ export class ProfilesTabComponent implements OnInit {
     try {
       this.isLoading.set(true);
       this.error.set(null);
-      
-      const response = await this.profilesService.getProfiles(this.query()).toPromise();
-      this.items.set(response || []);
-      this.total.set(response?.length || 0);
+
+      const response = await firstValueFrom(
+        this.profilesService.getProfiles(this.query())
+      );
+      this.items.set(response ?? []);
+      this.total.set(response?.length ?? 0);
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
     } finally {
@@ -94,23 +102,33 @@ export class ProfilesTabComponent implements OnInit {
   async create() {
     try {
       this.error.set(null);
-      
+
+      const payload = this.newProfile();
+
       // Validate required fields
-      if (!this.newProfile().user_id || !this.newProfile().name) {
+      if (!payload.user_id || !payload.name) {
         this.error.set('User and Profile Name are required');
         return;
       }
-      
-      await this.profilesService.createProfile(this.newProfile()).toPromise();
-      
+
+      // Normaliza strings vacíos -> null
+      const body: ProfileCreate = {
+        ...payload,
+        avatar: payload.avatar === '' ? null : payload.avatar,
+        maturity_rating:
+          payload.maturity_rating === '' ? null : payload.maturity_rating,
+      };
+
+      await firstValueFrom(this.profilesService.createProfile(body));
+
       // Reset form
       this.newProfile.set({
         user_id: '',
         name: '',
-        avatar: '',
-        maturity_rating: ''
+        avatar: null,
+        maturity_rating: null,
       });
-      
+
       this.loadProfiles();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
@@ -120,8 +138,10 @@ export class ProfilesTabComponent implements OnInit {
   async openEdit(profileId: string) {
     try {
       this.error.set(null);
-      const profile = await this.profilesService.getProfile(profileId).toPromise();
-      this.editing.set(profile || null);
+      const profile = await firstValueFrom(
+        this.profilesService.getProfile(profileId)
+      );
+      this.editing.set(profile ?? null);
       this.editOpen.set(true);
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
@@ -132,17 +152,22 @@ export class ProfilesTabComponent implements OnInit {
     try {
       this.error.set(null);
       const editingProfile = this.editing();
-      
+
       if (!editingProfile?.id) return;
 
       const updateData: ProfileUpdate = {
         name: editingProfile.name,
-        avatar: editingProfile.avatar,
-        maturity_rating: editingProfile.maturity_rating
+        avatar: editingProfile.avatar === '' ? null : editingProfile.avatar,
+        maturity_rating:
+          editingProfile.maturity_rating === ''
+            ? null
+            : editingProfile.maturity_rating,
       };
 
-      await this.profilesService.updateProfile(editingProfile.id, updateData).toPromise();
-      
+      await firstValueFrom(
+        this.profilesService.updateProfile(editingProfile.id, updateData)
+      );
+
       this.editOpen.set(false);
       this.editing.set(null);
       this.loadProfiles();
@@ -158,7 +183,7 @@ export class ProfilesTabComponent implements OnInit {
 
     try {
       this.error.set(null);
-      await this.profilesService.deleteProfile(profileId).toPromise();
+      await firstValueFrom(this.profilesService.deleteProfile(profileId));
       this.loadProfiles();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
@@ -166,7 +191,7 @@ export class ProfilesTabComponent implements OnInit {
   }
 
   applyFilters() {
-    this.query().offset = 0;
+    this.query.update((q) => ({ ...q, offset: 0 }));
     this.loadProfiles();
   }
 
@@ -175,7 +200,7 @@ export class ProfilesTabComponent implements OnInit {
       user_id: null,
       q: null,
       limit: 50,
-      offset: 0
+      offset: 0,
     });
     this.loadProfiles();
   }

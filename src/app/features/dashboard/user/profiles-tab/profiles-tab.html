@@ -5,8 +5,8 @@
       <h2 class="text-2xl font-bold text-orange-400 mb-2">Manage Profiles</h2>
       <p class="text-gray-400 text-sm">Create and manage your viewing profiles</p>
     </div>
-    
-    <button 
+
+    <button
       (click)="openCreateModal()"
       class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors flex items-center gap-2">
       <span>+</span>
@@ -33,8 +33,9 @@
     <div class="text-center py-12">
       <div class="text-gray-400 text-lg mb-4">No profiles found</div>
       <p class="text-gray-500 mb-6">Create your first profile to get started with personalized viewing.</p>
-      <button 
-        (click)="openCreateModal()"
+      <button
+        (click)="openCreateModal()
+        "
         class="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
         Create Your First Profile
       </button>
@@ -49,34 +50,32 @@
           <!-- Profile Header -->
           <div class="flex items-center gap-4 mb-4">
             @if (profile.avatar) {
-              <img 
-                [src]="profile.avatar" 
+              <img
+                [src]="profile.avatar"
                 [alt]="profile.name"
                 class="w-16 h-16 rounded-full object-cover border-2 border-gray-600">
             } @else {
-              <div 
+              <div
                 [innerHTML]="getDefaultAvatar(profile.name)"
                 class="flex-shrink-0">
               </div>
             }
             <div class="flex-1 min-w-0">
               <h3 class="text-xl font-semibold text-white truncate">{{ profile.name }}</h3>
-              @if (profile.maturity_rating) {
-                <div class="text-gray-400 text-sm mt-1">
-                  {{ getMaturityRatingLabel(profile.maturity_rating) }}
-                </div>
-              }
+              <div class="text-gray-400 text-sm mt-1">
+                {{ getMaturityRatingLabel(profile.maturity_rating) }}
+              </div>
             </div>
           </div>
 
           <!-- Actions -->
           <div class="flex gap-2 pt-4 border-t border-gray-700">
-            <button 
+            <button
               (click)="openEditModal(profile)"
               class="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors text-sm">
               Edit
             </button>
-            <button 
+            <button
               (click)="deleteProfile(profile)"
               class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors text-sm">
               Delete
@@ -92,7 +91,7 @@
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
         <h3 class="text-xl font-bold text-orange-400 mb-4">Create New Profile</h3>
-        
+
         <form (submit)="createProfile(); $event.preventDefault()" class="space-y-4">
           <div>
             <label class="block text-gray-300 text-sm font-medium mb-2">Profile Name</label>
@@ -124,6 +123,8 @@
               (ngModelChange)="setNew('maturity_rating', $event)"
               name="maturity_rating"
               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <!-- nullable option: '' will be coerced to null by the service -->
+              <option [ngValue]="''">— None —</option>
               @for (rating of maturityRatings; track rating.value) {
                 <option [value]="rating.value">{{ rating.label }}</option>
               }
@@ -153,7 +154,7 @@
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
         <h3 class="text-xl font-bold text-orange-400 mb-4">Edit Profile</h3>
-        
+
         <form (submit)="updateProfile(); $event.preventDefault()" class="space-y-4">
           <div>
             <label class="block text-gray-300 text-sm font-medium mb-2">Profile Name</label>
@@ -185,6 +186,7 @@
               (ngModelChange)="setEdit('maturity_rating', $event)"
               name="editMaturityRating"
               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <option [ngValue]="''">— None —</option>
               @for (rating of maturityRatings; track rating.value) {
                 <option [value]="rating.value">{{ rating.label }}</option>
               }
