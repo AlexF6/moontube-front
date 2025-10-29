@@ -8,6 +8,7 @@ import { ContentsService } from '../../../../core/services/contents.service';
 import type { Profile, ProfileList } from '../../../../models/profile.model';
 import type { Content, ContentList } from '../../../../models/content.model';
 import { Watchlist, WatchlistList, WatchlistCreate, WatchlistUpdate } from '../../../../models/watchlist.model';
+import { firstValueFrom } from 'rxjs';
 
 interface QueryParams {
   profile_id: string | null;
@@ -83,7 +84,7 @@ export class WatchlistsTabComponent implements OnInit {
   private async loadProfiles() {
     try {
       this.isProfilesLoading.set(true);
-      const profiles = await this.profilesService.getProfiles({}).toPromise();
+      const profiles = await firstValueFrom(this.profilesService.getProfiles({}));
       this.profiles.set(profiles || []);
     } catch (err: any) {
       this.error.set('Failed to load profiles: ' + this.getErrorMessage(err));
@@ -98,7 +99,7 @@ export class WatchlistsTabComponent implements OnInit {
       
       // 💡 FIX: Use getContents for a list, and pass the required QueryParams.
       // An empty object `{}` is correct here to fetch content without filters.
-      const content = await this.contentService.getContents({}).toPromise(); 
+      const content  = await firstValueFrom(this.contentService.getContents({}));
       
       // The type of 'content' is now ContentList[] | undefined
       this.contentItems.set(content || []);
@@ -114,7 +115,7 @@ export class WatchlistsTabComponent implements OnInit {
       this.isLoading.set(true);
       this.error.set(null);
       
-      const response = await this.watchlistService.getWatchlists(this.query()).toPromise();
+      const response = await firstValueFrom(this.watchlistService.getWatchlists(this.query()));
       this.items.set(response || []);
       this.total.set(response?.length || 0);
     } catch (err) {

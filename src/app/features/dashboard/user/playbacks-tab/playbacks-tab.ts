@@ -16,7 +16,7 @@ export class PlaybacksTabComponent implements OnInit {
   private svc = inject(PlaybacksService);
 
   playbacks = signal<PlaybackListItem[]>([]);
-  loading = signal(true);
+  loading = signal(false);
   error = signal<string | null>(null);
 
   // Filters
@@ -26,14 +26,18 @@ export class PlaybacksTabComponent implements OnInit {
   offset = signal(0);
 
   totalShown = computed(() => this.playbacks().length);
+  private inFlight = false;
 
   ngOnInit(): void {
-    this.load();
+    void this.load();
   }
 
   async load(): Promise<void> {
+    if (this.inFlight) return;
+    this.inFlight = true;
     this.loading.set(true);
     this.error.set(null);
+
     try {
       const completed =
         this.completedFilter() === 'ALL' ? null :
@@ -42,23 +46,26 @@ export class PlaybacksTabComponent implements OnInit {
       const list = await firstValueFrom(
         this.svc.getMyPlaybacks({
           completed,
-          device: this.deviceFilter() || null,
+          device: (this.deviceFilter().trim() || null),
           limit: this.limit(),
-          offset: this.offset()
+          offset: Math.max(0, this.offset())
         })
       );
+
       this.playbacks.set(list ?? []);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      this.error.set('Failed to load playbacks');
+      const detail = e?.error?.detail;
+      this.error.set(Array.isArray(detail) ? detail.map((d: any) => d.msg).join(', ') : detail || 'Failed to load playbacks');
     } finally {
       this.loading.set(false);
+      this.inFlight = false;
     }
   }
 
   onFilterChange(): void {
     this.offset.set(0);
-    this.load();
+    void this.load();
   }
 
   onCompletedChange(event: Event): void {
@@ -68,28 +75,48 @@ export class PlaybacksTabComponent implements OnInit {
   }
 
   async markAsCompleted(playbackId: string): Promise<void> {
+    // Optimistic update
+    const idx = this.playbacks().findIndex(p => p.id === playbackId);
+    const prev = idx >= 0 ? { ...this.playbacks()[idx] } : null;
+
+    if (idx >= 0) {
+      this.playbacks.update(list => {
+        const copy = [...list];
+        copy[idx] = { ...copy[idx], completed: true, ended_at: new Date().toISOString() };
+        return copy;
+      });
+    }
+
     try {
       await firstValueFrom(this.svc.markPlaybackCompleted(playbackId));
-      // Reload the list to reflect changes
-      this.load();
     } catch (e) {
       console.error('Failed to mark playback as completed:', e);
       this.error.set('Failed to update playback');
+      // rollback if needed
+      if (idx >= 0 && prev) {
+        this.playbacks.update(list => {
+          const copy = [...list];
+          copy[idx] = prev;
+          return copy;
+        });
+      }
     }
   }
 
   async deletePlayback(playbackId: string): Promise<void> {
-    if (!confirm('Are you sure you want to delete this playback record?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this playback record?')) return;
+
+    // Optimistic removal
+    const prev = this.playbacks();
+    this.playbacks.set(prev.filter(pb => pb.id !== playbackId));
 
     try {
       await firstValueFrom(this.svc.deleteMyPlayback(playbackId));
-      // Remove from local list instead of reloading
-      this.playbacks.update(list => list.filter(pb => pb.id !== playbackId));
     } catch (e) {
       console.error('Failed to delete playback:', e);
       this.error.set('Failed to delete playback');
+      // rollback
+      this.playbacks.set(prev);
     }
   }
 
@@ -117,6 +144,7 @@ export class PlaybacksTabComponent implements OnInit {
       : `${m}:${sec.toString().padStart(2, '0')}`;
   }
 
+  // If you later expose content duration, replace 1800 with actual duration.
   progressPercent(p?: number | null): number {
     return Math.min(100, Math.floor(((p ?? 0) / 1800) * 100));
   }

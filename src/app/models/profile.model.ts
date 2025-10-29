@@ -1,10 +1,9 @@
-// src/app/models/profile.model.ts
 export interface ProfileList {
   id: string;
   user_id: string;
   name: string;
-  avatar: string;
-  maturity_rating: string;
+  avatar: string | null;           // nullable en backend
+  maturity_rating: string | null;  // nullable en backend
 }
 
 export interface Profile {
@@ -15,19 +14,25 @@ export interface Profile {
   updated_at: string | null;
   user_id: string;
   name: string;
-  avatar: string;
-  maturity_rating: string;
+  avatar: string | null;           // nullable
+  maturity_rating: string | null;  // nullable
 }
 
 export interface ProfileCreate {
   user_id: string;
   name: string;
-  avatar: string;
-  maturity_rating: string;
+  avatar: string | null;           // permitir null
+  maturity_rating: string | null;  // permitir null
+}
+
+export interface ProfileCreateMe {
+  name: string;
+  avatar: string | null;
+  maturity_rating: string | null;
 }
 
 export interface ProfileUpdate {
   name?: string;
-  avatar?: string;
-  maturity_rating?: string;
+  avatar?: string | null;
+  maturity_rating?: string | null;
 }

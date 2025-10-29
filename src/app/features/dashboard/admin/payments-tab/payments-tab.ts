@@ -133,14 +133,14 @@ export class PaymentsTabComponent implements OnInit {
     if (!this.editing()) return;
 
     this.error.set(null);
-    
+
     try {
       const updateData: PaymentUpdate = {
-        amount: parseFloat(this.editing()!.amount),
+        amount: this.editing()!.amount,                 
         currency: this.editing()!.currency,
         status: this.editing()!.status,
-        provider: this.editing()!.provider,
-        external_id: this.editing()!.external_id,
+        provider: this.editing()!.provider ?? undefined,
+        external_id: this.editing()!.external_id ?? undefined,
         paid_at: this.editing()!.paid_at
       };
 

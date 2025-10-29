@@ -2,7 +2,7 @@ import { Component, OnInit, WritableSignal, signal, computed } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../../../core/services/users.service';
-import type { User } from '../../../../models/user.model';
+import type { User, UserAdminCreate, UserAdminUpdate } from '../../../../models/user.model';
 
 interface QueryParams {
   q: string | null;
@@ -20,7 +20,7 @@ interface QueryParams {
 })
 export class UsersTabComponent implements OnInit {
   isLoading = signal(false);
-  error = signal<string|null>(null);
+  error = signal<string | null>(null);
   users = signal<User[]>([]);
   totalUsers = computed(() => this.users().length);
 
@@ -28,7 +28,7 @@ export class UsersTabComponent implements OnInit {
   isPasswordModalOpen: WritableSignal<boolean> = signal(false);
   editingUser: WritableSignal<User | null> = signal(null);
 
-  // Query parameters
+  // Query parameters (as a single signal object)
   query = signal<QueryParams>({
     q: null,
     include_deleted: false,
@@ -37,56 +37,79 @@ export class UsersTabComponent implements OnInit {
     offset: 0
   });
 
-  newUser = { name: '', email: '', password: '', is_admin: false, active: true };
+  newUser: UserAdminCreate = { name: '', email: '', password: '', is_admin: false, active: true };
   newPassword = '';
 
   constructor(private usersSvc: UsersService) {}
-  
-  ngOnInit() { this.load(); }
+
+  ngOnInit() {
+    this.load();
+  }
 
   load() {
     this.isLoading.set(true);
     this.usersSvc.list(this.query()).subscribe({
-      next: (res) => { 
-        this.users.set(res); 
-        this.isLoading.set(false); 
+      next: (res) => {
+        this.users.set(res);
+        this.isLoading.set(false);
       },
-      error: (e) => { 
-        this.error.set(this.getErrorMessage(e)); 
-        this.isLoading.set(false); 
+      error: (e) => {
+        this.error.set(this.getErrorMessage(e));
+        this.isLoading.set(false);
       }
     });
+  }
+
+  // Immutable updates for the query signal
+  onQueryChange(patch: Partial<QueryParams>) {
+    this.query.update(q => ({ ...q, ...patch }));
+  }
+
+  applyFilters() {
+    this.query.update(q => ({ ...q, offset: 0 }));
+    this.load();
+  }
+
+  resetFilters() {
+    this.query.set({
+      q: null,
+      include_deleted: false,
+      only_active: false,
+      limit: 50,
+      offset: 0
+    });
+    this.load();
   }
 
   create() {
     const { name, email, password } = this.newUser;
-    if (!name || !email || !password) { 
-      this.error.set('Please fill all required fields'); 
-      return; 
+    if (!name || !email || !password) {
+      this.error.set('Please fill all required fields');
+      return;
     }
     this.isLoading.set(true);
     this.usersSvc.create(this.newUser).subscribe({
-      next: (user) => { 
-        this.users.update(u => [...u, user]); 
-        this.newUser = { name:'', email:'', password:'', is_admin:false, active:true }; 
-        this.isLoading.set(false); 
-        this.load(); // Reload to get updated list with proper ordering
+      next: (user) => {
+        this.users.update(u => [...u, user]);
+        this.newUser = { name: '', email: '', password: '', is_admin: false, active: true };
+        this.isLoading.set(false);
+        this.load(); // keep ordering consistent with backend sort
       },
-      error: (e) => { 
-        this.error.set(this.getErrorMessage(e)); 
-        this.isLoading.set(false); 
+      error: (e) => {
+        this.error.set(this.getErrorMessage(e));
+        this.isLoading.set(false);
       }
     });
   }
 
-  openEditModal(user: User) { 
-    this.editingUser.set({ ...user }); 
-    this.isEditModalOpen.set(true); 
+  openEditModal(user: User) {
+    this.editingUser.set({ ...user });
+    this.isEditModalOpen.set(true);
   }
 
-  closeEditModal() { 
-    this.isEditModalOpen.set(false); 
-    this.editingUser.set(null); 
+  closeEditModal() {
+    this.isEditModalOpen.set(false);
+    this.editingUser.set(null);
   }
 
   openPasswordModal(user: User) {
@@ -102,19 +125,26 @@ export class UsersTabComponent implements OnInit {
   }
 
   saveEdits() {
-    const user = this.editingUser(); 
+    const user = this.editingUser();
     if (!user) return;
+
     this.isLoading.set(true);
-    const patch = { name: user.name, email: user.email, active: user.active, is_admin: user.is_admin };
+    const patch: UserAdminUpdate = {
+      name: user.name,
+      email: user.email,
+      active: user.active,
+      is_admin: user.is_admin,
+    };
+
     this.usersSvc.update(user.id, patch).subscribe({
       next: (updated) => {
         this.users.update(list => list.map(u => u.id === updated.id ? updated : u));
-        this.closeEditModal(); 
+        this.closeEditModal();
         this.isLoading.set(false);
       },
-      error: (e) => { 
-        this.error.set(this.getErrorMessage(e)); 
-        this.isLoading.set(false); 
+      error: (e) => {
+        this.error.set(this.getErrorMessage(e));
+        this.isLoading.set(false);
       }
     });
   }
@@ -125,7 +155,7 @@ export class UsersTabComponent implements OnInit {
       this.error.set('Password is required');
       return;
     }
-    
+
     this.isLoading.set(true);
     this.usersSvc.setPassword(user.id, this.newPassword).subscribe({
       next: () => {
@@ -172,28 +202,12 @@ export class UsersTabComponent implements OnInit {
     });
   }
 
-  applyFilters() {
-    this.query().offset = 0;
-    this.load();
+  formatDate(d: string) {
+    return new Date(d).toLocaleDateString();
   }
 
-  resetFilters() {
-    this.query.set({
-      q: null,
-      include_deleted: false,
-      only_active: false,
-      limit: 50,
-      offset: 0
-    });
-    this.load();
-  }
-
-  formatDate(d: string) { 
-    return new Date(d).toLocaleDateString(); 
-  }
-
-  clearError() { 
-    this.error.set(null); 
+  clearError() {
+    this.error.set(null);
   }
 
   private getErrorMessage(error: any): string {

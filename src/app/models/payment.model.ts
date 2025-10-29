@@ -3,16 +3,19 @@ export interface Payment {
   id: string;
   user_id: string;
   subscription_id: string;
-  amount: string;
+  amount: number;                 
   currency: string;
   status: PaymentStatus;
-  provider: string;
-  external_id: string;
+  provider: string | null;        
+  external_id: string | null;     
   paid_at: string | null;
   created_by?: string;
   updated_by?: string;
   created_at?: string;
   updated_at?: string;
+
+  subscription_name?: string | null;
+  plan_name?: string | null;
 }
 
 export interface PaymentCreate {

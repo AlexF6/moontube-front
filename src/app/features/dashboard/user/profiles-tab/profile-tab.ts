@@ -1,11 +1,16 @@
-// src/app/features/dashboard/user/profiles-tab/profiles-tab.component.ts
 import { Component, OnInit, WritableSignal, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ProfilesService } from '../../../../core/services/profiles.service';
 import { AuthService } from '../../../../core/auth.service';
-import type { Profile, ProfileCreate, ProfileList, ProfileUpdate } from '../../../../models/profile.model';
+import type {
+  Profile,
+  ProfileCreate,
+  ProfileCreateMe,
+  ProfileList,
+  ProfileUpdate,
+} from '../../../../models/profile.model';
 
 type Maturity = { value: string; label: string };
 
@@ -28,15 +33,16 @@ export class ProfilesTabComponent implements OnInit {
   showCreateModal = signal<boolean>(false);
   showEditModal = signal<boolean>(false);
 
-  // Forms (signals with immutable updates)
+  // Forms
   newProfile: WritableSignal<ProfileCreate> = signal<ProfileCreate>({
-    user_id: '', // set on openCreateModal using current user id
+    user_id: '',            // set on openCreateModal if admin; ignored for /me
     name: '',
-    avatar: '',
+    avatar: null,
     maturity_rating: 'G',
   });
 
-  editProfile: WritableSignal<Profile & { id: string }> = signal<any>({
+  // usa Partial<Profile> para flexibilidad
+  editProfile: WritableSignal<Partial<Profile> & { id: string }> = signal({
     id: '',
     created_by: '',
     updated_by: null,
@@ -44,7 +50,7 @@ export class ProfilesTabComponent implements OnInit {
     updated_at: null,
     user_id: '',
     name: '',
-    avatar: '',
+    avatar: null,
     maturity_rating: 'G',
   });
 
@@ -72,11 +78,15 @@ export class ProfilesTabComponent implements OnInit {
       ? this.profilesSvc.getProfiles({ user_id: user?.id ?? null, limit: 50, offset: 0 })
       : this.profilesSvc.getMyProfiles()
     ).subscribe({
-      next: (rows) => { this.profiles.set(rows ?? []); this.loading.set(false); },
+      next: (rows) => {
+        this.profiles.set(rows ?? []);
+        this.loading.set(false);
+      },
       error: (err) => {
-        const msg = err?.status === 403
-          ? 'You do not have permission to list profiles.'
-          : err?.error?.detail || 'Failed to load profiles.';
+        const msg =
+          err?.status === 403
+            ? 'You do not have permission to list profiles.'
+            : err?.error?.detail || 'Failed to load profiles.';
         this.error.set(msg);
         this.loading.set(false);
       },
@@ -89,9 +99,9 @@ export class ProfilesTabComponent implements OnInit {
     const isAdmin = !!u?.is_admin;
 
     this.newProfile.set({
-      user_id: isAdmin ? (u?.id ?? '') : '',   // ignored by /me endpoint
+      user_id: isAdmin ? (u?.id ?? '') : '', // ignored by /me endpoint
       name: '',
-      avatar: '',
+      avatar: null,
       maturity_rating: 'G',
     });
     this.showCreateModal.set(true);
@@ -112,21 +122,43 @@ export class ProfilesTabComponent implements OnInit {
     this.loading.set(true);
 
     if (isAdmin) {
-      const payload = this.newProfile(); // needs user_id
+      const payload = this.newProfile();
       if (!payload.user_id) {
         this.error.set('Missing user id to create profile.');
         this.loading.set(false);
         return;
       }
-      this.profilesSvc.createProfile(payload).subscribe({
-        next: () => { this.showCreateModal.set(false); this.loadProfiles(); },
-        error: (err) => { this.error.set(err?.error?.detail || 'Failed to create profile.'); this.loading.set(false); },
+      const body: ProfileCreate = {
+        ...payload,
+        avatar: payload.avatar === '' ? null : payload.avatar,
+        maturity_rating: payload.maturity_rating === '' ? null : payload.maturity_rating,
+      };
+      this.profilesSvc.createProfile(body).subscribe({
+        next: () => {
+          this.showCreateModal.set(false);
+          this.loadProfiles();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail || 'Failed to create profile.');
+          this.loading.set(false);
+        },
       });
     } else {
       const { name, avatar, maturity_rating } = this.newProfile();
-      this.profilesSvc.createMyProfile({ name, avatar, maturity_rating }).subscribe({
-        next: () => { this.showCreateModal.set(false); this.loadProfiles(); },
-        error: (err) => { this.error.set(err?.error?.detail || 'Failed to create profile.'); this.loading.set(false); },
+      const body: ProfileCreateMe = {
+        name,
+        avatar: avatar === '' ? null : avatar,
+        maturity_rating: maturity_rating === '' ? null : maturity_rating,
+      };
+      this.profilesSvc.createMyProfile(body).subscribe({
+        next: () => {
+          this.showCreateModal.set(false);
+          this.loadProfiles();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail || 'Failed to create profile.');
+          this.loading.set(false);
+        },
       });
     }
   }
@@ -137,39 +169,53 @@ export class ProfilesTabComponent implements OnInit {
     const isAdmin = !!u?.is_admin;
 
     if (!isAdmin) {
-      // Non-admin: we don’t call admin GET. Use list data directly.
+      // Non-admin: usa datos del listado
       this.editProfile.set({
         id: p.id,
         created_by: '',
         updated_by: null,
+        created_at: '',
+        updated_at: null,
         user_id: p.user_id,
         name: p.name,
         avatar: p.avatar,
         maturity_rating: p.maturity_rating,
-      } as any);
+      });
       this.showEditModal.set(true);
       return;
     }
 
-    // Admin: can fetch full profile
+    // Admin: obtiene detalle completo
     this.loading.set(true);
     this.profilesSvc.getProfile(p.id).subscribe({
       next: (full) => {
-        this.editProfile.set(full as any);
+        this.editProfile.set({
+          id: full.id,
+          created_by: full.created_by,
+          updated_by: full.updated_by,
+          created_at: full.created_at,
+          updated_at: full.updated_at,
+          user_id: full.user_id,
+          name: full.name,
+          avatar: full.avatar,
+          maturity_rating: full.maturity_rating,
+        });
         this.showEditModal.set(true);
         this.loading.set(false);
       },
-      error: (err) => {
-        // Fallback: still allow editing with list item
+      error: () => {
+        // Fallback con datos de lista
         this.editProfile.set({
           id: p.id,
           created_by: '',
           updated_by: null,
+          created_at: '',
+          updated_at: null,
           user_id: p.user_id,
           name: p.name,
           avatar: p.avatar,
           maturity_rating: p.maturity_rating,
-        } as any);
+        });
         this.showEditModal.set(true);
         this.loading.set(false);
       },
@@ -181,7 +227,7 @@ export class ProfilesTabComponent implements OnInit {
   }
 
   setEdit<K extends keyof ProfileUpdate>(key: K, value: ProfileUpdate[K]): void {
-    this.editProfile.update((prev) => ({ ...prev, [key]: value } as any));
+    this.editProfile.update((prev) => ({ ...prev, [key]: value }));
   }
 
   updateProfile(): void {
@@ -191,8 +237,9 @@ export class ProfilesTabComponent implements OnInit {
     const current = this.editProfile();
     const patch: ProfileUpdate = {
       name: current.name,
-      avatar: current.avatar,
-      maturity_rating: current.maturity_rating,
+      avatar: current.avatar === '' ? null : (current.avatar ?? null),
+      maturity_rating:
+        current.maturity_rating === '' ? null : (current.maturity_rating ?? null),
     };
 
     this.loading.set(true);
@@ -201,8 +248,14 @@ export class ProfilesTabComponent implements OnInit {
       ? this.profilesSvc.updateProfile(current.id, patch)
       : this.profilesSvc.updateMyProfile(current.id, patch)
     ).subscribe({
-      next: () => { this.showEditModal.set(false); this.loadProfiles(); },
-      error: (err) => { this.error.set(err?.error?.detail || 'Failed to update profile.'); this.loading.set(false); },
+      next: () => {
+        this.showEditModal.set(false);
+        this.loadProfiles();
+      },
+      error: (err) => {
+        this.error.set(err?.error?.detail || 'Failed to update profile.');
+        this.loading.set(false);
+      },
     });
   }
 
@@ -220,7 +273,10 @@ export class ProfilesTabComponent implements OnInit {
       : this.profilesSvc.deleteMyProfile(p.id)
     ).subscribe({
       next: () => this.loadProfiles(),
-      error: (err) => { this.error.set(err?.error?.detail || 'Failed to delete profile.'); this.loading.set(false); },
+      error: (err) => {
+        this.error.set(err?.error?.detail || 'Failed to delete profile.');
+        this.loading.set(false);
+      },
     });
   }
 
@@ -228,11 +284,12 @@ export class ProfilesTabComponent implements OnInit {
   formatDate(d: string | null): string {
     if (!d) return '';
     const date = new Date(d);
-    if (isNaN(date.getTime())) return d; // show raw if invalid
-    return date.toLocaleString(); // or toLocaleDateString() if you prefer only date
+    if (isNaN(date.getTime())) return d;
+    return date.toLocaleString();
   }
 
-  getMaturityRatingLabel(value: string): string {
+  getMaturityRatingLabel(value: string | null): string {
+    if (!value) return '—';
     return this.maturityRatings.find((r) => r.value === value)?.label ?? value;
   }
 

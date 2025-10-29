@@ -1,6 +1,35 @@
-import { Component } from '@angular/core';
-import { VideoCard } from '../video-card/video-card';
+// src/app/shared/components/video-grid/video-grid.ts
+import { Component, Input, inject, signal, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { catchError, of, finalize } from 'rxjs';
+
+import { VideoCard } from '../video-card/video-card';
+import { ContentsService } from '../../../core/services/contents.service';
+import type { ContentList } from '../../../models/content.model';
+
+type GridQuery = {
+  q?: string;
+  type_q?: 'MOVIE' | 'SERIES' | 'VIDEOS' | null;
+  genre_q?: string;
+  year_from?: number | null;
+  year_to?: number | null;
+  min_duration_seconds?: number | null;
+  max_duration_seconds?: number | null;
+  age_rating?: string | null;
+  order_by?: 'created_at' | 'title' | 'release_year';
+  order_dir?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+};
+
+const DEFAULT_QUERY: GridQuery = {
+  type_q: 'VIDEOS',
+  order_by: 'created_at',
+  order_dir: 'desc',
+  limit: 24,
+  offset: 0,
+};
+
 @Component({
   selector: 'app-video-grid',
   standalone: true,
@@ -8,66 +37,99 @@ import { RouterLink } from '@angular/router';
   templateUrl: './video-grid.html',
 })
 export class VideoGrid {
-  videos = [
-    {
-      id: 101,
-      thumbnail: 'https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/E8vDc_W8CLv7-yMQu8KMEC7Rrr8/AAAABRKIQnGja8FW7HtFjgOF_TmYAR_dn3eeN2Cayj3Gm2kEhjSETNusxVJj712wh_n7reHNrt3Bt6_S_U7jF4h8ugUgeXYHpcqbzHxO.jpg?r=485',
-      duration: '24:15',
-      title: 'One Piece: La batalla en Egghead explicada',
-      channelAvatar: 'https://picsum.photos/seed/avatar-anime1/36/36',
-      channelName: 'OtakuWorld',
-      views: '2.3M',
-      date: 'hace 2 semanas'
-    },
-    {
-      id: 102,
-      thumbnail: 'https://i.ytimg.com/vi/gp9aY09li1s/maxresdefault.jpg',
-      duration: '15:42',
-      title: 'Zelda: Tears of the Kingdom - Secretos que no viste',
-      channelAvatar: 'https://picsum.photos/seed/avatar-game1/36/36',
-      channelName: 'GamerZone',
-      views: '1.1M',
-      date: 'hace 1 mes'
-    },
-    {
-      id: 103,
-      thumbnail: 'https://a.storyblok.com/f/178900/1920x1080/ca57399c91/jujutsu-kaisen-hidden-inventory-premature-death-the-movie.jpg/m/1200x0/filters:quality(95)format(webp)',
-      duration: '10:05',
-      title: 'Jujutsu Kaisen: El poder oculto de Gojo',
-      channelAvatar: 'https://picsum.photos/seed/avatar-anime2/36/36',
-      channelName: 'AnimeTalks',
-      views: '750k',
-      date: 'hace 3 semanas'
-    },
-    {
-      id: 104,
-      thumbnail: 'https://i.blogs.es/a47ba2/ffxvi-cabecera/1366_2000.jpeg',
-      duration: '18:20',
-      title: 'Final Fantasy XVI - Opinión sin spoilers',
-      channelAvatar: 'https://picsum.photos/seed/avatar-game2/36/36',
-      channelName: 'JRPG Corner',
-      views: '890k',
-      date: 'hace 2 meses'
-    },
-    {
-      id: 105,
-      thumbnail: 'https://www.tierragamer.com/wp-content/uploads/2020/06/Jiraiya_y_Naruto_Shippuden-1-1024x589.jpg',
-      duration: '09:55',
-      title: 'Los mejores openings de Naruto Shippuden',
-      channelAvatar: 'https://picsum.photos/seed/avatar-anime3/36/36',
-      channelName: 'AnimeVibes',
-      views: '3.2M',
-      date: 'hace 5 meses'
-    },
-    {
-      id: 106,
-      thumbnail: 'https://blog.latam.playstation.com/tachyon/sites/3/2025/08/bd23cc38fe144b44b2c73e4c07ed6373ee4d4c00.jpg?resize=1088%2C612&crop_strategy=smart',
-      duration: '21:18',
-      title: 'Top 10 juegos indie de 2025 que debes probar',
-      channelAvatar: 'https://picsum.photos/seed/avatar-game3/36/36',
-      channelName: 'IndieGamer',
-      views: '640k',
-      date: 'hace 1 semana'
-    }
+  private contents = inject(ContentsService);
+
+  /** Accept filters from any parent and normalize to a signal */
+  private _query = signal<GridQuery>(DEFAULT_QUERY);
+  @Input() set query(value: GridQuery | undefined) {
+    this._query.set({ ...DEFAULT_QUERY, ...(value ?? {}) });
+  }
+
+  /** State */
+  readonly items = signal<ContentList[]>([]);
+  readonly loading = signal<boolean>(true);
+  readonly error = signal<string | null>(null);
+
+  /** Derived */
+  readonly hasItems = computed(() => this.items().length > 0);
+  readonly isEmpty = computed(() => !this.loading() && this.items().length === 0);
+  readonly showContent = computed(() => this.hasItems() && !this.loading() && !this.error());
+
+  // Pre-processed view data
+  readonly processedVideos = computed(() =>
+    this.items().map((video, index) => ({
+      ...video,
+      thumbnail: this.getThumbnail(video, index),
+      duration: this.formatDuration(video.duration_seconds),
+      route: ['/watch', video.id],
+    }))
+  );
+
+  // Simple fallback thumbnails
+  private readonly fallbackThumbnails = [
+    'https://pic.bittopup.com/apiUpload/88feb06a212a7d8b536313cb63a55a2a.jpg',
+    'https://c4.wallpaperflare.com/wallpaper/336/629/188/kafka-honkai-star-rail-blade-honkai-star-rail-honkai-star-rail-hd-wallpaper-preview.jpg',
+    'https://picsum.photos/seed/video3/640/360',
+    'https://picsum.photos/seed/video4/640/360',
+    'https://picsum.photos/seed/video5/640/360',
+    'https://picsum.photos/seed/video6/640/360',
   ];
+
+  readonly skeletonItems = Array.from({ length: 8 }, (_, i) => i);
+
+  constructor() {
+    // Refetch whenever inputs change
+    effect(() => {
+      const q = this._query();
+      this.fetch(q);
+    });
+  }
+
+  private fetch(q: GridQuery) {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.contents
+      .getSmartContents(q)
+      .pipe(
+        catchError((err) => {
+          const detail =
+            err?.error?.detail ??
+            (typeof err?.message === 'string' ? err.message : 'Unable to load videos.');
+          this.error.set(detail);
+          return of<ContentList[]>([]);
+        }),
+        finalize(() => {
+          this.loading.set(false);
+        })
+      )
+      .subscribe((rows) => {
+        this.items.set(rows ?? []);
+      });
+  }
+
+  private getThumbnail(video: ContentList, index: number): string {
+    // Use type assertion for safe property access
+    const videoAny = video as any;
+    const cand = videoAny.thumbnail ?? videoAny.poster ?? '';
+    return cand || this.fallbackThumbnails[index % this.fallbackThumbnails.length];
+  }
+
+  // Format seconds as H:MM:SS or M:SS - FIXED
+  private formatDuration(seconds?: number | null): string {
+    const s = Math.max(0, Number(seconds ?? 0));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    } else {
+      return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+  }
+
+  retry() {
+    this.fetch(this._query());
+  }
 }
