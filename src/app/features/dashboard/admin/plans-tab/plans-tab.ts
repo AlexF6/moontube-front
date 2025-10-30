@@ -1,4 +1,5 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+// src/app/features/dashboard/admin/plans-tab/plans-tab.ts
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -24,6 +25,7 @@ export class PlansTabComponent implements OnInit {
   isLoading = signal<boolean>(false);
   editOpen = signal<boolean>(false);
   subscriptionsOpen = signal<boolean>(false);
+  processingAction = signal<string | null>(null);
 
   // Query & forms
   query = signal<Required<PlanQueryParams>>({
@@ -50,6 +52,7 @@ export class PlansTabComponent implements OnInit {
   currentPlanId = signal<string | null>(null);
 
   videoQualities = ['SD', 'HD', 'Full HD', '4K', '8K'];
+  currentPage = computed(() => Math.floor(this.query().offset / this.query().limit) + 1);
 
   ngOnInit() {
     this.loadPlans();
@@ -96,6 +99,7 @@ export class PlansTabComponent implements OnInit {
   async create() {
     try {
       this.error.set(null);
+      this.processingAction.set('create');
       const payload = this.newPlan();
       await firstValueFrom(this.plansService.create(payload));
 
@@ -111,6 +115,8 @@ export class PlansTabComponent implements OnInit {
       this.loadPlans();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
@@ -130,6 +136,7 @@ export class PlansTabComponent implements OnInit {
     if (!editingPlan?.id) return;
     try {
       this.error.set(null);
+      this.processingAction.set(`edit-${editingPlan.id}`);
       const patch: PlanUpdate = {
         name: editingPlan.name,
         price: parseFloat(editingPlan.price),
@@ -143,6 +150,8 @@ export class PlansTabComponent implements OnInit {
       this.loadPlans();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
@@ -150,23 +159,45 @@ export class PlansTabComponent implements OnInit {
     if (!confirm('Are you sure you want to delete this plan? This action cannot be undone.')) return;
     try {
       this.error.set(null);
+      this.processingAction.set(`delete-${planId}`);
       await firstValueFrom(this.plansService.delete(planId));
       this.loadPlans();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
   async openSubscriptions(planId: string) {
     try {
       this.error.set(null);
+      this.processingAction.set(`subscriptions-${planId}`);
       const subs = await firstValueFrom(this.plansService.getPlanSubscriptions(planId));
       this.currentSubscriptions.set(subs ?? []);
       this.currentPlanId.set(planId);
       this.subscriptionsOpen.set(true);
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.processingAction.set(null);
     }
+  }
+
+  prevPage() {
+    const q = this.query();
+    const newOffset = Math.max(0, q.offset - q.limit);
+    if (newOffset !== q.offset) {
+      this.query.update(v => ({ ...v, offset: newOffset }));
+    }
+    this.loadPlans();
+  }
+
+  nextPage() {
+    const q = this.query();
+    const newOffset = q.offset + q.limit;
+    this.query.update(v => ({ ...v, offset: newOffset }));
+    this.loadPlans();
   }
 
   // Utilities
@@ -184,12 +215,21 @@ export class PlansTabComponent implements OnInit {
 
   getStatusClass(status: string): string {
     switch (status) {
-      case 'ACTIVE': return 'status-active';
-      case 'INACTIVE': return 'status-inactive';
-      case 'CANCELED': return 'status-canceled';
-      case 'EXPIRED': return 'status-expired';
-      default: return 'status-inactive';
+      case 'ACTIVE':
+        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      case 'INACTIVE':
+        return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
+      case 'CANCELED':
+        return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+      case 'EXPIRED':
+        return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
     }
+  }
+
+  isProcessing(planId: string, action: string): boolean {
+    return this.processingAction() === `${action}-${planId}`;
   }
 
   private getErrorMessage(error: any): string {

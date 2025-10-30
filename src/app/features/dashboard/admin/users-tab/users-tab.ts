@@ -1,4 +1,5 @@
-import { Component, OnInit, WritableSignal, signal, computed } from '@angular/core';
+// src/app/features/dashboard/admin/users-tab/users-tab.ts
+import { Component, OnInit, WritableSignal, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../../../core/services/users.service';
@@ -19,10 +20,13 @@ interface QueryParams {
   templateUrl: './users-tab.html'
 })
 export class UsersTabComponent implements OnInit {
+  private usersSvc = inject(UsersService);
+
   isLoading = signal(false);
   error = signal<string | null>(null);
   users = signal<User[]>([]);
   totalUsers = computed(() => this.users().length);
+  processingAction = signal<string | null>(null);
 
   isEditModalOpen: WritableSignal<boolean> = signal(false);
   isPasswordModalOpen: WritableSignal<boolean> = signal(false);
@@ -39,8 +43,6 @@ export class UsersTabComponent implements OnInit {
 
   newUser: UserAdminCreate = { name: '', email: '', password: '', is_admin: false, active: true };
   newPassword = '';
-
-  constructor(private usersSvc: UsersService) {}
 
   ngOnInit() {
     this.load();
@@ -88,16 +90,20 @@ export class UsersTabComponent implements OnInit {
       return;
     }
     this.isLoading.set(true);
+    this.processingAction.set('create');
+    
     this.usersSvc.create(this.newUser).subscribe({
       next: (user) => {
         this.users.update(u => [...u, user]);
         this.newUser = { name: '', email: '', password: '', is_admin: false, active: true };
         this.isLoading.set(false);
+        this.processingAction.set(null);
         this.load(); // keep ordering consistent with backend sort
       },
       error: (e) => {
         this.error.set(this.getErrorMessage(e));
         this.isLoading.set(false);
+        this.processingAction.set(null);
       }
     });
   }
@@ -129,6 +135,8 @@ export class UsersTabComponent implements OnInit {
     if (!user) return;
 
     this.isLoading.set(true);
+    this.processingAction.set(`edit-${user.id}`);
+    
     const patch: UserAdminUpdate = {
       name: user.name,
       email: user.email,
@@ -141,10 +149,12 @@ export class UsersTabComponent implements OnInit {
         this.users.update(list => list.map(u => u.id === updated.id ? updated : u));
         this.closeEditModal();
         this.isLoading.set(false);
+        this.processingAction.set(null);
       },
       error: (e) => {
         this.error.set(this.getErrorMessage(e));
         this.isLoading.set(false);
+        this.processingAction.set(null);
       }
     });
   }
@@ -157,57 +167,88 @@ export class UsersTabComponent implements OnInit {
     }
 
     this.isLoading.set(true);
+    this.processingAction.set(`password-${user.id}`);
+
     this.usersSvc.setPassword(user.id, this.newPassword).subscribe({
       next: () => {
         this.closePasswordModal();
         this.isLoading.set(false);
         this.error.set(null);
+        this.processingAction.set(null);
       },
       error: (e) => {
         this.error.set(this.getErrorMessage(e));
         this.isLoading.set(false);
+        this.processingAction.set(null);
       }
     });
   }
 
   toggleActive(user: User) {
+    this.processingAction.set(`toggle-${user.id}`);
+    
     this.usersSvc.update(user.id, { active: !user.active }).subscribe({
       next: (updated) => {
         this.users.update(list => list.map(u => u.id === updated.id ? updated : u));
+        this.processingAction.set(null);
       },
-      error: (e) => this.error.set(this.getErrorMessage(e))
+      error: (e) => {
+        this.error.set(this.getErrorMessage(e));
+        this.processingAction.set(null);
+      }
     });
   }
 
   restore(user: User) {
     if (!confirm('Are you sure you want to restore this user?')) return;
     this.isLoading.set(true);
+    this.processingAction.set(`restore-${user.id}`);
+
     this.usersSvc.restore(user.id).subscribe({
       next: (restored) => {
         this.users.update(list => list.map(u => u.id === restored.id ? restored : u));
         this.isLoading.set(false);
+        this.processingAction.set(null);
       },
       error: (e) => {
         this.error.set(this.getErrorMessage(e));
         this.isLoading.set(false);
+        this.processingAction.set(null);
       }
     });
   }
 
   remove(id: string) {
     if (!confirm('Are you sure you want to delete this user?')) return;
+    this.processingAction.set(`delete-${id}`);
+
     this.usersSvc.delete(id).subscribe({
-      next: () => this.users.update(list => list.filter(u => u.id !== id)),
-      error: (e) => this.error.set(this.getErrorMessage(e))
+      next: () => {
+        this.users.update(list => list.filter(u => u.id !== id));
+        this.processingAction.set(null);
+      },
+      error: (e) => {
+        this.error.set(this.getErrorMessage(e));
+        this.processingAction.set(null);
+      }
     });
   }
 
   formatDate(d: string) {
-    return new Date(d).toLocaleDateString();
+    const date = new Date(d);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   }
 
   clearError() {
     this.error.set(null);
+  }
+
+  isProcessing(userId: string, action: string): boolean {
+    return this.processingAction() === `${action}-${userId}`;
   }
 
   private getErrorMessage(error: any): string {

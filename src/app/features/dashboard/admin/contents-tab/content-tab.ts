@@ -1,4 +1,5 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+// src/app/features/dashboard/admin/contents-tab/content-tab.ts
+import { Component, inject, signal, OnInit, WritableSignal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -35,6 +36,7 @@ export class ContentTabComponent implements OnInit {
   total = signal<number>(0);
   isLoading = signal<boolean>(false);
   editOpen = signal<boolean>(false);
+  processingAction = signal<string | null>(null);
 
   // Query and form signals
   query = signal<QueryParams>({
@@ -51,6 +53,9 @@ export class ContentTabComponent implements OnInit {
     limit: 50,
     offset: 0
   });
+
+  // Computed property for current page
+  currentPage = computed(() => Math.floor(this.query().offset / this.query().limit) + 1);
 
   // We keep the form using seconds to match API
   newContent = signal<ContentCreate>({
@@ -88,6 +93,7 @@ export class ContentTabComponent implements OnInit {
   async create() {
     try {
       this.error.set(null);
+      this.processingAction.set('create');
       await firstValueFrom(this.contentsService.createContent(this.newContent()));
 
       // Reset form
@@ -106,6 +112,8 @@ export class ContentTabComponent implements OnInit {
       this.loadContents();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
@@ -126,6 +134,8 @@ export class ContentTabComponent implements OnInit {
       const editingContent = this.editing();
       if (!editingContent?.id) return;
 
+      this.processingAction.set(`edit-${editingContent.id}`);
+
       const updateData: ContentUpdate = {
         title: editingContent.title ?? undefined,
         type: editingContent.type ?? undefined,
@@ -145,6 +155,8 @@ export class ContentTabComponent implements OnInit {
       this.loadContents();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
@@ -153,10 +165,13 @@ export class ContentTabComponent implements OnInit {
 
     try {
       this.error.set(null);
+      this.processingAction.set(`delete-${contentId}`);
       await firstValueFrom(this.contentsService.deleteContent(contentId));
       this.loadContents();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
@@ -211,6 +226,10 @@ export class ContentTabComponent implements OnInit {
     if (!val) return '-';
     const mins = Math.round(val / 60);
     return `${mins} min`;
+  }
+
+  isProcessing(contentId: string, action: string): boolean {
+    return this.processingAction() === `${action}-${contentId}`;
   }
 
   private getErrorMessage(error: any): string {

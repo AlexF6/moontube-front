@@ -1,202 +1,561 @@
-<!-- Error -->
-@if (error()) {
-  <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
-    <span class="text-red-200">{{ error() }}</span>
-    <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-xl font-bold">&times;</button>
-  </div>
-}
-
-<!-- Header + Add -->
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-  <h2 class="text-2xl font-semibold text-orange-500">Content Management ({{ total() }})</h2>
-  <button (click)="create()" class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors">Add Content</button>
-</div>
-
-<!-- Filters -->
-<div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
-    <input [(ngModel)]="query().q" placeholder="Search title/description"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-
-    <select [(ngModel)]="query().type_q"
-            class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All types</option>
-      <option [ngValue]="'MOVIE'">MOVIE</option>
-      <option [ngValue]="'SERIES'">SERIES</option>
-      <option [ngValue]="'VIDEOS'">VIDEOS</option>
-    </select>
-
-    <input [(ngModel)]="query().genre_q" placeholder="Genre contains…"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-
-    <input [(ngModel)]="query().age_rating" placeholder="Age rating (e.g. PG-13)"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-
-    <input [(ngModel)]="query().year_from" type="number" placeholder="Year from"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-
-    <input [(ngModel)]="query().year_to" type="number" placeholder="Year to"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-  </div>
-
-  <div class="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
-    <input [(ngModel)]="query().min_duration_seconds" type="number" placeholder="Min duration (sec)"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-
-    <input [(ngModel)]="query().max_duration_seconds" type="number" placeholder="Max duration (sec)"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-
-    <select [(ngModel)]="query().order_by"
-            class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
-      <option [ngValue]="'created_at'">Order by created</option>
-      <option [ngValue]="'title'">Order by title</option>
-      <option [ngValue]="'release_year'">Order by year</option>
-    </select>
-
-    <select [(ngModel)]="query().order_dir"
-            class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
-      <option [ngValue]="'desc'">Desc</option>
-      <option [ngValue]="'asc'">Asc</option>
-    </select>
-
-    <input [(ngModel)]="query().limit" type="number" min="1" placeholder="Limit"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-
-    <div class="flex gap-2">
-      <button (click)="applyFilters()" class="px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition">Apply</button>
-      <button (click)="resetFilters()" class="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition">Reset</button>
+<!-- src/app/features/dashboard/admin/contents-tab/content-tab.html -->
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-gray-700/50">
+    <div>
+      <h2 class="text-2xl font-bold text-white mb-1">Content Management</h2>
+      <p class="text-gray-400 text-sm">Manage movies, series, and video content</p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="px-4 py-2 bg-gray-800/50 rounded-xl border border-gray-700/50">
+        <div class="text-white font-semibold text-lg text-center">{{ total() }}</div>
+        <div class="text-gray-400 text-xs">Total Items</div>
+      </div>
     </div>
   </div>
 
-  <!-- Simple pagination -->
-  <div class="mt-3 flex items-center justify-end gap-2">
-    <button
-      (click)="prevPage()"
-      [disabled]="query().offset <= 0"
-      class="px-3 py-1 border border-gray-600 text-gray-300 rounded disabled:opacity-40">
-      Prev
-    </button>
+  <!-- Error -->
+  @if (error()) {
+    <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl backdrop-blur-sm">
+      <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <span class="text-sm flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-lg font-bold transition-colors">&times;</button>
+    </div>
+  }
 
-    <span class="text-gray-400 text-sm">
-      Offset: {{ query().offset }} · Limit: {{ query().limit }}
-    </span>
+  <!-- Filters -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+      </svg>
+      Filters & Search
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Search Content</label>
+        <input 
+          [(ngModel)]="query().q" 
+          placeholder="Search titles, descriptions..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
 
-    <button
-      (click)="nextPage()"
-      [disabled]="items().length < query().limit"
-      class="px-3 py-1 border border-gray-600 text-gray-300 rounded">
-      Next
-    </button>
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Content Type</label>
+        <select 
+          [(ngModel)]="query().type_q"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Content Types</option>
+          <option [ngValue]="'MOVIE'">Movies</option>
+          <option [ngValue]="'SERIES'">Series</option>
+          <option [ngValue]="'VIDEOS'">Videos</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Genre</label>
+        <input 
+          [(ngModel)]="query().genre_q" 
+          placeholder="Filter by genre..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Age Rating</label>
+        <input 
+          [(ngModel)]="query().age_rating" 
+          placeholder="PG-13, R, etc..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Year Range</label>
+        <div class="flex gap-2">
+          <input 
+            [(ngModel)]="query().year_from" 
+            type="number" 
+            placeholder="From"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+          <input 
+            [(ngModel)]="query().year_to" 
+            type="number" 
+            placeholder="To"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Duration (seconds)</label>
+        <div class="flex gap-2">
+          <input 
+            [(ngModel)]="query().min_duration_seconds" 
+            type="number" 
+            placeholder="Min"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+          <input 
+            [(ngModel)]="query().max_duration_seconds" 
+            type="number" 
+            placeholder="Max"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Sort By</label>
+        <select 
+          [(ngModel)]="query().order_by"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="'created_at'">Date Created</option>
+          <option [ngValue]="'title'">Title</option>
+          <option [ngValue]="'release_year'">Release Year</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Sort Direction</label>
+        <select 
+          [(ngModel)]="query().order_dir"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="'desc'">Descending</option>
+          <option [ngValue]="'asc'">Ascending</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Items Per Page</label>
+        <input 
+          [(ngModel)]="query().limit" 
+          type="number" 
+          min="1" 
+          placeholder="Limit"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="flex items-end gap-3">
+        <button 
+          (click)="applyFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+          </svg>
+          Apply Filters
+        </button>
+        <button 
+          (click)="resetFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between pt-4 border-t border-gray-700/50">
+      <div class="text-gray-400 text-sm">
+        Showing {{ items().length }} of {{ total() }} items
+      </div>
+      <div class="flex items-center gap-3">
+        <button
+          (click)="prevPage()"
+          [disabled]="query().offset <= 0 || isLoading()"
+          class="flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Previous
+        </button>
+        <span class="text-gray-300 text-sm font-medium min-w-20 text-center">
+          Page {{ currentPage() }}
+        </span>
+        <button
+          (click)="nextPage()"
+          [disabled]="items().length < query().limit || isLoading()"
+          class="flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          Next
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
 
-<!-- Create form -->
-<div class="rounded-lg p-6 bg-gray-800/30 border border-gray-700 mb-6">
-  <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Content</h3>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-    <input [(ngModel)]="newContent().title" placeholder="Title"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+  <!-- Create New Content -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create New Content
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Title</label>
+        <input 
+          [(ngModel)]="newContent().title" 
+          placeholder="Enter content title"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
 
-    <select [(ngModel)]="newContent().type"
-            class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
-      <option [ngValue]="'MOVIE'">MOVIE</option>
-      <option [ngValue]="'SERIES'">SERIES</option>
-      <option [ngValue]="'VIDEOS'">VIDEOS</option>
-    </select>
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Content Type</label>
+        <select 
+          [(ngModel)]="newContent().type"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="'MOVIE'">Movie</option>
+          <option [ngValue]="'SERIES'">Series</option>
+          <option [ngValue]="'VIDEOS'">Video</option>
+        </select>
+      </div>
 
-    <input [(ngModel)]="newContent().release_year" type="number" placeholder="Year"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Release Year</label>
+        <input 
+          [(ngModel)]="newContent().release_year" 
+          type="number" 
+          placeholder="2024"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
 
-    <input [(ngModel)]="newContent().duration_seconds" type="number" placeholder="Duration (sec)"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Duration (seconds)</label>
+        <input 
+          [(ngModel)]="newContent().duration_seconds" 
+          type="number" 
+          placeholder="3600"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
 
-    <input [(ngModel)]="newContent().age_rating" placeholder="Age rating (e.g. PG-13)"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Age Rating</label>
+        <input 
+          [(ngModel)]="newContent().age_rating" 
+          placeholder="PG-13, R, etc..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
 
-    <input [(ngModel)]="newContent().genres" placeholder="Genres (comma separated)"
-           class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"/>
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Genres</label>
+        <input 
+          [(ngModel)]="newContent().genres" 
+          placeholder="Action, Drama, Comedy..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400"/>
+      </div>
 
-    <input [(ngModel)]="newContent().video_url" placeholder="Video URL"
-           class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+      <div class="space-y-2 md:col-span-2">
+        <label class="block text-gray-300 text-sm font-medium">Video URL</label>
+        <input 
+          [(ngModel)]="newContent().video_url" 
+          placeholder="https://example.com/video.mp4"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
 
-    <input [(ngModel)]="newContent().thumbnail" placeholder="Thumbnail URL"
-           class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Thumbnail URL</label>
+        <input 
+          [(ngModel)]="newContent().thumbnail" 
+          placeholder="https://example.com/thumb.jpg"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
 
-    <textarea [(ngModel)]="newContent().description" rows="2" placeholder="Description"
-              class="md:col-span-2 lg:col-span-4 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"></textarea>
-  </div>
-</div>
-
-<!-- Table -->
-<div class="bg-gray-800/30 border border-gray-700 rounded-lg overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full">
-      <thead class="bg-gray-900/40">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Thumb</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Title</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Year</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Duration</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rating</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Genres</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        @for (c of items(); track c.id) {
-          <tr class="hover:bg-gray-700/40 transition">
-            <td class="px-6 py-3">
-              @if (c.thumbnail) {
-                <img [src]="c.thumbnail" alt="thumb" class="h-10 w-16 object-cover rounded border border-gray-700" />
-              } @else {
-                <div class="h-10 w-16 bg-gray-700/50 rounded border border-gray-700 flex items-center justify-center text-xs text-gray-400">No img</div>
-              }
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ c.title }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ c.type }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ c.release_year }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDurationSeconds(c.duration_seconds) }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ c.age_rating }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ formatGenres(c.genres) }}</td>
-            <td class="px-6 py-4 text-sm flex items-center gap-2">
-              <button (click)="openEdit(c.id)" class="px-3 py-1 border border-yellow-600 text-yellow-500 rounded-lg hover:bg-yellow-600/10 text-xs transition">Edit</button>
-              <button (click)="remove(c.id)" class="px-3 py-1 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 text-xs transition">Delete</button>
-            </td>
-          </tr>
+      <div class="space-y-2 md:col-span-3">
+        <label class="block text-gray-300 text-sm font-medium">Description</label>
+        <textarea 
+          [(ngModel)]="newContent().description" 
+          rows="3" 
+          placeholder="Enter content description..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 resize-none"></textarea>
+      </div>
+    </div>
+    
+    <div class="flex justify-end">
+      <button 
+        (click)="create()" 
+        [disabled]="isLoading() || !newContent().title || !newContent().video_url"
+        class="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        @if (processingAction() === 'create') {
+          <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+          <span>Creating...</span>
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Create Content</span>
         }
-      </tbody>
-    </table>
+      </button>
+    </div>
   </div>
-  @if (isLoading()) {
-    <div class="p-4 text-center text-gray-400">Loading…</div>
+
+  <!-- Content List -->
+  @if (isLoading() && items().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent"></div>
+      <p class="text-gray-400 text-sm">Loading content...</p>
+    </div>
+  }
+
+  @if (!isLoading() && items().length === 0) {
+    <div class="text-center py-16 space-y-4">
+      <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <div class="space-y-2">
+        <div class="text-gray-300 text-xl font-medium">No content found</div>
+        <p class="text-gray-500 max-w-md mx-auto text-sm">
+          No content matches your current filter criteria. Try adjusting your filters or create new content.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (items().length > 0) {
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+        </svg>
+        Content Library ({{ total() }} items)
+      </h3>
+
+      <div class="grid gap-4">
+        @for (content of items(); track content.id) {
+          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
+            <div class="flex flex-col lg:flex-row lg:items-start gap-4">
+              <!-- Thumbnail -->
+              <div class="flex-shrink-0">
+                @if (content.thumbnail) {
+                  <img 
+                    [src]="content.thumbnail" 
+                    alt="Thumbnail" 
+                    class="h-32 w-56 object-cover rounded-xl border border-gray-600 shadow-lg group-hover:scale-105 transition-transform duration-200" />
+                } @else {
+                  <div class="h-32 w-24 bg-gray-700/50 rounded-xl border border-gray-600 flex items-center justify-center text-xs text-gray-400 shadow-lg">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                }
+              </div>
+
+              <!-- Content Details -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+                  <div>
+                    <h4 class="text-lg font-semibold text-white mb-1">{{ content.title }}</h4>
+                    <div class="flex items-center gap-3 text-gray-400 text-sm">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+                        </svg>
+                        {{ content.type }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        {{ content.release_year }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ formatDurationSeconds(content.duration_seconds) }}
+                      </span>
+                      @if (content.age_rating) {
+                        <span class="px-2 py-1 bg-gray-600/50 text-gray-300 text-xs rounded-full border border-gray-500">
+                          {{ content.age_rating }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                  
+                  <!-- Actions -->
+                  <div class="flex gap-2">
+                    <button
+                      (click)="openEdit(content.id)"
+                      [disabled]="isProcessing(content.id, 'edit')"
+                      class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+                      @if (isProcessing(content.id, 'edit')) {
+                        <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                      } @else {
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      }
+                      <span>Edit</span>
+                    </button>
+                    
+                    <button
+                      (click)="remove(content.id)"
+                      [disabled]="isProcessing(content.id, 'delete')"
+                      class="flex items-center gap-2 px-3 py-2 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-600/50 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+                      @if (isProcessing(content.id, 'delete')) {
+                        <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                      } @else {
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      }
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Genres -->
+                @if (content.genres && content.genres.trim()) {
+                  <div class="flex flex-wrap gap-1">
+                    @for (genre of content.genres.split(','); track genre; let i = $index) {
+                      <span class="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs rounded-full border border-orange-500/30">
+                        {{ genre.trim() }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Edit Modal -->
+  @if (editOpen() && editing(); as content) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700/50 w-full max-w-2xl shadow-2xl">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Edit Content</h3>
+        </div>
+        
+        <form (ngSubmit)="saveEdits()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Title</label>
+              <input 
+                [(ngModel)]="content.title" 
+                name="title"
+                placeholder="Content title"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Content Type</label>
+              <select 
+                [(ngModel)]="content.type" 
+                name="type"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+                <option [ngValue]="'MOVIE'">Movie</option>
+                <option [ngValue]="'SERIES'">Series</option>
+                <option [ngValue]="'VIDEOS'">Video</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Release Year</label>
+              <input 
+                [(ngModel)]="content.release_year" 
+                name="release_year"
+                type="number" 
+                placeholder="2024"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Duration (seconds)</label>
+              <input 
+                [(ngModel)]="content.duration_seconds" 
+                name="duration_seconds"
+                type="number" 
+                placeholder="3600"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Age Rating</label>
+              <input 
+                [(ngModel)]="content.age_rating" 
+                name="age_rating"
+                placeholder="PG-13, R, etc..."
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Genres</label>
+              <input 
+                [(ngModel)]="content.genres" 
+                name="genres"
+                placeholder="Action, Drama, Comedy..."
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200"/>
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="block text-gray-300 text-sm font-medium">Video URL</label>
+              <input 
+                [(ngModel)]="content.video_url" 
+                name="video_url"
+                placeholder="https://example.com/video.mp4"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="block text-gray-300 text-sm font-medium">Thumbnail URL</label>
+              <input 
+                [(ngModel)]="content.thumbnail" 
+                name="thumbnail"
+                placeholder="https://example.com/thumb.jpg"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="block text-gray-300 text-sm font-medium">Description</label>
+              <textarea 
+                [(ngModel)]="content.description" 
+                name="description"
+                rows="3" 
+                placeholder="Content description..."
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 resize-none"></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+            <button
+              type="button"
+              (click)="editOpen.set(false)"
+              class="px-4 py-2.5 bg-gray-600 hover:bg-gray-500 text-white font-medium rounded-xl transition-all duration-200">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="isLoading()"
+              class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+              @if (processingAction() === 'edit-' + content.id) {
+                <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                <span>Saving...</span>
+              } @else {
+                <span>Save Changes</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   }
 </div>
-
-<!-- Edit Modal -->
-@if (editOpen() && editing(); as u) {
-  <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[4px] z-50">
-    <div class="bg-gray-800/80 border border-gray-700 rounded-xl w-full max-w-xl p-6 relative">
-      <button (click)="editOpen.set(false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl">✕</button>
-      <h3 class="text-xl font-medium text-orange-500 mb-4">Edit Content</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <input [(ngModel)]="u.title" placeholder="Title" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <select [(ngModel)]="u.type" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
-          <option [ngValue]="'MOVIE'">MOVIE</option>
-          <option [ngValue]="'SERIES'">SERIES</option>
-          <option [ngValue]="'VIDEOS'">VIDEOS</option>
-        </select>
-        <input [(ngModel)]="u.release_year" type="number" placeholder="Year" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="u.duration_seconds" type="number" placeholder="Duration (sec)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="u.age_rating" placeholder="Age rating" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="u.genres" placeholder="Genres (comma separated)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"/>
-        <input [(ngModel)]="u.video_url" placeholder="Video URL" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="u.thumbnail" placeholder="Thumbnail URL" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <textarea [(ngModel)]="u.description" rows="3" placeholder="Description" class="md:col-span-2 px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300"></textarea>
-      </div>
-      <div class="mt-6 flex justify-end gap-2">
-        <button (click)="editOpen.set(false)" class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">Cancel</button>
-        <button (click)="saveEdits()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">Save</button>
-      </div>
-    </div>
-  </div>
-}
