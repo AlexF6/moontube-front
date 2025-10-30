@@ -30,18 +30,13 @@ export class WatchlistComponent implements OnInit {
   error = signal<string | null>(null);
   watchlists: WritableSignal<WatchlistList[]> = signal<WatchlistList[]>([]);
 
-  showCreateModal = signal<boolean>(false);
   showEditModal = signal<boolean>(false);
+  processingAction = signal<string | null>(null);
 
   // User state
   isAdmin = signal<boolean>(false);
 
   // Forms (signals with immutable updates)
-  newWatchlist: WritableSignal<WatchlistCreate> = signal<WatchlistCreate>({
-    profile_id: '',
-    content_id: '',
-  });
-
   editWatchlist: WritableSignal<Watchlist & { id: string }> = signal<any>({
     id: '',
     created_by: '',
@@ -53,7 +48,7 @@ export class WatchlistComponent implements OnInit {
     added_at: '',
   });
 
-  // Filter state
+  // Filter state - simplified for user view
   filters: WritableSignal<Filters> = signal<Filters>({
     profile_id: '',
     content_id: '',
@@ -101,57 +96,6 @@ export class WatchlistComponent implements OnInit {
       error: (err) => {
         const msg = err?.error?.detail || 'Failed to load watchlist items.';
         this.error.set(msg);
-        this.loading.set(false);
-      },
-    });
-  }
-
-  // ------- Create -------
-  openCreateModal(): void {
-    this.newWatchlist.set({
-      profile_id: '',
-      content_id: '',
-    });
-    this.showCreateModal.set(true);
-  }
-
-  closeCreateModal(): void {
-    this.showCreateModal.set(false);
-  }
-
-  setNew<K extends keyof WatchlistCreate>(key: K, value: WatchlistCreate[K]): void {
-    this.newWatchlist.update((prev) => ({ ...prev, [key]: value }));
-  }
-
-  createWatchlist(): void {
-    const payload = this.newWatchlist();
-    
-    if (!payload.profile_id || !payload.content_id) {
-      this.error.set('Profile ID and Content ID are required.');
-      return;
-    }
-
-    this.loading.set(true);
-
-    const observable = this.isAdmin()
-      ? this.watchlistSvc.createWatchlist(payload)
-      : this.watchlistSvc.createMyWatchlist(payload);
-
-    observable.subscribe({
-      next: () => { 
-        this.showCreateModal.set(false); 
-        this.loadWatchlists(); 
-      },
-      error: (err) => { 
-        if (err.status === 409) {
-          this.error.set('This watchlist item already exists.');
-        } else if (err.status === 404) {
-          this.error.set('Profile or Content not found.');
-        } else if (err.status === 403) {
-          this.error.set('You do not have permission to add to this profile.');
-        } else {
-          this.error.set(err?.error?.detail || 'Failed to create watchlist item.');
-        }
         this.loading.set(false);
       },
     });
@@ -205,6 +149,7 @@ export class WatchlistComponent implements OnInit {
     };
 
     this.loading.set(true);
+    this.processingAction.set(`edit-${current.id}`);
 
     const observable = this.isAdmin()
       ? this.watchlistSvc.updateWatchlist(current.id, patch)
@@ -214,6 +159,7 @@ export class WatchlistComponent implements OnInit {
       next: () => { 
         this.showEditModal.set(false); 
         this.loadWatchlists(); 
+        this.processingAction.set(null);
       },
       error: (err) => { 
         if (err.status === 409) {
@@ -226,51 +172,36 @@ export class WatchlistComponent implements OnInit {
           this.error.set(err?.error?.detail || 'Failed to update watchlist item.');
         }
         this.loading.set(false);
+        this.processingAction.set(null);
       },
     });
   }
 
   // ------- Delete -------
   deleteWatchlist(w: WatchlistList): void {
-    if (!confirm(`Delete watchlist item?`)) return;
+    if (!confirm(`Are you sure you want to remove this item from your watchlist?`)) return;
 
     this.loading.set(true);
+    this.processingAction.set(`delete-${w.id}`);
 
     const observable = this.isAdmin()
       ? this.watchlistSvc.deleteWatchlist(w.id)
       : this.watchlistSvc.deleteMyWatchlist(w.id);
 
     observable.subscribe({
-      next: () => this.loadWatchlists(),
+      next: () => {
+        this.loadWatchlists();
+        this.processingAction.set(null);
+      },
       error: (err) => { 
         this.error.set(err?.error?.detail || 'Failed to delete watchlist item.'); 
         this.loading.set(false);
+        this.processingAction.set(null);
       },
     });
   }
 
-  // ------- Filters -------
-  setFilter<K extends keyof Filters>(key: K, value: Filters[K]): void {
-    this.filters.update((prev) => ({ ...prev, [key]: value }));
-  }
-
-  applyFilters(): void {
-    this.filters.update(prev => ({ ...prev, offset: 0 }));
-    this.loadWatchlists();
-  }
-
-  resetFilters(): void {
-    this.filters.set({
-      profile_id: '',
-      content_id: '',
-      added_from: '',
-      added_to: '',
-      limit: 50,
-      offset: 0
-    });
-    this.loadWatchlists();
-  }
-
+  // ------- Pagination -------
   nextPage(): void {
     this.filters.update(prev => ({ 
       ...prev, 
@@ -304,17 +235,25 @@ export class WatchlistComponent implements OnInit {
     if (!d) return '—';
     const date = new Date(d);
     if (isNaN(date.getTime())) return d;
-    return date.toLocaleString();
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   // Get appropriate header text based on user role
   getHeaderTitle(): string {
-    return this.isAdmin() ? 'Watchlist Management' : 'My Watchlist';
+    return 'My Watchlist';
   }
 
   getHeaderDescription(): string {
-    return this.isAdmin() 
-      ? 'Admin panel for managing user watchlists' 
-      : 'Manage your personal watchlist items';
+    return 'Manage your personal watchlist items';
+  }
+
+  isProcessing(itemId: string, action: string): boolean {
+    return this.processingAction() === `${action}-${itemId}`;
   }
 }

@@ -1,3 +1,4 @@
+// src/app/features/subscription/subscriptions-tab.ts
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,6 +18,7 @@ export class SubscriptionsTabComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   selectedStatus = signal<SubscriptionStatus | 'ALL'>('ALL');
+  processingAction = signal<string | null>(null);
 
   readonly statusOptions = [
     { value: 'ALL', label: 'All Subscriptions' },
@@ -59,45 +61,57 @@ export class SubscriptionsTabComponent implements OnInit {
   }
 
   async cancelSubscription(subscription: SubscriptionListItem): Promise<void> {
-    if (!confirm('Are you sure you want to cancel this subscription?')) return;
+    if (!confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) return;
 
+    this.processingAction.set(`cancel-${subscription.id}`);
+    
     try {
       await this.subscriptionsService.cancelMy(subscription.id).toPromise();
       this.loadSubscriptions(); // Refresh the list
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to cancel subscription');
       console.error('Error canceling subscription:', err);
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
   async reactivateSubscription(subscription: SubscriptionListItem): Promise<void> {
     if (!confirm('Are you sure you want to reactivate this subscription?')) return;
 
+    this.processingAction.set(`reactivate-${subscription.id}`);
+    
     try {
       await this.subscriptionsService.reactivateMy(subscription.id).toPromise();
       this.loadSubscriptions(); // Refresh the list
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to reactivate subscription');
       console.error('Error reactivating subscription:', err);
+    } finally {
+      this.processingAction.set(null);
     }
   }
 
   formatDate(dateString: string | null | undefined): string {
     if (!dateString) return '—';
     const d = new Date(dateString);
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   }
 
   getStatusBadgeClass(status: SubscriptionStatus): string {
     switch (status) {
       case SubscriptionStatus.ACTIVE:
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
       case SubscriptionStatus.CANCELED:
-        return 'bg-red-100 text-red-800';
+        return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
       case SubscriptionStatus.PAST_DUE:
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
     }
   }
 
@@ -107,5 +121,9 @@ export class SubscriptionsTabComponent implements OnInit {
 
   isCanceled(s: SubscriptionListItem): boolean {
     return s.status === SubscriptionStatus.CANCELED;
+  }
+
+  isProcessing(subscriptionId: string, action: string): boolean {
+    return this.processingAction() === `${action}-${subscriptionId}`;
   }
 }
