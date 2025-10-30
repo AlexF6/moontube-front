@@ -1,3 +1,4 @@
+// src/app/core/auth.service.ts
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../enviroments/enviroment';

@@ -1,0 +1,16 @@
+<div class="px-4 py-6 space-y-6">
+  <!-- When query is empty → show default grid -->
+  @if (!q()) {
+    <section class="space-y-4">
+      <h2 class="text-xl font-semibold text-white/90">Latest videos</h2>
+      <app-video-grid [query]="defaultGridQuery"></app-video-grid>
+    </section>
+
+  <!-- When there is a query → show results grid with the same VideoCard style -->
+  } @else {
+    <section class="space-y-4">
+      <h2 class="text-xl font-semibold text-white/90">Results for “{{ q() }}”</h2>
+      <app-video-grid [query]="{ q: q(), limit: 24 }"></app-video-grid>
+    </section>
+  }
+</div>

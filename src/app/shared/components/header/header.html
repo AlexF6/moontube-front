@@ -1,63 +1,103 @@
+<!-- src/app/shared/components/header/header.html -->
+
 @if (ui.isSidebarOpen()) {
   <div 
-    class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
-    (click)="ui.close()">
+    class="fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity duration-200 ease-in-out" 
+    (click)="ui.close()"
+    [class]="ui.isSidebarOpen() ? 'opacity-100' : 'opacity-0 pointer-events-none'">
   </div>
 }
 
-<header class="sticky top-0 z-30 backdrop-blur-sm bg-black/80 flex-1 items-center px-4 py-2 my-4">
-  
-  <div class="flex items-center justify-between gap-4 px-2">
+<header class="sticky top-0 z-50 backdrop-blur-lg bg-black/90 border-b border-zinc-800/80 shadow-lg">
+  <div class="flex items-center justify-between gap-4 px-4 py-3">
     <button 
-      class="md:hidden p-2 rounded-lg border border-zinc-700 hover:bg-orange-500 transition"
-      (click)="ui.toggle()"
-      aria-label="Toggle sidebar">
-      <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M4 6h16M4 12h16M4 18h16" />
+      class="md:hidden p-2.5 rounded-xl border border-zinc-600 hover:border-orange-500 hover:bg-orange-500/10 transition-all duration-200 active:scale-95"
+      (click)="ui.toggle()" 
+      aria-label="Toggle sidebar"
+      [attr.aria-expanded]="ui.isSidebarOpen()">
+      <svg class="w-6 h-6 text-zinc-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
       </svg>
-  </button>
-    <div class="relative flex-1 max-w-3xl mr-4">
+    </button>
+
+    <div class="relative flex-1 max-w-2xl mx-4">
       <input
         type="text"
-        placeholder="Search videos here"
-        class="text-zinc-400 header-placeholder w-full bg-gray-300/10 border border-zinc-700 rounded-full py-1.5 pl-4 pr-12
-        text-white focus:outline-none focus:ring-2 focus:[#aaaaaa]/30"
+        placeholder="Search videos..."
+        class="w-full bg-zinc-900/80 border border-zinc-600 rounded-2xl py-2.5 pl-5 pr-12
+               text-zinc-100 placeholder-zinc-400 
+               focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500
+               transition-all duration-200
+               hover:border-zinc-500"
+        [value]="query"
+        (input)="onInput($event)"
+        (keyup.enter)="onSearch()"
+        aria-label="Search videos"
       />
-      <svg class="w-6 text-zinc-400 absolute right-4 top-1/2 transform -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M792-120.67 532.67-380q-30 25.33-69.64 39.67Q423.39-326 378.67-326q-108.44 0-183.56-75.17Q120-476.33 120-583.33t75.17-182.17q75.16-75.17 182.5-75.17 107.33 0 182.16 75.17 74.84 75.17 74.84 182.27 0 43.23-14 82.9-14 39.66-40.67 73l260 258.66-48 48Zm-414-272q79.17 0 134.58-55.83Q568-504.33 568-583.33q0-79-55.42-134.84Q457.17-774 378-774q-79.72 0-135.53 55.83-55.8 55.84-55.8 134.84t55.8 134.83q55.81 55.83 135.53 55.83Z"/></svg>
+      
+      @if (query) {
+        <button
+          type="button"
+          class="absolute right-10 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors"
+          (click)="clearSearch()"
+          aria-label="Clear search">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      }
+      
+      <button
+        type="button"
+        class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-zinc-400 hover:text-orange-500 transition-colors"
+        (click)="onSearch()"
+        aria-label="Search">
+        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+          <path d="M792-120.67 532.67-380q-30 25.33-69.64 39.67Q423.39-326 378.67-326q-108.44 0-183.56-75.17Q120-476.33 120-583.33t75.17-182.17q75.16-75.17 182.5-75.17 107.33 0 182.16 75.17 74.84 75.17 74.84 182.27 0 43.23-14 82.9-14 39.66-40.67 73l260 258.66-48 48Zm-414-272q79.17 0 134.58-55.83Q568-504.33 568-583.33q0-79-55.42-134.84Q457.17-774 378-774q-79.72 0-135.53 55.83-55.8 55.84-55.8 134.84t55.8 134.83q55.81 55.83 135.53 55.83Z"/>
+        </svg>
+      </button>
     </div>
 
-    <div class="flex items-center space-x-4 text-md">
-      <div class="relative flex items-center">
-        <button 
-          (click)="authUi.openLogin()"
-          class="py-2 hover:text-white/90 px-3 font-medium rounded-lg border border-orange-500 transition-colors text-orange-500 flex items-center space-x-2">
-            <svg 
-            class="w-6 h-6"                 
-            xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 -960 960 960" 
-            fill="currentColor"
-          >
-              <path d="M222-255q63-44 125-67.5T480-346q71 0 133.5 23.5T739-255q44-54 62.5-109T820-480q0-145-97.5-242.5T480-820q-145 0-242.5 97.5T140-480q0 61 19 116t63 109Zm257.81-195q-57.81 0-97.31-39.69-39.5-39.68-39.5-97.5 0-57.81 39.69-97.31 39.68-39.5 97.5-39.5 57.81 0 97.31 39.69 39.5 39.68 39.5 97.5 0 57.81-39.69 97.31-39.68 39.5-97.5 39.5Zm.66 370Q398-80 325-111.5t-127.5-86q-54.5-54.5-86-127.27Q80-397.53 80-480.27 80-563 111.5-635.5q31.5-72.5 86-127t127.27-86q72.76-31.5 155.5-31.5 82.73 0 155.23 31.5 72.5 31.5 127 86t86 127.03q31.5 72.53 31.5 155T848.5-325q-31.5 73-86 127.5t-127.03 86Q562.94-80 480.47-80Zm-.47-60q55 0 107.5-16T691-212q-51-36-104-55t-107-19q-54 0-107 19t-104 55q51 40 103.5 56T480-140Zm0-370q34 0 55.5-21.5T557-587q0-34-21.5-55.5T480-664q-34 0-55.5 21.5T403-587q0 34 21.5 55.5T480-510Zm0-77Zm0 374Z"/>
-          </svg>
-          <span>Login</span>
-        </button>
-      </div>
-
-      <div class="relative flex items-center">
-        <button (click)="authUi.openRegister()" class="py-2 px-3 hover:text-white/90 font-medium rounded-lg border border-orange-500 transition-colors text-orange-500 flex items-center space-x-2">
-          <svg xmlns="http://www.w3.org/2000/svg"
-              class="w-6 h-6"                 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 -960 960 960" 
-              fill="currentColor">
-              <path d="M730-400v-130H600v-60h130v-130h60v130h130v60H790v130h-60Zm-370-81q-66 0-108-42t-42-108q0-66 42-108t108-42q66 0 108 42t42 108q0 66-42 108t-108 42ZM40-160v-94q0-35 17.5-63.5T108-360q75-33 133.34-46.5t118.5-13.5Q420-420 478-406.5T611-360q33 15 51 43t18 63v94H40Zm60-60h520v-34q0-16-9-30.5T587-306q-71-33-120-43.5T360-360q-58 0-107.5 10.5T132-306q-15 7-23.5 21.5T100-254v34Zm260-321q39 0 64.5-25.5T450-631q0-39-25.5-64.5T360-721q-39 0-64.5 25.5T270-631q0 39 25.5 64.5T360-541Zm0-90Zm0 411Z"/>
-            </svg>
-            <span>
-              Signup
+    <div class="flex items-center space-x-4 text-md min-w-0">
+      <!-- Rest of the user auth section remains the same -->
+      @if (auth.isLoading()) {
+        <div class="flex items-center gap-2 text-zinc-400">
+          <div class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-sm">Checking session...</span>
+        </div>
+      } @else {
+        @if (auth.user(); as u) {
+          <div class="flex items-center gap-3">
+            <span class="hidden sm:block text-zinc-200 font-medium truncate max-w-32 lg:max-w-48">
+              Hi, {{ u.name || u.email }}
             </span>
-        </button>
-      </div>
+            <button
+              (click)="logout()"
+              class="py-2.5 px-4 font-medium rounded-xl border border-orange-500 text-orange-500 
+                     hover:bg-orange-500 hover:text-white transition-all duration-200 
+                     active:scale-95 focus:ring-2 focus:ring-orange-500/50">
+              Logout
+            </button>
+          </div>
+        } @else {
+          <div class="flex items-center gap-2">
+            <button
+              (click)="authUi.openLogin()"
+              class="py-2.5 px-4 font-medium rounded-xl border border-orange-500 text-orange-500 
+                     hover:bg-orange-500 hover:text-white transition-all duration-200 
+                     active:scale-95 focus:ring-2 focus:ring-orange-500/50">
+              Login
+            </button>
+            <button
+              (click)="authUi.openRegister()"
+              class="py-2.5 px-4 font-medium rounded-xl bg-orange-500 text-white 
+                     hover:bg-orange-600 transition-all duration-200 
+                     active:scale-95 focus:ring-2 focus:ring-orange-500/50">
+              Signup
+            </button>
+          </div>
+        }
+      }
     </div>
   </div>
 </header>

@@ -7,10 +7,12 @@ import { AdminGuard } from './core/guards/admin.guard';
 import { AuthGuard } from './core/guards/auth.guard';
 import { WatchlistComponent } from './features/watchlist/watchlist';
 import { SubscriptionsTabComponent } from './features/subscription/subscriptions-tab';
+import { SearchPageComponent } from './features/search/search-page';
 
 export const routes: Routes = [
   { path: '', component: Home },
   { path: 'watch/:id', component: Watch },
+  { path: 'search', component: SearchPageComponent },
   { path: 'dashboard/admin', component: AdminShell, canActivate: [AuthGuard, AdminGuard] },
   { path: 'dashboard/user', component: UserShell, canActivate: [AuthGuard] },
   { path: 'playlists', component: WatchlistComponent, canActivate: [AuthGuard] },
