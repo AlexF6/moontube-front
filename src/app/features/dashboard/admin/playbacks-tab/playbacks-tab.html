@@ -1,193 +1,534 @@
 <!-- src/app/features/dashboard/admin/playbacks-tab/playbacks-tab.html -->
-<!-- Error -->
-@if (error()) {
-  <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
-    <span class="text-red-200">{{ error() }}</span>
-    <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-xl font-bold">&times;</button>
-  </div>
-}
-
-<!-- Header + Add -->
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-  <h2 class="text-2xl font-semibold text-orange-500">Playbacks Management ({{ total() }})</h2>
-  <button (click)="create()" class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors">Add Playback</button>
-</div>
-
-<!-- Filters -->
-<div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-    <select [(ngModel)]="query().profile_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All Profiles</option>
-      @for (profile of profiles(); track profile.id) {
-        <option [ngValue]="profile.id">{{ profile.name }}</option>
-      }
-    </select>
-    <select [(ngModel)]="query().content_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All Content</option>
-      @for (content of contentItems(); track content.id) {
-        <option [ngValue]="content.id">{{ content.title }}</option>
-      }
-    </select>
-    <select [(ngModel)]="query().episode_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All Episodes</option>
-      @for (episode of episodes(); track episode.id) {
-        <option [ngValue]="episode.id">{{ episode.title }} (S{{ episode.season_number }}E{{ episode.episode_number }})</option>
-      }
-    </select>
-    <select [(ngModel)]="query().completed" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All Status</option>
-      <option [ngValue]="true">Completed</option>
-      <option [ngValue]="false">Not Completed</option>
-    </select>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-    <input [(ngModel)]="query().device_q" placeholder="Device search" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().min_progress" type="number" min="0" placeholder="Min progress (sec)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().max_progress" type="number" min="0" placeholder="Max progress (sec)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-    <input [(ngModel)]="query().started_from" type="datetime-local" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().started_to" type="datetime-local" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().ended_from" type="datetime-local" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().ended_to" type="datetime-local" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-  </div>
-  <div class="mt-3 flex gap-2">
-    <button (click)="applyFilters()" class="px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition">Apply</button>
-    <button (click)="resetFilters()" class="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition">Reset</button>
-  </div>
-</div>
-
-<!-- Create form -->
-<div class="rounded-lg p-6 bg-gray-800/30 border border-gray-700 mb-6">
-  <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Playback</h3>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-    <select [(ngModel)]="newPlayback().profile_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">Select Profile</option>
-      @for (profile of profiles(); track profile.id) {
-        <option [ngValue]="profile.id">{{ profile.name }}</option>
-      }
-    </select>
-    <select [(ngModel)]="newPlayback().content_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">Select Content</option>
-      @for (content of contentItems(); track content.id) {
-        <option [ngValue]="content.id">{{ content.title }}</option>
-      }
-    </select>
-    <select [(ngModel)]="newPlayback().episode_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">Select Episode</option>
-      @for (episode of episodes(); track episode.id) {
-        <option [ngValue]="episode.id">{{ episode.title }} (S{{ episode.season_number }}E{{ episode.episode_number }})</option>
-      }
-    </select>
-    <input [(ngModel)]="newPlayback().device" placeholder="Device" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-    <input [(ngModel)]="newPlayback().progress_seconds" type="number" min="0" placeholder="Progress (seconds)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="newPlayback().started_at" type="datetime-local" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="newPlayback().ended_at" type="datetime-local" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <div class="flex items-center gap-2">
-      <input [(ngModel)]="newPlayback().completed" type="checkbox" id="completed" class="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500 focus:ring-2">
-      <label for="completed" class="text-sm text-gray-300">Completed</label>
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-gray-700/50">
+    <div>
+      <h2 class="text-2xl font-bold text-white mb-1">Playbacks Management</h2>
+      <p class="text-gray-400 text-sm">Track and manage user playback sessions</p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="px-4 py-2 bg-gray-800/50 rounded-xl border border-gray-700/50">
+        <div class="text-white font-semibold text-lg text-center">{{ total() }}</div>
+        <div class="text-gray-400 text-xs">Total Playbacks</div>
+      </div>
     </div>
   </div>
-  @if (isProfilesLoading() || isContentLoading() || isEpisodesLoading()) {
-    <div class="mt-2 text-sm text-gray-400">Loading data...</div>
-  }
-</div>
 
-<!-- Table -->
-<div class="bg-gray-800/30 border border-gray-700 rounded-lg overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full">
-      <thead class="bg-gray-900/40">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Profile</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Content</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Episode</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Progress</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Device</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Started</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        @for (item of items(); track item.id) {
-          <tr class="hover:bg-gray-700/40 transition">
-            <td class="px-6 py-4 text-sm text-gray-300">
-              {{ getProfileName(item.profile_id) }}
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">
-              {{ getContentTitle(item.content_id) }}
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">
-              {{ getEpisodeTitle(item.episode_id) }}
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">
-              {{ formatProgress(item.progress_seconds) }}
-            </td>
-            <td class="px-6 py-4 text-sm">
-              <span [class]="item.completed ? 'text-green-400' : 'text-yellow-400'">
-                {{ item.completed ? 'Completed' : 'In Progress' }}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ item.device || '-' }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">
-              {{ item.started_at | date:'medium' }}
-            </td>
-            <td class="px-6 py-4 text-sm flex items-center gap-2">
-              <button (click)="openEdit(item.id)" class="px-3 py-1 border border-yellow-600 text-yellow-500 rounded-lg hover:bg-yellow-600/10 text-xs transition">Edit</button>
-              <button (click)="remove(item.id)" class="px-3 py-1 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 text-xs transition">Delete</button>
-            </td>
-          </tr>
+  <!-- Error -->
+  @if (error()) {
+    <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl backdrop-blur-sm">
+      <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <span class="text-sm flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-lg font-bold transition-colors">&times;</button>
+    </div>
+  }
+
+  <!-- Filters -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+      </svg>
+      Filters & Search
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Profile</label>
+        <select 
+          [ngModel]="query().profile_id"
+          (ngModelChange)="onQueryChange('profile_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Profiles</option>
+          @for (profile of profiles(); track profile.id) {
+            <option [ngValue]="profile.id">{{ profile.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Content</label>
+        <select 
+          [ngModel]="query().content_id"
+          (ngModelChange)="onQueryChange('content_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Content</option>
+          @for (content of contentItems(); track content.id) {
+            <option [ngValue]="content.id">{{ content.title }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Episode</label>
+        <select 
+          [ngModel]="query().episode_id"
+          (ngModelChange)="onQueryChange('episode_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Episodes</option>
+          @for (episode of episodes(); track episode.id) {
+            <option [ngValue]="episode.id">{{ episode.title }} (S{{ episode.season_number }}E{{ episode.episode_number }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Status</label>
+        <select 
+          [ngModel]="query().completed"
+          (ngModelChange)="onQueryChange('completed', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Status</option>
+          <option [ngValue]="true">Completed</option>
+          <option [ngValue]="false">Not Completed</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Device Search</label>
+        <input 
+          [ngModel]="query().device_q"
+          (ngModelChange)="onQueryChange('device_q', $event)"
+          placeholder="Search devices..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Progress Range (seconds)</label>
+        <div class="flex gap-2">
+          <input 
+            [ngModel]="query().min_progress"
+            (ngModelChange)="onQueryChange('min_progress', $event)"
+            type="number" 
+            min="0" 
+            placeholder="Min"
+            class="flex-1 w-4 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+          <input 
+            [ngModel]="query().max_progress"
+            (ngModelChange)="onQueryChange('max_progress', $event)"
+            type="number" 
+            min="0" 
+            placeholder="Max"
+            class="flex-1 w-4 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Started From</label>
+        <input 
+          [ngModel]="query().started_from"
+          (ngModelChange)="onQueryChange('started_from', $event)"
+          type="datetime-local"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Started To</label>
+        <input 
+          [ngModel]="query().started_to"
+          (ngModelChange)="onQueryChange('started_to', $event)"
+          type="datetime-local"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-4 border-t border-gray-700/50">
+      <div class="text-gray-400 text-sm">
+        Showing {{ items().length }} of {{ total() }} playbacks
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          (click)="resetFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Reset
+        </button>
+        <button 
+          (click)="applyFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+          </svg>
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create New Playback -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create New Playback
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Profile *</label>
+        <select 
+          [ngModel]="newPlayback().profile_id"
+          (ngModelChange)="onNewPlaybackChange('profile_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="''">Select Profile</option>
+          @for (profile of profiles(); track profile.id) {
+            <option [ngValue]="profile.id">{{ profile.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Content *</label>
+        <select 
+          [ngModel]="newPlayback().content_id"
+          (ngModelChange)="onNewPlaybackChange('content_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="''">Select Content</option>
+          @for (content of contentItems(); track content.id) {
+            <option [ngValue]="content.id">{{ content.title }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Episode</label>
+        <select 
+          [ngModel]="newPlayback().episode_id"
+          (ngModelChange)="onNewPlaybackChange('episode_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="''">Select Episode</option>
+          @for (episode of episodes(); track episode.id) {
+            <option [ngValue]="episode.id">{{ episode.title }} (S{{ episode.season_number }}E{{ episode.episode_number }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Device</label>
+        <input 
+          [ngModel]="newPlayback().device"
+          (ngModelChange)="onNewPlaybackChange('device', $event)"
+          placeholder="Device name"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Progress (seconds) *</label>
+        <input 
+          [ngModel]="newPlayback().progress_seconds"
+          (ngModelChange)="onNewPlaybackChange('progress_seconds', $event)"
+          type="number" 
+          min="0" 
+          placeholder="Progress in seconds"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Started At</label>
+        <input 
+          [ngModel]="newPlayback().started_at"
+          (ngModelChange)="onNewPlaybackChange('started_at', $event)"
+          type="datetime-local"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Ended At</label>
+        <input 
+          [ngModel]="newPlayback().ended_at"
+          (ngModelChange)="onNewPlaybackChange('ended_at', $event)"
+          type="datetime-local"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Completed</label>
+        <div class="flex items-center gap-3 pt-2">
+          <input 
+            [ngModel]="newPlayback().completed"
+            (ngModelChange)="onNewPlaybackChange('completed', $event)"
+            type="checkbox" 
+            id="completed"
+            class="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500 focus:ring-2">
+          <label for="completed" class="text-gray-300 text-sm">Mark as completed</label>
+        </div>
+      </div>
+    </div>
+
+    @if (isProfilesLoading() || isContentLoading() || isEpisodesLoading()) {
+      <div class="flex items-center gap-2 text-orange-400 text-sm mb-4">
+        <svg class="w-4 h-4 animate-spin" fill="currentColor" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading data...
+      </div>
+    }
+    
+    <div class="flex justify-end">
+      <button 
+        (click)="create()" 
+        [disabled]="!canCreate() || isCreating()"
+        class="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        @if (isCreating()) {
+          <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+          <span>Creating...</span>
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Create Playback</span>
         }
-      </tbody>
-    </table>
-  </div>
-  @if (isLoading()) {
-    <div class="p-4 text-center text-gray-400">Loading playbacks…</div>
-  }
-</div>
-
-<!-- Edit Modal -->
-@if (editOpen() && editing(); as item) {
-  <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[4px] z-50">
-    <div class="bg-gray-800/80 border border-gray-700 rounded-xl w-full max-w-md p-6 relative">
-      <button (click)="editOpen.set(false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl">✕</button>
-      <h3 class="text-xl font-medium text-orange-500 mb-4">Edit Playback</h3>
-      <div class="grid grid-cols-1 gap-3">
-        <input [(ngModel)]="item.ended_at" type="datetime-local" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.progress_seconds" type="number" min="0" placeholder="Progress (seconds)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.device" placeholder="Device" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <div class="flex items-center gap-2">
-          <input [(ngModel)]="item.completed" type="checkbox" id="edit-completed" class="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500 focus:ring-2">
-          <label for="edit-completed" class="text-sm text-gray-300">Completed</label>
-        </div>
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Profile:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ getProfileName(item.profile_id) }}</p>
-        </div>
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Content:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ getContentTitle(item.content_id) }}</p>
-        </div>
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Episode:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ getEpisodeTitle(item.episode_id) }}</p>
-        </div>
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Started At:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ item.started_at | date:'medium' }}</p>
-        </div>
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Playback ID:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ item.id }}</p>
-        </div>
-      </div>
-      <div class="mt-6 flex justify-end gap-2">
-        <button (click)="editOpen.set(false)" class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">Cancel</button>
-        <button (click)="saveEdits()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">Save</button>
-      </div>
+      </button>
     </div>
   </div>
-}
+
+  <!-- Playbacks List -->
+  @if (isLoading() && items().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent"></div>
+      <p class="text-gray-400 text-sm">Loading playbacks...</p>
+    </div>
+  }
+
+  @if (!isLoading() && items().length === 0) {
+    <div class="text-center py-16 space-y-4">
+      <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <div class="space-y-2">
+        <div class="text-gray-300 text-xl font-medium">No playbacks found</div>
+        <p class="text-gray-500 max-w-md mx-auto text-sm">
+          No playback sessions match your current filter criteria. Try adjusting your filters or create a new playback session.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (items().length > 0) {
+    <div class="space-y-6">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Playback Sessions ({{ total() }} sessions)
+      </h3>
+
+      <div class="grid gap-4">
+        @for (item of items(); track item.id) {
+          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
+            <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+              <!-- Playback Info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h4 class="text-lg font-semibold text-white mb-2">
+                      {{ getContentTitle(item.content_id) }}
+                    </h4>
+                    <div class="flex items-center gap-3 text-gray-400 text-sm">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        {{ getProfileName(item.profile_id) }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ formatProgress(item.progress_seconds) }}
+                      </span>
+                      <span [class]="item.completed ? 'text-green-400' : 'text-yellow-400'" class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ item.completed ? 'Completed' : 'In Progress' }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Actions -->
+                  <div class="flex gap-2">
+                    <button
+                      (click)="openEdit(item.id)"
+                      class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-xl transition-all duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+                    
+                    <button
+                      (click)="remove(item.id)"
+                      class="flex items-center gap-2 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm rounded-xl transition-all duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Playback Metadata -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Episode</div>
+                    <div class="text-white text-sm">{{ getEpisodeTitle(item.episode_id) }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Device</div>
+                    <div class="text-white text-sm">{{ item.device || '—' }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Started</div>
+                    <div class="text-white text-sm">{{ formatDateTime(item.started_at) }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Ended</div>
+                    <div class="text-white text-sm">{{ formatDateTime(item.ended_at) }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Playback ID</div>
+                    <div class="text-white text-sm font-mono truncate">{{ item.id }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Edit Modal -->
+  @if (editOpen() && editing(); as item) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700/50 w-full max-w-2xl shadow-2xl">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Edit Playback</h3>
+        </div>
+        
+        <form (ngSubmit)="saveEdits()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Progress -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Progress (seconds) *</label>
+              <input 
+                [(ngModel)]="item.progress_seconds" 
+                name="progress_seconds"
+                type="number" 
+                min="0" 
+                placeholder="Progress in seconds"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Device -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Device</label>
+              <input 
+                [(ngModel)]="item.device" 
+                name="device"
+                placeholder="Device name"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Ended At -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Ended At</label>
+              <input 
+                [(ngModel)]="item.ended_at" 
+                name="ended_at"
+                type="datetime-local"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Completed -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Status</label>
+              <div class="flex items-center gap-3 pt-2">
+                <input 
+                  [(ngModel)]="item.completed" 
+                  name="completed"
+                  type="checkbox" 
+                  id="edit-completed"
+                  class="w-4 h-4 text-orange-500 bg-gray-700 border-gray-600 rounded focus:ring-orange-500 focus:ring-2">
+                <label for="edit-completed" class="text-gray-300 text-sm">Mark as completed</label>
+              </div>
+            </div>
+
+            <!-- Read-only fields -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Profile</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm">
+                {{ getProfileName(item.profile_id) }}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Content</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm">
+                {{ getContentTitle(item.content_id) }}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Episode</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm">
+                {{ getEpisodeTitle(item.episode_id) }}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Started At</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm">
+                {{ formatDateTime(item.started_at) }}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Playback ID</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm font-mono">
+                {{ item.id }}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+            <button
+              type="button"
+              (click)="editOpen.set(false)"
+              class="px-4 py-2.5 bg-gray-600 hover:bg-gray-500 text-white font-medium rounded-xl transition-all duration-200">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="isUpdating() || item.progress_seconds < 0"
+              class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+              @if (isUpdating()) {
+                <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                <span>Saving...</span>
+              } @else {
+                <span>Save Changes</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

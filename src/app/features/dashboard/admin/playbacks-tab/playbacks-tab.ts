@@ -47,6 +47,8 @@ export class PlaybacksTabComponent implements OnInit {
   items = signal<PlaybackListItem[]>([]);
   total = signal<number>(0);
   isLoading = signal<boolean>(false);
+  isCreating = signal<boolean>(false);
+  isUpdating = signal<boolean>(false);
   editOpen = signal<boolean>(false);
 
   // Query & lists
@@ -106,7 +108,21 @@ export class PlaybacksTabComponent implements OnInit {
     device: null,
   });
 
+  canCreate = computed(() => {
+    const np = this.newPlayback();
+    return !!np.profile_id && !!np.content_id && (np.progress_seconds ?? 0) >= 0;
+  });
+
   editing = signal<Playback | null>(null);
+
+  // ---------- SAFE BIND HELPERS ----------
+  onQueryChange<K extends keyof QueryParams>(key: K, value: QueryParams[K]) {
+    this.query.update(q => ({ ...q, [key]: value }));
+  }
+
+  onNewPlaybackChange<K extends keyof PlaybackCreate>(key: K, value: PlaybackCreate[K]) {
+    this.newPlayback.update(e => ({ ...e, [key]: value }));
+  }
 
   async ngOnInit() {
     await Promise.all([this.loadProfiles(), this.loadContent(), this.loadEpisodes()]);
@@ -164,19 +180,15 @@ export class PlaybacksTabComponent implements OnInit {
   }
 
   async create() {
+    if (!this.canCreate()) {
+      this.error.set('Profile, Content, and valid Progress are required');
+      return;
+    }
+
     try {
+      this.isCreating.set(true);
       this.error.set(null);
       const np = this.newPlayback();
-
-      // Required by backend
-      if (!np.profile_id || !np.content_id) {
-        this.error.set('Profile and Content are required');
-        return;
-      }
-      if ((np.progress_seconds ?? 0) < 0) {
-        this.error.set('Progress seconds cannot be negative');
-        return;
-      }
 
       await firstValueFrom(this.playbacksService.createPlayback(np));
 
@@ -195,6 +207,8 @@ export class PlaybacksTabComponent implements OnInit {
       await this.loadPlaybacks();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.isCreating.set(false);
     }
   }
 
@@ -211,6 +225,7 @@ export class PlaybacksTabComponent implements OnInit {
 
   async saveEdits() {
     try {
+      this.isUpdating.set(true);
       this.error.set(null);
       const pb = this.editing();
       if (!pb?.id) return;
@@ -228,6 +243,8 @@ export class PlaybacksTabComponent implements OnInit {
       await this.loadPlaybacks();
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.isUpdating.set(false);
     }
   }
 
@@ -295,6 +312,16 @@ export class PlaybacksTabComponent implements OnInit {
     if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
     if (minutes > 0) return `${minutes}m ${seconds}s`;
     return `${seconds}s`;
+  }
+
+  formatDate(date: string | null | undefined): string {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString();
+  }
+
+  formatDateTime(date: string | null | undefined): string {
+    if (!date) return '—';
+    return new Date(date).toLocaleString();
   }
 
   private getErrorMessage(error: any): string {

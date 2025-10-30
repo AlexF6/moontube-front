@@ -1,161 +1,137 @@
-<!-- Error -->
-@if (error()) {
-  <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
-    <span class="text-red-200">{{ error() }}</span>
-    <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-xl font-bold">&times;</button>
-  </div>
-}
-
-<!-- Header + Add -->
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-  <h2 class="text-2xl font-semibold text-orange-500">Profiles Management ({{ total() }})</h2>
-  <button
-    (click)="create()"
-    class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors">
-    Add Profile
-  </button>
-</div>
-
-<!-- Filters -->
-<div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-    <select
-      [(ngModel)]="query().user_id"
-      class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All Users</option>
-      @for (user of users(); track user.id) {
-        <option [ngValue]="user.id">{{ user.name }} ({{ user.email }})</option>
-      }
-    </select>
-
-    <input
-      [(ngModel)]="query().q"
-      placeholder="Search by profile name"
-      class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-
-    <div class="flex gap-2">
-      <button (click)="applyFilters()" class="px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition">
-        Apply
-      </button>
-      <button (click)="resetFilters()" class="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition">
-        Reset
-      </button>
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-gray-700/50">
+    <div>
+      <h2 class="text-2xl font-bold text-white mb-1">Profiles Management</h2>
+      <p class="text-gray-400 text-sm">Manage user profiles and viewing preferences</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="px-4 py-2 bg-gray-800/50 rounded-xl border border-gray-700/50">
+        <div class="text-white font-semibold text-lg text-center">{{ total() }}</div>
+        <div class="text-gray-400 text-xs">Total Profiles</div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Create form -->
-<div class="rounded-lg p-6 bg-gray-800/30 border border-gray-700 mb-6">
-  <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Profile</h3>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-    <select
-      [(ngModel)]="newProfile().user_id"
-      class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">Select User</option>
-      @for (user of users(); track user.id) {
-        <option [ngValue]="user.id">{{ user.name }} ({{ user.email }})</option>
-      }
-    </select>
-
-    <input
-      [(ngModel)]="newProfile().name"
-      placeholder="Profile Name"
-      class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-
-    <input
-      [(ngModel)]="newProfile().avatar"
-      placeholder="Avatar URL (optional)"
-      class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-
-    <!-- Maturity select with nullable option ('' becomes null in service/TS) -->
-    <select
-      [(ngModel)]="newProfile().maturity_rating"
-      class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">— None —</option>
-      <option value="G">G — General Audience</option>
-      <option value="PG">PG — Parental Guidance</option>
-      <option value="PG-13">PG-13 — Parents Strongly Cautioned</option>
-      <option value="R">R — Restricted</option>
-      <option value="NC-17">NC-17 — Adults Only</option>
-    </select>
-  </div>
-
-  @if (isUsersLoading()) {
-    <div class="mt-2 text-sm text-gray-400">Loading users...</div>
+  <!-- Error -->
+  @if (error()) {
+    <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl backdrop-blur-sm">
+      <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <span class="text-sm flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-lg font-bold transition-colors">&times;</button>
+    </div>
   }
-</div>
 
-<!-- Table -->
-<div class="bg-gray-800/30 border border-gray-700 rounded-lg overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full">
-      <thead class="bg-gray-900/40">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Avatar</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Maturity Rating</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        @for (p of items(); track p.id) {
-          <tr class="hover:bg-gray-700/40 transition">
-            <td class="px-6 py-4 text-sm text-gray-300">{{ p.name }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">
-              @if (p.avatar) {
-                <img [src]="p.avatar" alt="Avatar" class="w-8 h-8 rounded-full object-cover">
-              } @else {
-                <span class="text-gray-500">-</span>
-              }
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ p.maturity_rating || '-' }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">
-              <span class="font-mono text-xs">{{ getUserName(p.user_id) }}</span>
-            </td>
-            <td class="px-6 py-4 text-sm flex items-center gap-2">
-              <button
-                (click)="openEdit(p.id)"
-                class="px-3 py-1 border border-yellow-600 text-yellow-500 rounded-lg hover:bg-yellow-600/10 text-xs transition">
-                Edit
-              </button>
-              <button
-                (click)="remove(p.id)"
-                class="px-3 py-1 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 text-xs transition">
-                Delete
-              </button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-  @if (isLoading()) {
-    <div class="p-4 text-center text-gray-400">Loading profiles…</div>
-  }
-</div>
+  <!-- Filters -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+      </svg>
+      Filters & Search
+    </h3>
 
-<!-- Edit Modal -->
-@if (editOpen() && editing(); as p) {
-  <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[4px] z-50">
-    <div class="bg-gray-800/80 border border-gray-700 rounded-xl w-full max-w-md p-6 relative">
-      <button (click)="editOpen.set(false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl">✕</button>
-      <h3 class="text-xl font-medium text-orange-500 mb-4">Edit Profile</h3>
-      <div class="grid grid-cols-1 gap-3">
-        <input
-          [(ngModel)]="p.name"
-          placeholder="Profile Name"
-          class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-
-        <input
-          [(ngModel)]="p.avatar"
-          placeholder="Avatar URL (optional)"
-          class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-
-        <!-- Same select as create ('' → null in service) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">User</label>
         <select
-          [(ngModel)]="p.maturity_rating"
-          class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+          [ngModel]="query().user_id"
+          (ngModelChange)="onQueryChange('user_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Users</option>
+          @for (user of users(); track user.id) {
+            <option [ngValue]="user.id">{{ user.name }} ({{ user.email }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Search</label>
+        <input
+          [ngModel]="query().q"
+          (ngModelChange)="onQueryChange('q', $event)"
+          placeholder="Search by profile name..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="flex items-end gap-3">
+        <button
+          (click)="resetFilters()"
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Reset
+        </button>
+        <button
+          (click)="applyFilters()"
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+          </svg>
+          Apply Filters
+        </button>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-4 border-t border-gray-700/50">
+      <div class="text-gray-400 text-sm">
+        Showing {{ items().length }} of {{ total() }} profiles
+      </div>
+    </div>
+  </div>
+
+  <!-- Create New Profile -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create New Profile
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">User *</label>
+        <select
+          [ngModel]="newProfile().user_id"
+          (ngModelChange)="onNewProfileChange('user_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="''">Select User</option>
+          @for (user of users(); track user.id) {
+            <option [ngValue]="user.id">{{ user.name }} ({{ user.email }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Profile Name *</label>
+        <input
+          [ngModel]="newProfile().name"
+          (ngModelChange)="onNewProfileChange('name', $event)"
+          placeholder="Enter profile name"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Avatar URL</label>
+        <input
+          [ngModel]="newProfile().avatar"
+          (ngModelChange)="onNewProfileChange('avatar', $event)"
+          placeholder="https://example.com/avatar.jpg"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Maturity Rating</label>
+        <select
+          [ngModel]="newProfile().maturity_rating"
+          (ngModelChange)="onNewProfileChange('maturity_rating', $event || null)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
           <option [ngValue]="''">— None —</option>
           <option value="G">G — General Audience</option>
           <option value="PG">PG — Parental Guidance</option>
@@ -163,28 +139,243 @@
           <option value="R">R — Restricted</option>
           <option value="NC-17">NC-17 — Adults Only</option>
         </select>
-
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">User:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ getUserName(p.user_id) }}</p>
-        </div>
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Profile ID:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ p.id }}</p>
-        </div>
-      </div>
-      <div class="mt-6 flex justify-end gap-2">
-        <button
-          (click)="editOpen.set(false)"
-          class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">
-          Cancel
-        </button>
-        <button
-          (click)="saveEdits()"
-          class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">
-          Save
-        </button>
       </div>
     </div>
+
+    @if (isUsersLoading()) {
+      <div class="flex items-center gap-2 text-orange-400 text-sm mb-4">
+        <svg class="w-4 h-4 animate-spin" fill="currentColor" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading users...
+      </div>
+    }
+
+    <div class="flex justify-end">
+      <button
+        (click)="create()"
+        [disabled]="!canCreate() || isCreating()"
+        class="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        @if (isCreating()) {
+          <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+          <span>Creating...</span>
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Create Profile</span>
+        }
+      </button>
+    </div>
   </div>
-}
+
+  <!-- Loading / Empty / List -->
+  @if (isLoading() && items().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent"></div>
+      <p class="text-gray-400 text-sm">Loading profiles...</p>
+    </div>
+  }
+
+  @if (!isLoading() && items().length === 0) {
+    <div class="text-center py-16 space-y-4">
+      <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+      </div>
+      <div class="space-y-2">
+        <div class="text-gray-300 text-xl font-medium">No profiles found</div>
+        <p class="text-gray-500 max-w-md mx-auto text-sm">
+          No profiles match your current filter criteria. Try adjusting your filters or create a new profile.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (items().length > 0) {
+    <div class="space-y-6">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+        Profile Library ({{ total() }} profiles)
+      </h3>
+
+      <div class="grid gap-4">
+        @for (profile of items(); track profile.id) {
+          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
+            <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+              <!-- Avatar -->
+              <div class="flex-shrink-0">
+                @if (profile.avatar) {
+                  <img
+                    [src]="profile.avatar"
+                    alt="Profile avatar"
+                    class="w-20 h-20 rounded-2xl object-cover border border-gray-600 shadow-lg group-hover:scale-105 transition-transform duration-200" />
+                } @else {
+                  <div class="w-20 h-20 rounded-2xl bg-gray-700/50 border border-gray-600 flex items-center justify-center text-gray-400 shadow-lg group-hover:scale-105 transition-transform duration-200">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                  </div>
+                }
+              </div>
+
+              <!-- Profile Details -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h4 class="text-lg font-semibold text-white mb-2">{{ profile.name }}</h4>
+                    <div class="flex items-center gap-3 text-gray-400 text-sm">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        {{ getUserName(profile.user_id) }}
+                      </span>
+                      @if (profile.maturity_rating) {
+                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ getMaturityRatingColor(profile.maturity_rating) }}">
+                          {{ profile.maturity_rating }} — {{ getMaturityRatingDescription(profile.maturity_rating) }}
+                        </span>
+                      } @else {
+                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-500/20 text-gray-300 border border-gray-500/30">
+                          No maturity rating
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex gap-2">
+                    <button
+                      (click)="openEdit(profile.id)"
+                      class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-xl transition-all duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+
+                    <button
+                      (click)="remove(profile.id)"
+                      class="flex items-center gap-2 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm rounded-xl transition-all duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Profile Metadata -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Profile ID</div>
+                    <div class="text-white text-sm font-mono">{{ profile.id }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">User ID</div>
+                    <div class="text-white text-sm font-mono">{{ profile.user_id }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Edit Modal -->
+  @if (editOpen() && editing(); as profile) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700/50 w-full max-w-2xl shadow-2xl">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Edit Profile</h3>
+        </div>
+
+        <form (ngSubmit)="saveEdits()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Profile Name -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Profile Name *</label>
+              <input
+                [(ngModel)]="profile.name"
+                name="name"
+                placeholder="Enter profile name"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Maturity Rating -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Maturity Rating</label>
+              <select
+                [(ngModel)]="profile.maturity_rating"
+                name="maturity_rating"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+                <option [ngValue]="''">— None —</option>
+                <option value="G">G — General Audience</option>
+                <option value="PG">PG — Parental Guidance</option>
+                <option value="PG-13">PG-13 — Parents Strongly Cautioned</option>
+                <option value="R">R — Restricted</option>
+                <option value="NC-17">NC-17 — Adults Only</option>
+              </select>
+            </div>
+
+            <!-- Avatar URL -->
+            <div class="space-y-2 md:col-span-2">
+              <label class="block text-gray-300 text-sm font-medium">Avatar URL</label>
+              <input
+                [(ngModel)]="profile.avatar"
+                name="avatar"
+                placeholder="https://example.com/avatar.jpg"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Read-only -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">User</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm">
+                {{ getUserName(profile.user_id) }}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Profile ID</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm font-mono">
+                {{ profile.id }}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+            <button
+              type="button"
+              (click)="editOpen.set(false)"
+              class="px-4 py-2.5 bg-gray-600 hover:bg-gray-500 text-white font-medium rounded-xl transition-all duration-200">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="isUpdating() || !profile.name"
+              class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+              @if (isUpdating()) {
+                <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                <span>Saving...</span>
+              } @else {
+                <span>Save Changes</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

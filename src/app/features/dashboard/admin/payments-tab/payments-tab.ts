@@ -1,5 +1,4 @@
-// src/app/features/dashboard/admin/payments-tab/payments-tab.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { PaymentsService } from '../../../../core/services/payments.service';
@@ -30,6 +29,8 @@ export class PaymentsTabComponent implements OnInit {
   items = signal<Payment[]>([]);
   total = signal(0);
   isLoading = signal(false);
+  isCreating = signal(false);
+  isUpdating = signal(false);
   error = signal<string | null>(null);
   
   // Dropdown data
@@ -60,10 +61,29 @@ export class PaymentsTabComponent implements OnInit {
     order_dir: 'desc'
   });
 
+  // Computed values
+  paidCount = computed(() => 
+    this.items().filter(item => item.status === PaymentStatus.PAID).length
+  );
+  pendingCount = computed(() => 
+    this.items().filter(item => item.status === PaymentStatus.PENDING).length
+  );
+  failedCount = computed(() => 
+    this.items().filter(item => item.status === PaymentStatus.FAILED).length
+  );
+  refundedCount = computed(() => 
+    this.items().filter(item => item.status === PaymentStatus.REFUNDED).length
+  );
+  totalAmount = computed(() => 
+    this.items().reduce((sum, payment) => sum + payment.amount, 0)
+  );
+
   async ngOnInit() {
-    await this.loadUsers();
-    await this.loadSubscriptions();
-    await this.loadPayments();
+    await Promise.all([
+      this.loadUsers(),
+      this.loadSubscriptions(),
+      this.loadPayments()
+    ]);
   }
 
   private async loadUsers() {
@@ -113,14 +133,19 @@ export class PaymentsTabComponent implements OnInit {
   }
 
   async create() {
+    if (!this.newPayment().user_id || !this.newPayment().subscription_id || !this.newPayment().amount || !this.newPayment().currency) return;
+
+    this.isCreating.set(true);
     this.error.set(null);
     
     try {
       await this.paymentsService.create(this.newPayment()).toPromise();
       this.newPayment.set(this.getDefaultPayment());
-      this.loadPayments();
+      await this.loadPayments();
     } catch (err: any) {
       this.error.set(err.error?.detail || 'Failed to create payment');
+    } finally {
+      this.isCreating.set(false);
     }
   }
 
@@ -132,6 +157,7 @@ export class PaymentsTabComponent implements OnInit {
   async saveEdits() {
     if (!this.editing()) return;
 
+    this.isUpdating.set(true);
     this.error.set(null);
 
     try {
@@ -147,9 +173,11 @@ export class PaymentsTabComponent implements OnInit {
       await this.paymentsService.update(this.editing()!.id, updateData).toPromise();
       this.editOpen.set(false);
       this.editing.set(null);
-      this.loadPayments();
+      await this.loadPayments();
     } catch (err: any) {
       this.error.set(err.error?.detail || 'Failed to update payment');
+    } finally {
+      this.isUpdating.set(false);
     }
   }
 
@@ -160,7 +188,7 @@ export class PaymentsTabComponent implements OnInit {
     
     try {
       await this.paymentsService.delete(id).toPromise();
-      this.loadPayments();
+      await this.loadPayments();
     } catch (err: any) {
       this.error.set(err.error?.detail || 'Failed to delete payment');
     }
@@ -206,19 +234,36 @@ export class PaymentsTabComponent implements OnInit {
     return new Date(date).toLocaleString();
   }
 
+  formatCurrency(amount: number, currency: string): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  }
+
   getStatusColor(status: PaymentStatus): string {
     switch (status) {
-      case PaymentStatus.PAID: return 'text-green-400';
-      case PaymentStatus.PENDING: return 'text-yellow-400';
-      case PaymentStatus.FAILED: return 'text-red-400';
-      case PaymentStatus.REFUNDED: return 'text-blue-400';
-      default: return 'text-gray-400';
+      case PaymentStatus.PAID: return 'bg-green-500/20 text-green-300 border border-green-500/30';
+      case PaymentStatus.PENDING: return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30';
+      case PaymentStatus.FAILED: return 'bg-red-500/20 text-red-300 border border-red-500/30';
+      case PaymentStatus.REFUNDED: return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
+      default: return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
+    }
+  }
+
+  getStatusIcon(status: PaymentStatus): string {
+    switch (status) {
+      case PaymentStatus.PAID: return '✓';
+      case PaymentStatus.PENDING: return '⏱';
+      case PaymentStatus.FAILED: return '✕';
+      case PaymentStatus.REFUNDED: return '↩';
+      default: return '?';
     }
   }
 
   getUserName(userId: string): string {
     const user = this.users().find(u => u.id === userId);
-    return user ? (user.name || user.email) : userId;
+    return user ? (user.name || user.email) : 'Unknown User';
   }
 
   getSubscriptionInfo(subscriptionId: string): string {
@@ -226,10 +271,13 @@ export class PaymentsTabComponent implements OnInit {
     return subscription ? `${subscription.id.slice(0, 8)}...` : subscriptionId;
   }
 
+  getUserSubscriptions(userId: string): Subscription[] {
+    if (!userId) return this.subscriptions();
+    return this.subscriptions().filter(s => s.user_id === userId);
+  }
+
   onUserChange(userId: string) {
-    // When user changes, filter subscriptions for that user
-    if (userId) {
-      this.newPayment().subscription_id = '';
-    }
+    // When user changes, reset subscription selection
+    this.newPayment().subscription_id = '';
   }
 }

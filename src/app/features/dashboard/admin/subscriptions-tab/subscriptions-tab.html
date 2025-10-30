@@ -1,175 +1,471 @@
-<!-- Error -->
-@if (error()) {
-  <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
-    <span class="text-red-200">{{ error() }}</span>
-    <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-xl font-bold">&times;</button>
-  </div>
-}
-
-<!-- Header -->
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-  <h2 class="text-2xl font-semibold text-orange-500">
-    Subscriptions Management ({{ total() }})
-  </h2>
-</div>
-
-<!-- Filters -->
-<div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
-    <select [(ngModel)]="query().user_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All users</option>
-      @for (user of users(); track user.id) {
-        <option [ngValue]="user.id">{{ user.name || user.email }}</option>
-      }
-    </select>
-
-    <select [(ngModel)]="query().plan_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All plans</option>
-      @for (plan of plans(); track plan.id) {
-        <option [ngValue]="plan.id">{{ plan.name }}</option>
-      }
-    </select>
-
-    <select [(ngModel)]="query().status_q" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All statuses</option>
-      <option [ngValue]="'ACTIVE'">ACTIVE</option>
-      <option [ngValue]="'CANCELED'">CANCELED</option>
-      <option [ngValue]="'PAST_DUE'">PAST_DUE</option>
-    </select>
-
-    <input [(ngModel)]="query().start_from" type="date" placeholder="Start from" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().start_to" type="date" placeholder="Start to" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-
-    <div class="flex gap-2">
-      <button (click)="applyFilters()" class="px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition">Apply</button>
-      <button (click)="resetFilters()" class="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition">Reset</button>
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-gray-700/50">
+    <div>
+      <h2 class="text-2xl font-bold text-white mb-1">Subscriptions Management</h2>
+      <p class="text-gray-400 text-sm">Manage user subscriptions and billing cycles</p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="px-4 py-2 bg-gray-800/50 rounded-xl border border-gray-700/50">
+        <div class="text-white font-semibold text-lg text-center">{{ total() }}</div>
+        <div class="text-gray-400 text-xs">Total Subscriptions</div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Create form -->
-<div class="rounded-lg p-6 bg-gray-800/30 border border-gray-700 mb-6">
-  <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Subscription</h3>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    <select [(ngModel)]="newSubscription().user_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">Select User</option>
-      @for (user of users(); track user.id) {
-        <option [ngValue]="user.id">{{ user.email }} {{ user.name ? '(' + user.name + ')' : '' }}</option>
-      }
-    </select>
-
-    <select [(ngModel)]="newSubscription().plan_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">Select Plan</option>
-      @for (plan of plans(); track plan.id) {
-        <option [ngValue]="plan.id">{{ plan.name }}</option>
-      }
-    </select>
-
-    <select [(ngModel)]="newSubscription().status" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
-      <option [ngValue]="'ACTIVE'">ACTIVE</option>
-      <option [ngValue]="'CANCELED'">CANCELED</option>
-      <option [ngValue]="'PAST_DUE'">PAST_DUE</option>
-    </select>
-
-    <input [(ngModel)]="newSubscription().start_date" type="date" placeholder="Start Date" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-    <input [(ngModel)]="newSubscription().end_date" type="date" placeholder="End Date" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-    <input [(ngModel)]="newSubscription().renews_at" type="date" placeholder="Renews At" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-  </div>
-
-  <div class="mt-4 flex justify-end">
-    <button
-      (click)="create()"
-      [disabled]="!newSubscription().user_id || !newSubscription().plan_id"
-      class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-      Create Subscription
-    </button>
-  </div>
-</div>
-
-<!-- Table -->
-<div class="bg-gray-800/30 border border-gray-700 rounded-lg overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full">
-      <thead class="bg-gray-900/40">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Plan</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Start Date</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">End Date</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Renews At</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        @for (subscription of items(); track subscription.id) {
-          <tr class="hover:bg-gray-700/40 transition">
-            <td class="px-6 py-4 text-sm text-gray-300">{{ getUserName(subscription.user_id) }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ getPlanName(subscription.plan_id) }}</td>
-            <td class="px-6 py-4 text-sm">
-              <span [class]="getStatusColor(subscription.status)">{{ subscription.status }}</span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDate(subscription.start_date) }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDate(subscription.end_date) }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDate(subscription.renews_at) }}</td>
-            <td class="px-6 py-4 text-sm flex items-center gap-2">
-              <button (click)="openEdit(subscription)" class="px-3 py-1 border border-yellow-600 text-yellow-500 rounded-lg hover:bg-yellow-600/10 text-xs transition">Edit</button>
-              @if (isActive(subscription)) {
-                <button (click)="cancelSubscription(subscription.id)" class="px-3 py-1 border border-red-600 text-red-500 rounded-lg hover:bg-red-600/10 text-xs transition">Cancel</button>
-              } @else {
-                <button (click)="reactivateSubscription(subscription.id)" class="px-3 py-1 border border-green-600 text-green-500 rounded-lg hover:bg-green-600/10 text-xs transition">Reactivate</button>
-              }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  @if (isLoading()) {
-    <div class="p-4 text-center text-gray-400">Loading…</div>
+  <!-- Error -->
+  @if (error()) {
+    <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl backdrop-blur-sm">
+      <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <span class="text-sm flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-lg font-bold transition-colors">&times;</button>
+    </div>
   }
-  @if (items().length === 0 && !isLoading()) {
-    <div class="p-4 text-center text-gray-400">No subscriptions found</div>
-  }
-</div>
 
-<!-- Edit Modal -->
-@if (editOpen() && editing(); as subscription) {
-  <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[4px] z-50">
-    <div class="bg-gray-800/80 border border-gray-700 rounded-xl w-full max-w-xl p-6 relative">
-      <button (click)="editOpen.set(false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl">✕</button>
-      <h3 class="text-xl font-medium text-orange-500 mb-4">Edit Subscription</h3>
-
-      <div class="grid grid-cols-1 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-1">User</label>
-          <div class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
-            {{ getUserName(subscription.user_id) }}
-          </div>
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
         </div>
+        <div>
+          <div class="text-2xl font-bold text-white">{{ activeCount() }}</div>
+          <div class="text-gray-400 text-sm">Active Subscriptions</div>
+        </div>
+      </div>
+    </div>
 
-        <select [(ngModel)]="subscription.plan_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
+    <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-white">{{ canceledCount() }}</div>
+          <div class="text-gray-400 text-sm">Canceled Subscriptions</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-2xl font-bold text-white">{{ pastDueCount() }}</div>
+          <div class="text-gray-400 text-sm">Past Due Subscriptions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+      </svg>
+      Filters & Search
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">User</label>
+        <select 
+          [(ngModel)]="query().user_id"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Users</option>
+          @for (user of users(); track user.id) {
+            <option [ngValue]="user.id">{{ user.name || user.email }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Plan</label>
+        <select 
+          [(ngModel)]="query().plan_id"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Plans</option>
+          @for (plan of plans(); track plan.id) {
+            <option [ngValue]="plan.id">{{ plan.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Status</label>
+        <select 
+          [(ngModel)]="query().status_q"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Statuses</option>
+          <option [ngValue]="'ACTIVE'">Active</option>
+          <option [ngValue]="'CANCELED'">Canceled</option>
+          <option [ngValue]="'PAST_DUE'">Past Due</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Date Range</label>
+        <div class="flex gap-2">
+          <input 
+            [(ngModel)]="query().start_from" 
+            type="date"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+          <input 
+            [(ngModel)]="query().start_to" 
+            type="date"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-4 border-t border-gray-700/50">
+      <div class="text-gray-400 text-sm">
+        Showing {{ items().length }} of {{ total() }} subscriptions
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          (click)="resetFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Reset
+        </button>
+        <button 
+          (click)="applyFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+          </svg>
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create New Subscription -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create New Subscription
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">User *</label>
+        <select 
+          [(ngModel)]="newSubscription().user_id"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="''">Select User</option>
+          @for (user of users(); track user.id) {
+            <option [ngValue]="user.id">{{ user.email }} {{ user.name ? '(' + user.name + ')' : '' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Plan *</label>
+        <select 
+          [(ngModel)]="newSubscription().plan_id"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
           <option [ngValue]="''">Select Plan</option>
           @for (plan of plans(); track plan.id) {
             <option [ngValue]="plan.id">{{ plan.name }}</option>
           }
         </select>
-
-        <select [(ngModel)]="subscription.status" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300">
-          <option [ngValue]="'ACTIVE'">ACTIVE</option>
-          <option [ngValue]="'CANCELED'">CANCELED</option>
-          <option [ngValue]="'PAST_DUE'">PAST_DUE</option>
-        </select>
-
-        <input [(ngModel)]="subscription.end_date" type="date" placeholder="End Date" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="subscription.renews_at" type="date" placeholder="Renews At" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
       </div>
 
-      <div class="mt-6 flex justify-end gap-2">
-        <button (click)="editOpen.set(false)" class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">Cancel</button>
-        <button (click)="saveEdits()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">Save</button>
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Status</label>
+        <select 
+          [(ngModel)]="newSubscription().status"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="'ACTIVE'">Active</option>
+          <option [ngValue]="'CANCELED'">Canceled</option>
+          <option [ngValue]="'PAST_DUE'">Past Due</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Start Date</label>
+        <input 
+          [(ngModel)]="newSubscription().start_date" 
+          type="date"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">End Date</label>
+        <input 
+          [(ngModel)]="newSubscription().end_date" 
+          type="date"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Renews At</label>
+        <input 
+          [(ngModel)]="newSubscription().renews_at" 
+          type="date"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
       </div>
     </div>
+    
+    <div class="flex justify-end">
+      <button 
+        (click)="create()" 
+        [disabled]="isLoading() || !newSubscription().user_id || !newSubscription().plan_id"
+        class="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        @if (isCreating()) {
+          <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+          <span>Creating...</span>
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Create Subscription</span>
+        }
+      </button>
+    </div>
   </div>
-}
+
+  <!-- Subscriptions List -->
+  @if (isLoading() && items().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent"></div>
+      <p class="text-gray-400 text-sm">Loading subscriptions...</p>
+    </div>
+  }
+
+  @if (!isLoading() && items().length === 0) {
+    <div class="text-center py-16 space-y-4">
+      <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <div class="space-y-2">
+        <div class="text-gray-300 text-xl font-medium">No subscriptions found</div>
+        <p class="text-gray-500 max-w-md mx-auto text-sm">
+          No subscriptions match your current filter criteria. Try adjusting your filters or create a new subscription.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (items().length > 0) {
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Subscription Library ({{ total() }} subscriptions)
+      </h3>
+
+      <div class="grid gap-4">
+        @for (subscription of items(); track subscription.id) {
+          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
+            <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+              <!-- Status Icon -->
+              <div class="flex-shrink-0">
+                <div class="w-16 h-16 rounded-2xl bg-gray-700/50 border border-gray-600 flex items-center justify-center text-2xl shadow-lg group-hover:scale-105 transition-transform duration-200">
+                  @if (subscription.status === 'ACTIVE') {
+                    <div class="text-green-400">✓</div>
+                  } @else if (subscription.status === 'CANCELED') {
+                    <div class="text-red-400">✕</div>
+                  } @else {
+                    <div class="text-yellow-400">!</div>
+                  }
+                </div>
+              </div>
+
+              <!-- Subscription Details -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h4 class="text-lg font-semibold text-white mb-2">{{ getUserName(subscription.user_id) }}</h4>
+                    <div class="flex items-center gap-3 text-gray-400 text-sm">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        {{ getPlanName(subscription.plan_id) }}
+                      </span>
+                      <span class="px-2 py-1 rounded-full text-xs font-medium {{ getStatusColor(subscription.status) }}">
+                        {{ getStatusBadge(subscription.status) }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Actions -->
+                  <div class="flex gap-2">
+                    <button
+                      (click)="openEdit(subscription)"
+                      class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-xl transition-all duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+                    
+                    @if (isActive(subscription)) {
+                      <button
+                        (click)="cancelSubscription(subscription.id)"
+                        class="flex items-center gap-2 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm rounded-xl transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        <span>Cancel</span>
+                      </button>
+                    } @else {
+                      <button
+                        (click)="reactivateSubscription(subscription.id)"
+                        class="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-xl transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Reactivate</span>
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <!-- Dates Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Start Date</div>
+                    <div class="text-white text-sm">{{ formatDate(subscription.start_date) }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">End Date</div>
+                    <div class="text-white text-sm">{{ formatDate(subscription.end_date) }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Renews</div>
+                    <div class="text-white text-sm">
+                      {{ formatDate(subscription.renews_at) }}
+                      @if (subscription.renews_at && subscription.status === 'ACTIVE') {
+                        <div class="text-orange-400 text-xs mt-1">
+                          {{ getDaysUntilRenewal(subscription.renews_at) }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Edit Modal -->
+  @if (editOpen() && editing(); as subscription) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700/50 w-full max-w-2xl shadow-2xl">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Edit Subscription</h3>
+        </div>
+        
+        <form (ngSubmit)="saveEdits()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- User (Read-only) -->
+            <div class="md:col-span-2 space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">User</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm">
+                {{ getUserName(subscription.user_id) }}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Plan *</label>
+              <select 
+                [(ngModel)]="subscription.plan_id" 
+                name="plan_id"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+                <option [ngValue]="''">Select Plan</option>
+                @for (plan of plans(); track plan.id) {
+                  <option [ngValue]="plan.id">{{ plan.name }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Status</label>
+              <select 
+                [(ngModel)]="subscription.status" 
+                name="status"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+                <option [ngValue]="'ACTIVE'">Active</option>
+                <option [ngValue]="'CANCELED'">Canceled</option>
+                <option [ngValue]="'PAST_DUE'">Past Due</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">End Date</label>
+              <input 
+                [(ngModel)]="subscription.end_date" 
+                name="end_date"
+                type="date"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Renews At</label>
+              <input 
+                [(ngModel)]="subscription.renews_at" 
+                name="renews_at"
+                type="date"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+            <button
+              type="button"
+              (click)="editOpen.set(false)"
+              class="px-4 py-2.5 bg-gray-600 hover:bg-gray-500 text-white font-medium rounded-xl transition-all duration-200">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="isUpdating()"
+              class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+              @if (isUpdating()) {
+                <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                <span>Saving...</span>
+              } @else {
+                <span>Save Changes</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

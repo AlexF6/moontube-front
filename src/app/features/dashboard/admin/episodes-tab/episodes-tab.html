@@ -1,145 +1,531 @@
-<!-- Error -->
-@if (error()) {
-  <div class="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg flex justify-between items-center">
-    <span class="text-red-200">{{ error() }}</span>
-    <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-xl font-bold">&times;</button>
-  </div>
-}
-
-<!-- Header + Add -->
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-  <h2 class="text-2xl font-semibold text-orange-500">Episodes Management ({{ total() }})</h2>
-  <button (click)="create()" class="px-6 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-600/10 hover:text-gray-200 transition-colors">Add Episode</button>
-</div>
-
-<!-- Filters -->
-<div class="rounded-lg p-4 bg-gray-800/30 border border-gray-700 mb-6">
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-    <select [(ngModel)]="query().content_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="null">All Content</option>
-      @for (content of contentItems(); track content.id) {
-        <option [ngValue]="content.id">{{ content.title }}</option>
-      }
-    </select>
-    <input [(ngModel)]="query().season" type="number" min="1" placeholder="Season" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().ep" type="number" min="1" placeholder="Episode" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().q_title" placeholder="Search title" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
-    <input [(ngModel)]="query().min_duration" type="number" min="1" placeholder="Min duration (s)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().max_duration" type="number" min="1" placeholder="Max duration (s)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().year_from" type="number" min="1800" max="2100" placeholder="Year from" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="query().year_to" type="number" min="1800" max="2100" placeholder="Year to" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-    <select [(ngModel)]="query().order_by" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option value="created_at">Created At</option>
-      <option value="season">Season</option>
-      <option value="episode">Episode</option>
-      <option value="title">Title</option>
-      <option value="release_date">Release Date</option>
-    </select>
-    <select [(ngModel)]="query().order_dir" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option value="desc">Descending</option>
-      <option value="asc">Ascending</option>
-    </select>
-  </div>
-  <div class="mt-3 flex gap-2">
-    <button (click)="applyFilters()" class="px-4 py-2 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 transition">Apply</button>
-    <button (click)="resetFilters()" class="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-600/10 transition">Reset</button>
-  </div>
-</div>
-
-<!-- Create form -->
-<div class="rounded-lg p-6 bg-gray-800/30 border border-gray-700 mb-6">
-  <h3 class="text-xl font-medium mb-4 text-orange-500">Create New Episode</h3>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-    <select [(ngModel)]="newEpisode().content_id" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition">
-      <option [ngValue]="''">Select Content</option>
-      @for (content of contentItems(); track content.id) {
-        <option [ngValue]="content.id">{{ content.title }}</option>
-      }
-    </select>
-    <input [(ngModel)]="newEpisode().season_number" type="number" min="1" placeholder="Season Number" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="newEpisode().episode_number" type="number" min="1" placeholder="Episode Number" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="newEpisode().title" placeholder="Title" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-    <input [(ngModel)]="newEpisode().duration_seconds" type="number" min="1" placeholder="Duration (seconds)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="newEpisode().release_date" type="date" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-    <input [(ngModel)]="newEpisode().video_url" placeholder="Video URL" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-500 outline-none transition" />
-  </div>
-  @if (isContentLoading()) {
-    <div class="mt-2 text-sm text-gray-400">Loading content...</div>
-  }
-</div>
-
-<!-- Table -->
-<div class="bg-gray-800/30 border border-gray-700 rounded-lg overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full">
-      <thead class="bg-gray-900/40">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Content</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Season</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Episode</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Title</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Duration</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Release Date</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        @for (item of items(); track item.id) {
-          <tr class="hover:bg-gray-700/40 transition">
-            <td class="px-6 py-4 text-sm text-gray-300">
-              {{ getContentTitle(item.content_id) }}
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ item.season_number }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ item.episode_number }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ item.title }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ formatDuration(item.duration_seconds) }}</td>
-            <td class="px-6 py-4 text-sm text-gray-300">{{ item.release_date || '—' }}</td>
-            <td class="px-6 py-4 text-sm flex items-center gap-2">
-              <button (click)="openEdit(item.id)" class="px-3 py-1 border border-yellow-600 text-yellow-500 rounded-lg hover:bg-yellow-600/10 text-xs transition">Edit</button>
-              <button (click)="remove(item.id)" class="px-3 py-1 border border-orange-500 text-orange-400 rounded-lg hover:bg-orange-600/10 text-xs transition">Delete</button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-  @if (isLoading()) {
-    <div class="p-4 text-center text-gray-400">Loading episodes…</div>
-  }
-</div>
-
-<!-- Edit Modal -->
-@if (editOpen() && editing(); as item) {
-  <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[4px] z-50">
-    <div class="bg-gray-800/80 border border-gray-700 rounded-xl w-full max-w-md p-6 relative">
-      <button (click)="editOpen.set(false)" class="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl">✕</button>
-      <h3 class="text-xl font-medium text-orange-500 mb-4">Edit Episode</h3>
-      <div class="grid grid-cols-1 gap-3">
-        <input [(ngModel)]="item.season_number" type="number" min="1" placeholder="Season Number" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.episode_number" type="number" min="1" placeholder="Episode Number" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.title" placeholder="Title" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.duration_seconds" type="number" min="1" placeholder="Duration (seconds)" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.release_date" type="date" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <input [(ngModel)]="item.video_url" placeholder="Video URL" class="px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-300" />
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Content:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ getContentTitle(item.content_id) }}</p>
-        </div>
-        <div class="mt-2">
-          <label class="text-sm text-gray-400">Episode ID:</label>
-          <p class="text-gray-300 font-mono text-sm bg-gray-900 p-2 rounded">{{ item.id }}</p>
-        </div>
-      </div>
-      <div class="mt-6 flex justify-end gap-2">
-        <button (click)="editOpen.set(false)" class="px-4 py-2 border border-gray-500 text-gray-400 rounded-lg hover:bg-gray-600/10 transition">Cancel</button>
-        <button (click)="saveEdits()" class="px-4 py-2 border border-green-500 text-green-400 rounded-lg hover:bg-green-600/10 transition">Save</button>
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-gray-700/50">
+    <div>
+      <h2 class="text-2xl font-bold text-white mb-1">Episodes Management</h2>
+      <p class="text-gray-400 text-sm">Manage TV series episodes and metadata</p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="px-4 py-2 bg-gray-800/50 rounded-xl border border-gray-700/50">
+        <div class="text-white font-semibold text-lg text-center">{{ total() }}</div>
+        <div class="text-gray-400 text-xs">Total Episodes</div>
       </div>
     </div>
   </div>
-}
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl backdrop-blur-sm">
+      <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <span class="text-sm flex-1">{{ error() }}</span>
+      <button (click)="clearError()" class="text-red-400 hover:text-red-200 text-lg font-bold transition-colors">&times;</button>
+    </div>
+  }
+
+  <!-- Filters -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+      </svg>
+      Filters & Search
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Content</label>
+        <select 
+          [ngModel]="query().content_id"
+          (ngModelChange)="onQueryChange('content_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="null">All Content</option>
+          @for (content of contentItems(); track content.id) {
+            <option [ngValue]="content.id">{{ content.title }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Season</label>
+        <input 
+          [ngModel]="query().season"
+          (ngModelChange)="onQueryChange('season', $event)"
+          type="number" 
+          min="1" 
+          placeholder="Season number"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Episode</label>
+        <input 
+          [ngModel]="query().ep"
+          (ngModelChange)="onQueryChange('ep', $event)"
+          type="number" 
+          min="1" 
+          placeholder="Episode number"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Search Title</label>
+        <input 
+          [ngModel]="query().q_title"
+          (ngModelChange)="onQueryChange('q_title', $event)"
+          placeholder="Search episode titles..."
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Duration Range (seconds)</label>
+        <div class="flex gap-2">
+          <input 
+            [ngModel]="query().min_duration"
+            (ngModelChange)="onQueryChange('min_duration', $event)"
+            type="number" 
+            min="1" 
+            placeholder="Min"
+            class="flex-1 w-4 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+          <input 
+            [ngModel]="query().max_duration"
+            (ngModelChange)="onQueryChange('max_duration', $event)"
+            type="number" 
+            min="1" 
+            placeholder="Max"
+            class="flex-1 px-4 w-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Release Year Range</label>
+        <div class="flex gap-2">
+          <input 
+            [ngModel]="query().year_from"
+            (ngModelChange)="onQueryChange('year_from', $event)"
+            type="number" 
+            min="1800" 
+            max="2100" 
+            placeholder="From"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+          <input 
+            [ngModel]="query().year_to"
+            (ngModelChange)="onQueryChange('year_to', $event)"
+            type="number" 
+            min="1800" 
+            max="2100" 
+            placeholder="To"
+            class="flex-1 px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Sort By</label>
+        <select 
+          [ngModel]="query().order_by"
+          (ngModelChange)="onQueryChange('order_by', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option value="created_at">Created At</option>
+          <option value="season">Season</option>
+          <option value="episode">Episode</option>
+          <option value="title">Title</option>
+          <option value="release_date">Release Date</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Sort Direction</label>
+        <select 
+          [ngModel]="query().order_dir"
+          (ngModelChange)="onQueryChange('order_dir', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option value="desc">Descending</option>
+          <option value="asc">Ascending</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-4 border-t border-gray-700/50">
+      <div class="text-gray-400 text-sm">
+        Showing {{ items().length }} of {{ total() }} episodes
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          (click)="resetFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Reset
+        </button>
+        <button 
+          (click)="applyFilters()" 
+          [disabled]="isLoading()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"/>
+          </svg>
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create New Episode -->
+  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+    <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create New Episode
+    </h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Content *</label>
+        <select 
+          [ngModel]="newEpisode().content_id"
+          (ngModelChange)="onNewEpisodeChange('content_id', $event)"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200">
+          <option [ngValue]="''">Select Content</option>
+          @for (content of contentItems(); track content.id) {
+            <option [ngValue]="content.id">{{ content.title }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Season Number *</label>
+        <input 
+          [ngModel]="newEpisode().season_number"
+          (ngModelChange)="onNewEpisodeChange('season_number', $event)"
+          type="number" 
+          min="1" 
+          placeholder="1"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Episode Number *</label>
+        <input 
+          [ngModel]="newEpisode().episode_number"
+          (ngModelChange)="onNewEpisodeChange('episode_number', $event)"
+          type="number" 
+          min="1" 
+          placeholder="1"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Title *</label>
+        <input 
+          [ngModel]="newEpisode().title"
+          (ngModelChange)="onNewEpisodeChange('title', $event)"
+          placeholder="Episode title"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Duration (seconds)</label>
+        <input 
+          [ngModel]="newEpisode().duration_seconds"
+          (ngModelChange)="onNewEpisodeChange('duration_seconds', $event)"
+          type="number" 
+          min="1" 
+          placeholder="Duration in seconds"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Release Date</label>
+        <input 
+          [ngModel]="newEpisode().release_date"
+          (ngModelChange)="onNewEpisodeChange('release_date', $event)"
+          type="date"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-gray-300 text-sm font-medium">Video URL</label>
+        <input 
+          [ngModel]="newEpisode().video_url"
+          (ngModelChange)="onNewEpisodeChange('video_url', $event)"
+          placeholder="https://example.com/video.mp4"
+          class="w-full px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 placeholder-gray-400" />
+      </div>
+    </div>
+
+    @if (isContentLoading()) {
+      <div class="flex items-center gap-2 text-orange-400 text-sm mb-4">
+        <svg class="w-4 h-4 animate-spin" fill="currentColor" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading content...
+      </div>
+    }
+    
+    <div class="flex justify-end">
+      <button 
+        (click)="create()" 
+        [disabled]="!canCreate() || isCreating()"
+        class="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+        @if (isCreating()) {
+          <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+          <span>Creating...</span>
+        } @else {
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Create Episode</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Episodes List -->
+  @if (isLoading() && items().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent"></div>
+      <p class="text-gray-400 text-sm">Loading episodes...</p>
+    </div>
+  }
+
+  @if (!isLoading() && items().length === 0) {
+    <div class="text-center py-16 space-y-4">
+      <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <div class="space-y-2">
+        <div class="text-gray-300 text-xl font-medium">No episodes found</div>
+        <p class="text-gray-500 max-w-md mx-auto text-sm">
+          No episodes match your current filter criteria. Try adjusting your filters or create a new episode.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (items().length > 0) {
+    <div class="space-y-6">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Episode Library ({{ total() }} episodes)
+      </h3>
+
+      <div class="grid gap-4">
+        @for (episode of items(); track episode.id) {
+          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
+            <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+              <!-- Content Thumbnail -->
+              <div class="flex-shrink-0">
+                @if (getContentThumbnail(episode.content_id)) {
+                  <img 
+                    [src]="getContentThumbnail(episode.content_id)" 
+                    alt="Content thumbnail" 
+                    class="w-32 h-20 rounded-xl object-cover border border-gray-600 shadow-lg group-hover:scale-105 transition-transform duration-200" />
+                } @else {
+                  <div class="w-32 h-20 rounded-xl bg-gray-700/50 border border-gray-600 flex items-center justify-center text-gray-400 shadow-lg group-hover:scale-105 transition-transform duration-200">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+                    </svg>
+                  </div>
+                }
+              </div>
+
+              <!-- Episode Details -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h4 class="text-lg font-semibold text-white mb-2">{{ episode.title }}</h4>
+                    <div class="flex items-center gap-3 text-gray-400 text-sm">
+                      <span class="px-3 py-1 bg-orange-500/20 text-orange-300 rounded-full text-xs font-medium border border-orange-500/30">
+                        {{ getEpisodeNumber(episode) }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+                        </svg>
+                        {{ getContentTitle(episode.content_id) }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ formatDuration(episode.duration_seconds) }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Actions -->
+                  <div class="flex gap-2">
+                    <button
+                      (click)="openEdit(episode.id)"
+                      class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-xl transition-all duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      <span>Edit</span>
+                    </button>
+                    
+                    <button
+                      (click)="remove(episode.id)"
+                      class="flex items-center gap-2 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm rounded-xl transition-all duration-200">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Episode Metadata -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Episode ID</div>
+                    <div class="text-white text-sm font-mono">{{ episode.id }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Content ID</div>
+                    <div class="text-white text-sm font-mono">{{ episode.content_id }}</div>
+                  </div>
+                  <div class="space-y-1">
+                    <div class="text-gray-400 text-xs font-medium">Release Date</div>
+                    <div class="text-white text-sm">{{ formatDate(episode.release_date) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Edit Modal -->
+  @if (editOpen() && editing(); as episode) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700/50 w-full max-w-2xl shadow-2xl">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white">Edit Episode</h3>
+        </div>
+        
+        <form (ngSubmit)="saveEdits()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Season Number -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Season Number *</label>
+              <input 
+                [(ngModel)]="episode.season_number" 
+                name="season_number"
+                type="number" 
+                min="1" 
+                placeholder="1"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Episode Number -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Episode Number *</label>
+              <input 
+                [(ngModel)]="episode.episode_number" 
+                name="episode_number"
+                type="number" 
+                min="1" 
+                placeholder="1"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Title -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Title *</label>
+              <input 
+                [(ngModel)]="episode.title" 
+                name="title"
+                placeholder="Episode title"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Duration -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Duration (seconds)</label>
+              <input 
+                [(ngModel)]="episode.duration_seconds" 
+                name="duration_seconds"
+                type="number" 
+                min="1" 
+                placeholder="Duration in seconds"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Release Date -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Release Date</label>
+              <input 
+                [(ngModel)]="episode.release_date" 
+                name="release_date"
+                type="date"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Video URL -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Video URL</label>
+              <input 
+                [(ngModel)]="episode.video_url" 
+                name="video_url"
+                placeholder="https://example.com/video.mp4"
+                class="w-full px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200" />
+            </div>
+
+            <!-- Read-only fields -->
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Content</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm">
+                {{ getContentTitle(episode.content_id) }}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-gray-300 text-sm font-medium">Episode ID</label>
+              <div class="px-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white text-sm font-mono">
+                {{ episode.id }}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+            <button
+              type="button"
+              (click)="editOpen.set(false)"
+              class="px-4 py-2.5 bg-gray-600 hover:bg-gray-500 text-white font-medium rounded-xl transition-all duration-200">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              [disabled]="isUpdating() || !episode.title || episode.season_number < 1 || episode.episode_number < 1"
+              class="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white font-medium rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+              @if (isUpdating()) {
+                <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
+                <span>Saving...</span>
+              } @else {
+                <span>Save Changes</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

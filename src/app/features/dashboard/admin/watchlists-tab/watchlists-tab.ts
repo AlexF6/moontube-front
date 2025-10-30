@@ -1,4 +1,3 @@
-// src/app/features/dashboard/admin/watchlists-tab/watchlists-tab.ts
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -30,14 +29,16 @@ export class WatchlistsTabComponent implements OnInit {
   private profilesService = inject(ProfilesService);
   private contentService = inject(ContentsService);
 
-  // State signals
+  // State
   error = signal<string | null>(null);
   items = signal<WatchlistList[]>([]);
   total = signal<number>(0);
   isLoading = signal<boolean>(false);
+  isCreating = signal<boolean>(false);
+  isUpdating = signal<boolean>(false);
   editOpen = signal<boolean>(false);
-  
-  // Query and form signals
+
+  // Query + form
   query = signal<QueryParams>({
     profile_id: null,
     content_id: null,
@@ -52,19 +53,22 @@ export class WatchlistsTabComponent implements OnInit {
   isProfilesLoading = signal<boolean>(false);
   isContentLoading = signal<boolean>(false);
 
+  // Maps
   profileNameMap = computed(() => {
     const map = new Map<string, string>();
-    this.profiles().forEach(profile => {
-      map.set(profile.id, profile.name);
-    });
+    this.profiles().forEach(p => map.set(p.id, p.name));
     return map;
   });
 
   contentTitleMap = computed(() => {
     const map = new Map<string, string>();
-    this.contentItems().forEach(content => {
-      map.set(content.id, content.title);
-    });
+    this.contentItems().forEach(c => map.set(c.id, c.title));
+    return map;
+  });
+
+  contentThumbnailMap = computed(() => {
+    const map = new Map<string, string>();
+    this.contentItems().forEach(c => map.set(c.id, c.thumbnail || ''));
     return map;
   });
 
@@ -73,131 +77,33 @@ export class WatchlistsTabComponent implements OnInit {
     content_id: ''
   });
 
+  canCreate = computed(() => {
+    const w = this.newWatchlist();
+    return !!w.profile_id && !!w.content_id;
+  });
+
   editing = signal<Watchlist | null>(null);
 
+  // ---------- Lifecycle ----------
   async ngOnInit() {
-    await this.loadProfiles();
-    await this.loadContent();
-    await this.loadWatchlists();
+    await Promise.all([
+      this.loadProfiles(),
+      this.loadContent(),
+      this.loadWatchlists()
+    ]);
   }
 
-  private async loadProfiles() {
-    try {
-      this.isProfilesLoading.set(true);
-      const profiles = await firstValueFrom(this.profilesService.getProfiles({}));
-      this.profiles.set(profiles || []);
-    } catch (err: any) {
-      this.error.set('Failed to load profiles: ' + this.getErrorMessage(err));
-    } finally {
-      this.isProfilesLoading.set(false);
-    }
+  // ---------- Template handlers (no arrow funcs in template) ----------
+  onQueryChange<K extends keyof QueryParams>(key: K, value: QueryParams[K]) {
+    this.query.update(q => ({ ...q, [key]: value }));
   }
 
-  private async loadContent() {
-    try {
-      this.isContentLoading.set(true);
-      
-      // 💡 FIX: Use getContents for a list, and pass the required QueryParams.
-      // An empty object `{}` is correct here to fetch content without filters.
-      const content  = await firstValueFrom(this.contentService.getContents({}));
-      
-      // The type of 'content' is now ContentList[] | undefined
-      this.contentItems.set(content || []);
-    } catch (err: any) {
-      this.error.set('Failed to load content: ' + this.getErrorMessage(err));
-    } finally {
-      this.isContentLoading.set(false);
-    }
-  }
-
-  async loadWatchlists() {
-    try {
-      this.isLoading.set(true);
-      this.error.set(null);
-      
-      const response = await firstValueFrom(this.watchlistService.getWatchlists(this.query()));
-      this.items.set(response || []);
-      this.total.set(response?.length || 0);
-    } catch (err) {
-      this.error.set(this.getErrorMessage(err));
-    } finally {
-      this.isLoading.set(false);
-    }
-  }
-
-  async create() {
-    try {
-      this.error.set(null);
-      
-      // Validate required fields
-      if (!this.newWatchlist().profile_id || !this.newWatchlist().content_id) {
-        this.error.set('Profile and Content are required');
-        return;
-      }
-      
-      await this.watchlistService.createWatchlist(this.newWatchlist()).toPromise();
-      
-      // Reset form
-      this.newWatchlist.set({
-        profile_id: '',
-        content_id: ''
-      });
-      
-      this.loadWatchlists();
-    } catch (err) {
-      this.error.set(this.getErrorMessage(err));
-    }
-  }
-
-  async openEdit(watchlistId: string) {
-    try {
-      this.error.set(null);
-      const watchlist = await this.watchlistService.getWatchlist(watchlistId).toPromise();
-      this.editing.set(watchlist || null);
-      this.editOpen.set(true);
-    } catch (err) {
-      this.error.set(this.getErrorMessage(err));
-    }
-  }
-
-  async saveEdits() {
-    try {
-      this.error.set(null);
-      const editingWatchlist = this.editing();
-      
-      if (!editingWatchlist?.id) return;
-
-      const updateData: WatchlistUpdate = {
-        profile_id: editingWatchlist.profile_id,
-        content_id: editingWatchlist.content_id
-      };
-
-      await this.watchlistService.updateWatchlist(editingWatchlist.id, updateData).toPromise();
-      
-      this.editOpen.set(false);
-      this.editing.set(null);
-      this.loadWatchlists();
-    } catch (err) {
-      this.error.set(this.getErrorMessage(err));
-    }
-  }
-
-  async remove(watchlistId: string) {
-    if (!confirm('Are you sure you want to delete this watchlist item?')) {
-      return;
-    }
-
-    try {
-      this.error.set(null);
-      await this.watchlistService.deleteWatchlist(watchlistId).toPromise();
-      this.loadWatchlists();
-    } catch (err) {
-      this.error.set(this.getErrorMessage(err));
-    }
+  onNewWatchlistChange<K extends keyof WatchlistCreate>(key: K, value: WatchlistCreate[K]) {
+    this.newWatchlist.update(w => ({ ...w, [key]: value }));
   }
 
   applyFilters() {
-    this.query().offset = 0;
+    this.query.update(q => ({ ...q, offset: 0 }));
     this.loadWatchlists();
   }
 
@@ -217,12 +123,136 @@ export class WatchlistsTabComponent implements OnInit {
     this.error.set(null);
   }
 
+  // ---------- Data ----------
+  private async loadProfiles() {
+    try {
+      this.isProfilesLoading.set(true);
+      const profiles = await firstValueFrom(this.profilesService.getProfiles({} as any));
+      this.profiles.set(profiles || []);
+    } catch (err: any) {
+      this.error.set('Failed to load profiles: ' + this.getErrorMessage(err));
+    } finally {
+      this.isProfilesLoading.set(false);
+    }
+  }
+
+  private async loadContent() {
+    try {
+      this.isContentLoading.set(true);
+      const content = await firstValueFrom(this.contentService.getContents({} as any));
+      this.contentItems.set(content || []);
+    } catch (err: any) {
+      this.error.set('Failed to load content: ' + this.getErrorMessage(err));
+    } finally {
+      this.isContentLoading.set(false);
+    }
+  }
+
+  async loadWatchlists() {
+    try {
+      this.isLoading.set(true);
+      this.error.set(null);
+      const response = await firstValueFrom(this.watchlistService.getWatchlists(this.query()));
+      this.items.set(response || []);
+      this.total.set(response?.length || 0);
+    } catch (err) {
+      this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  // ---------- Create ----------
+  async create() {
+    if (!this.canCreate()) {
+      this.error.set('Please select both profile and content');
+      return;
+    }
+    try {
+      this.isCreating.set(true);
+      this.error.set(null);
+
+      await firstValueFrom(this.watchlistService.createWatchlist(this.newWatchlist()));
+
+      this.newWatchlist.set({ profile_id: '', content_id: '' });
+      await this.loadWatchlists();
+    } catch (err) {
+      this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.isCreating.set(false);
+    }
+  }
+
+  // ---------- Edit ----------
+  async openEdit(watchlistId: string) {
+    try {
+      this.error.set(null);
+      const watchlist = await firstValueFrom(this.watchlistService.getWatchlist(watchlistId));
+      this.editing.set(watchlist || null);
+      this.editOpen.set(true);
+    } catch (err) {
+      this.error.set(this.getErrorMessage(err));
+    }
+  }
+
+  async saveEdits() {
+    try {
+      this.isUpdating.set(true);
+      this.error.set(null);
+      const editingWatchlist = this.editing();
+      if (!editingWatchlist?.id) return;
+
+      const updateData: WatchlistUpdate = {
+        profile_id: editingWatchlist.profile_id,
+        content_id: editingWatchlist.content_id
+      };
+
+      await firstValueFrom(this.watchlistService.updateWatchlist(editingWatchlist.id, updateData));
+      this.editOpen.set(false);
+      this.editing.set(null);
+      await this.loadWatchlists();
+    } catch (err) {
+      this.error.set(this.getErrorMessage(err));
+    } finally {
+      this.isUpdating.set(false);
+    }
+  }
+
+  // ---------- Delete ----------
+  async remove(watchlistId: string) {
+    if (!confirm('Are you sure you want to delete this watchlist item? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      this.error.set(null);
+      await firstValueFrom(this.watchlistService.deleteWatchlist(watchlistId));
+      await this.loadWatchlists();
+    } catch (err) {
+      this.error.set(this.getErrorMessage(err));
+    }
+  }
+
+  // ---------- Utils ----------
   getProfileName(profileId: string): string {
     return this.profileNameMap().get(profileId) || 'Unknown Profile';
   }
 
   getContentTitle(contentId: string): string {
     return this.contentTitleMap().get(contentId) || 'Unknown Content';
+  }
+
+  getContentThumbnail(contentId: string): string {
+    return this.contentThumbnailMap().get(contentId) || '';
+  }
+
+  formatDate(date: string | null): string {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString();
+  }
+
+  formatDateTime(date: string | null): string {
+    if (!date) return '-';
+    return new Date(date).toLocaleString();
   }
 
   private getErrorMessage(error: any): string {

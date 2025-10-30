@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SubscriptionsService } from '../../../../core/services/subscriptions.service';
@@ -30,6 +30,8 @@ export class SubscriptionsTabComponent implements OnInit {
   items = signal<SubscriptionListItem[]>([]);
   total = signal(0);
   isLoading = signal(false);
+  isCreating = signal(false);
+  isUpdating = signal(false);
   error = signal<string | null>(null);
 
   // Dropdown data
@@ -55,10 +57,23 @@ export class SubscriptionsTabComponent implements OnInit {
     order_dir: 'desc',
   });
 
+  // Computed values
+  activeCount = computed(() => 
+    this.items().filter(item => item.status === SubscriptionStatus.ACTIVE).length
+  );
+  canceledCount = computed(() => 
+    this.items().filter(item => item.status === SubscriptionStatus.CANCELED).length
+  );
+  pastDueCount = computed(() => 
+    this.items().filter(item => item.status === SubscriptionStatus.PAST_DUE).length
+  );
+
   async ngOnInit() {
-    await this.loadUsers();
-    await this.loadPlans();
-    await this.loadSubscriptions();
+    await Promise.all([
+      this.loadUsers(),
+      this.loadPlans(),
+      this.loadSubscriptions()
+    ]);
   }
 
   private async loadUsers() {
@@ -72,9 +87,7 @@ export class SubscriptionsTabComponent implements OnInit {
 
   private async loadPlans() {
     try {
-      const plans = (await this.plansService.list({}).toPromise()) as
-        | PlanList[]
-        | undefined;
+      const plans = (await this.plansService.list({}).toPromise()) as PlanList[] | undefined;
       this.plans.set(plans || []);
     } catch (err: any) {
       this.error.set('Failed to load plans');
@@ -90,7 +103,7 @@ export class SubscriptionsTabComponent implements OnInit {
     return {
       user_id: '',
       plan_id: '',
-      status: SubscriptionStatus.ACTIVE, // backend defaults to ACTIVE if omitted; keeping explicit
+      status: SubscriptionStatus.ACTIVE,
       start_date: today,
       end_date: endDate,
       renews_at: endDate,
@@ -113,14 +126,19 @@ export class SubscriptionsTabComponent implements OnInit {
   }
 
   async create() {
+    if (!this.newSubscription().user_id || !this.newSubscription().plan_id) return;
+
+    this.isCreating.set(true);
     this.error.set(null);
 
     try {
       await this.subscriptionsService.create(this.newSubscription()).toPromise();
       this.newSubscription.set(this.getDefaultSubscription());
-      this.loadSubscriptions();
+      await this.loadSubscriptions();
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to create subscription');
+    } finally {
+      this.isCreating.set(false);
     }
   }
 
@@ -132,6 +150,7 @@ export class SubscriptionsTabComponent implements OnInit {
   async saveEdits() {
     if (!this.editing()) return;
 
+    this.isUpdating.set(true);
     this.error.set(null);
 
     try {
@@ -148,20 +167,22 @@ export class SubscriptionsTabComponent implements OnInit {
         .toPromise();
       this.editOpen.set(false);
       this.editing.set(null);
-      this.loadSubscriptions();
+      await this.loadSubscriptions();
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to update subscription');
+    } finally {
+      this.isUpdating.set(false);
     }
   }
 
   async cancelSubscription(id: string) {
-    if (!confirm('Are you sure you want to cancel this subscription?')) return;
+    if (!confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) return;
 
     this.error.set(null);
 
     try {
       await this.subscriptionsService.cancel(id).toPromise();
-      this.loadSubscriptions();
+      await this.loadSubscriptions();
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to cancel subscription');
     }
@@ -172,7 +193,7 @@ export class SubscriptionsTabComponent implements OnInit {
 
     try {
       await this.subscriptionsService.reactivate(id).toPromise();
-      this.loadSubscriptions();
+      await this.loadSubscriptions();
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to reactivate subscription');
     }
@@ -216,23 +237,49 @@ export class SubscriptionsTabComponent implements OnInit {
   getStatusColor(status: SubscriptionStatus): string {
     switch (status) {
       case SubscriptionStatus.ACTIVE:
-        return 'text-green-400';
+        return 'bg-green-500/20 text-green-300 border border-green-500/30';
       case SubscriptionStatus.CANCELED:
-        return 'text-red-400';
+        return 'bg-red-500/20 text-red-300 border border-red-500/30';
       case SubscriptionStatus.PAST_DUE:
-        return 'text-yellow-400';
+        return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30';
       default:
-        return 'text-gray-400';
+        return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
+    }
+  }
+
+  getStatusBadge(status: SubscriptionStatus): string {
+    switch (status) {
+      case SubscriptionStatus.ACTIVE:
+        return '● Active';
+      case SubscriptionStatus.CANCELED:
+        return '● Canceled';
+      case SubscriptionStatus.PAST_DUE:
+        return '● Past Due';
+      default:
+        return '● Unknown';
     }
   }
 
   getUserName(userId: string): string {
     const user = this.users().find((u) => u.id === userId);
-    return user ? user.name || user.email : userId;
+    return user ? (user.name || user.email) : 'Unknown User';
   }
 
   getPlanName(planId: string): string {
-    const plan: PlanList | undefined = this.plans().find((p) => p.id === planId);
-    return plan ? plan.name : planId;
+    const plan = this.plans().find((p) => p.id === planId);
+    return plan ? plan.name : 'Unknown Plan';
+  }
+
+  getDaysUntilRenewal(renewsAt: string | null): string {
+    if (!renewsAt) return '—';
+    const renewDate = new Date(renewsAt);
+    const today = new Date();
+    const diffTime = renewDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'Expired';
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    return `in ${diffDays} days`;
   }
 }
