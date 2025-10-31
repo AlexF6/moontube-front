@@ -1,74 +1,104 @@
 @if (ui.isSidebarOpen()) {
-  <div 
+  <div
     class="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-500 overflow-hidden"
     (click)="ui.close()">
   </div>
 }
 
-<aside 
+<aside
+  role="navigation"
+  aria-label="Main"
   data-sidebar="root"
-  class="fixed md:static top-0 left-0 z-50 w-[280px] h-full md:h-auto 
-         bg-black transition-transform duration-300 
+  class="fixed md:static top-0 left-0 z-50 w-[280px] h-full md:h-auto
+         bg-black transition-transform duration-300
          flex flex-col px-4 py-[28px]"
   [class.-translate-x-full]="!ui.isSidebarOpen() && !isDesktop"
   [class.translate-x-0]="ui.isSidebarOpen() || isDesktop">
-  
+
   <div data-slot="sidebar-header" class="flex text-center items-center justify-center">
     <span class="text-2xl font-bold text-orange-400 tracking-widest pb-4">MOONTUBE</span>
   </div>
 
   <ul data-slot="sidebar-menu" class="flex flex-col gap-1 p-2">
+
+    <!-- Home (active only on exact "/") -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
-      <a [routerLink]="['/']" 
-        data-slot="sidebar-menu-button"
-        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-              transition-colors duration-300 bg-orange-800/40 hover:bg-orange-500/90 border-2 border-orange-500 hover:text-white
-              data-[active=true]:bg-orange-800/40 data-[active=true]:text-orange-400">
-        
-        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M220-180h150v-250h220v250h150v-390L480-765 220-570v390Zm-60 60v-480l320-240 320 240v480H530v-250H430v250H160Zm320-353Z"/></svg>
+      <a
+        [routerLink]="['/']"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        [attr.aria-current]="isActiveExact('/') ? 'page' : null"
+        class="flex items-center gap-2 p-3 w-full rounded-lg text-white/80 text-lg font-semibold
+               transition-colors duration-300 border border-transparent hover:bg-orange-500/60 relative"
+        [class.ring-1]="isActiveExact('/')"
+        [class.ring-orange-500]="isActiveExact('/')"
+        [class.bg-orange-500/10]="isActiveExact('/')"
+        [class.text-orange-300]="isActiveExact('/')"
+        [class.border-orange-400]="isActiveExact('/')">
+        <span class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+              [class.bg-orange-500]="isActiveExact('/')"></span>
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M220-180h150v-250h220v250h150v-390L480-765 220-570v390Zm-60 60v-480l320-240 320 240v480H530v-250H430v250H160Zm320-353Z"/></svg>
         Home
       </a>
     </li>
 
-    <!-- Single Dashboard Link - Always Visible -->
+    <!-- Dashboard (admin or user). Uses button + programmatic nav; style as active when URL starts with /dashboard -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
         (click)="navigateToDashboard()"
-        data-slot="sidebar-menu-button"
-        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 hover:bg-orange-500/90 hover:border-orange-500">
-        
-        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M510-570v-270h330v270H510ZM120-450v-390h330v390H120Zm390 330v-390h330v390H510Zm-390 0v-270h330v270H120Zm60-390h210v-270H180v270Zm390 330h210v-270H570v270Zm0-450h210v-150H570v150ZM180-180h210v-150H180v150Zm210-330Zm180-120Zm0 180ZM390-330Z"/></svg>
+        [attr.aria-current]="isActiveStartsWith('/dashboard') ? 'page' : null"
+        class="flex items-center gap-2 p-3 w-full rounded-lg text-white/80 text-lg font-semibold
+               transition-colors duration-300 border border-transparent hover:bg-orange-500/60 relative"
+        [class.ring-1]="isActiveStartsWith('/dashboard')"
+        [class.ring-orange-500]="isActiveStartsWith('/dashboard')"
+        [class.bg-orange-500/10]="isActiveStartsWith('/dashboard')"
+        [class.text-orange-300]="isActiveStartsWith('/dashboard')"
+        [class.border-orange-400]="isActiveStartsWith('/dashboard')">
+        <span class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+              [class.bg-orange-500]="isActiveStartsWith('/dashboard')"></span>
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M510-570v-270h330v270H510ZM120-450v-390h330v390H120Zm390 330v-390h330v390H510Zm-390 0v-270h330v270H120Zm60-390h210v-270H180v270Zm390 330h210v-270H570v270Zm0-450h210v-150H570v150ZM180-180h210v-150H180v150Zm210-330Zm180-120Zm0 180ZM390-330Z"/></svg>
         Dashboard
       </button>
     </li>
 
+    <!-- My Playlist -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
         (click)="navigateToPlaylist()"
-        data-slot="sidebar-menu-button"
-        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 hover:bg-orange-500/90 hover:border-orange-500">
-        <svg class="h-6 w-6"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 -960 960 960" fill="currentColor">
+        [attr.aria-current]="isActiveStartsWith('/playlists') ? 'page' : null"
+        class="flex items-center gap-2 p-3 w-full rounded-lg text-white/80 text-lg font-semibold
+               transition-colors duration-300 border border-transparent hover:bg-orange-500/60 relative"
+        [class.ring-1]="isActiveStartsWith('/playlists')"
+        [class.ring-orange-500]="isActiveStartsWith('/playlists')"
+        [class.bg-orange-500/10]="isActiveStartsWith('/playlists')"
+        [class.text-orange-300]="isActiveStartsWith('/playlists')"
+        [class.border-orange-400]="isActiveStartsWith('/playlists')">
+        <span class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+              [class.bg-orange-500]="isActiveStartsWith('/playlists')"></span>
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
           <path d="M80-160v-60h800v60H80Zm89-160v-316h60v316h-60Zm159 0v-480h60v480h-60Zm159 0v-480h60v480h-60Zm275 0L597-600l54-30 162 280-51 30Z"/>
         </svg>
         <span>My Playlist</span>
       </button>
     </li>
 
+    <!-- Subscriptions -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
         (click)="navigateToSubscriptions()"
-        data-slot="sidebar-menu-button"
-        class="peer/menu-button flex items-center gap-2 p-3 w-full rounded-lg text-white/90 text-lg font-semibold
-               transition-colors duration-300 hover:bg-orange-500/90 hover:text-white">
-        <svg class="h-6 w-6"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 -960 960 960"
-            fill="currentColor">
-        <path d="M140-80q-24 0-42-18t-18-42v-440q0-24 18-42t42-18h680q24 0 42 18t18 42v440q0 24-18 42t-42 18H140Zm0-60h680v-440H140v440Zm267-71 221-149-221-148v297ZM149-700v-60h662v60H149Zm131-120v-60h400v60H280ZM140-140v-440 440Z"/>
+        [attr.aria-current]="isActiveStartsWith('/subscriptions') ? 'page' : null"
+        class="flex items-center gap-2 p-3 w-full rounded-lg text-white/80 text-lg font-semibold
+               transition-colors duration-300 border border-transparent hover:bg-orange-500/60 relative"
+        [class.ring-1]="isActiveStartsWith('/subscriptions')"
+        [class.ring-orange-500]="isActiveStartsWith('/subscriptions')"
+        [class.bg-orange-500/10]="isActiveStartsWith('/subscriptions')"
+        [class.text-orange-300]="isActiveStartsWith('/subscriptions')"
+        [class.border-orange-400]="isActiveStartsWith('/subscriptions')">
+        <span class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+              [class.bg-orange-500]="isActiveStartsWith('/subscriptions')"></span>
+        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 -960 960 960" fill="currentColor">
+          <path d="M140-80q-24 0-42-18t-18-42v-440q0-24 18-42t42-18h680q24 0 42 18t18 42v440q0 24-18 42t-42 18H140Zm0-60h680v-440H140v440Zm267-71 221-149-221-148v297ZM149-700v-60h662v60H149Zm131-120v-60h400v60H280ZM140-140v-440 440Z"/>
         </svg>
         <span>Subscriptions</span>
       </button>

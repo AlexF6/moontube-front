@@ -1,24 +1,26 @@
 import { Component, HostListener, inject } from "@angular/core";
-import { UiStateService } from '../../../core/ui-state.service';
-import { Router, RouterLink } from "@angular/router";
+import { Router, RouterLink, RouterLinkActive } from "@angular/router";
+
+import { UiStateService } from "../../../core/ui-state.service";
 import { AuthService } from "../../../core/auth.service";
 import { AuthUiService } from "../../../core/auth-ui.service";
+
 @Component({
   selector: "app-sidebar",
-  imports: [RouterLink],
   standalone: true,
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: "./sidebar.html"
 })
-
 export class Sidebar {
   private authService = inject(AuthService);
   private router = inject(Router);
   private authUi = inject(AuthUiService);
-  
-  
+
   constructor(public ui: UiStateService) {}
+
   isDesktop = window.innerWidth >= 768;
-  @HostListener('window:resize')
+
+  @HostListener("window:resize")
   onResize() {
     this.isDesktop = window.innerWidth >= 768;
   }
@@ -27,49 +29,55 @@ export class Sidebar {
     return this.authService.user();
   }
 
+  /** Helpers to decide active UI (so "Home" isn't always active) */
+  isActiveExact(path: string): boolean {
+    return this.router.url === path;
+  }
+  isActiveStartsWith(prefix: string): boolean {
+    return this.router.url.startsWith(prefix);
+  }
+
+  /** Close the sidebar on mobile after navigating */
+  private closeIfMobile() {
+    if (!this.isDesktop) this.ui.close();
+  }
+
+  /** Guarded navigations (open login if needed) */
   navigateToDashboard() {
     const user = this.authService.user();
-    
     if (user) {
-      // User is logged in - navigate to appropriate dashboard
-      if (user.is_admin) {
-        this.router.navigate(['/dashboard/admin']);
-      } else {
-        this.router.navigate(['/dashboard/user']);
-      }
+      this.router.navigate([user.is_admin ? "/dashboard/admin" : "/dashboard/user"]);
+      this.closeIfMobile();
     } else {
-      // User is not logged in - open login modal
       this.authUi.openLogin();
-      this.ui.close(); // Close sidebar on mobile after clicking
+      this.closeIfMobile();
     }
   }
 
-    navigateToPlaylist() {
+  navigateToPlaylist() {
     const user = this.authService.user();
-    
     if (user) {
-      this.router.navigate(['playlists']);
+      this.router.navigate(["/playlists"]);
+      this.closeIfMobile();
     } else {
-      // User is not logged in - open login modal
       this.authUi.openLogin();
-      this.ui.close(); // Close sidebar on mobile after clicking
+      this.closeIfMobile();
     }
   }
 
   navigateToSubscriptions() {
     const user = this.authService.user();
-    
     if (user) {
-      this.router.navigate(['subscriptions']);
+      this.router.navigate(["/subscriptions"]);
+      this.closeIfMobile();
     } else {
-      // User is not logged in - open login modal
       this.authUi.openLogin();
-      this.ui.close(); // Close sidebar on mobile after clicking
+      this.closeIfMobile();
     }
   }
 
   getDashboardLink(): string {
     const user = this.authService.user();
-    return user?.is_admin ? '/dashboard/admin' : '/dashboard/user';
+    return user?.is_admin ? "/dashboard/admin" : "/dashboard/user";
   }
 }
