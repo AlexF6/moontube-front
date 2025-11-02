@@ -75,50 +75,138 @@ ng e2e
 ## 📁 Project Structure
 
 ```plaintext
-moontube-front/
-├─ .angular/                 # Angular builder cache (ignored by Git)
-├─ node_modules/             # Dependencies (do not commit)
-├─ public/                   # Static assets (favicon, robots.txt, images)
-│   └─ favicon.ico
-│
-├─ src/
-│   ├─ app/
-│   │   ├─ core/             # Global services (auth, http-interceptors, guards)
-│   │   │   └─ auth.service.ts
-│   │   ├─ shared/           # Reusable components, pipes, directives
-│   │   │   ├─ components/
-│   │   │   │   └─ button/
-│   │   │   │       ├─ button.component.ts
-│   │   │   │       ├─ button.component.html
-│   │   │   │       └─ button.component.scss
-│   │   │   └─ pipes/
-│   │   ├─ features/         # Large modules/pages (home, dashboard, etc.)
-│   │   │   └─ home/
-│   │   │       ├─ home.component.ts
-│   │   │       ├─ home.component.html
-│   │   │       └─ home.component.scss
-│   │   ├─ app.config.ts     # Global providers (router, http, etc.)
-│   │   ├─ app.routes.ts     # Route definitions
-│   │   ├─ app.ts            # Root AppComponent
-│   │   ├─ app.html          # AppComponent template
-│   │   └─ app.scss          # AppComponent styles
-│   │
-│   ├─ assets/               # Static assets (images, fonts, data)
-│   │   └─ logo.svg
-│   │
-│   ├─ index.html            # Main HTML entry point
-│   ├─ main.ts               # Application bootstrap (AppComponent)
-│   └─ styles.scss           # Global styles (resets, variables, Tailwind)
-│
-├─ .editorconfig             # Optional code style configuration
-├─ .gitignore
-├─ angular.json
-├─ package.json
-├─ tsconfig.json
-├─ tsconfig.app.json
-├─ tsconfig.spec.json        # Test TypeScript configuration
-├─ pnpm-lock.yaml            # or package-lock.json (depending on your package manager)
-└─ README.md
+.
+├── README.md
+├── angular.json
+├── package.json
+├── pnpm-lock.yaml
+├── public
+│   └── favicon.ico
+├── src
+│   ├── app
+│   │   ├── app.config.ts
+│   │   ├── app.html
+│   │   ├── app.routes.ts
+│   │   ├── app.scss
+│   │   ├── app.ts
+│   │   ├── core
+│   │   │   ├── auth-ui.service.ts
+│   │   │   ├── auth.interceptor.ts
+│   │   │   ├── auth.service.ts
+│   │   │   ├── guards
+│   │   │   │   ├── admin.guard.ts
+│   │   │   │   └── auth.guard.ts
+│   │   │   ├── services
+│   │   │   │   ├── contents.service.ts
+│   │   │   │   ├── episodes.service.ts
+│   │   │   │   ├── payments.service.ts
+│   │   │   │   ├── plans.service.ts
+│   │   │   │   ├── playbacks.service.ts
+│   │   │   │   ├── profiles.service.ts
+│   │   │   │   ├── subscriptions.service.ts
+│   │   │   │   ├── users.service.ts
+│   │   │   │   └── watchlist.service.ts
+│   │   │   └── ui-state.service.ts
+│   │   ├── enviroments
+│   │   │   └── enviroment.ts
+│   │   ├── features
+│   │   │   ├── dashboard
+│   │   │   │   ├── admin
+│   │   │   │   │   ├── admin-shell.html
+│   │   │   │   │   ├── admin-shell.ts
+│   │   │   │   │   ├── contents-tab
+│   │   │   │   │   │   ├── content-tab.html
+│   │   │   │   │   │   └── content-tab.ts
+│   │   │   │   │   ├── episodes-tab
+│   │   │   │   │   │   ├── episodes-tab.html
+│   │   │   │   │   │   └── episodes-tab.ts
+│   │   │   │   │   ├── payments-tab
+│   │   │   │   │   │   ├── payments-tab.html
+│   │   │   │   │   │   └── payments-tab.ts
+│   │   │   │   │   ├── plans-tab
+│   │   │   │   │   │   ├── plans-tab.html
+│   │   │   │   │   │   └── plans-tab.ts
+│   │   │   │   │   ├── playbacks-tab
+│   │   │   │   │   │   ├── playbacks-tab.html
+│   │   │   │   │   │   └── playbacks-tab.ts
+│   │   │   │   │   ├── profiles-tab
+│   │   │   │   │   │   ├── profiles-tab.html
+│   │   │   │   │   │   └── profiles-tab.ts
+│   │   │   │   │   ├── subscriptions-tab
+│   │   │   │   │   │   ├── subscriptions-tab.html
+│   │   │   │   │   │   └── subscriptions-tab.ts
+│   │   │   │   │   ├── users-tab
+│   │   │   │   │   │   ├── users-tab.html
+│   │   │   │   │   │   └── users-tab.ts
+│   │   │   │   │   └── watchlists-tab
+│   │   │   │   │       ├── watchlists-tab.html
+│   │   │   │   │       └── watchlists-tab.ts
+│   │   │   │   └── user
+│   │   │   │       ├── payments-tab
+│   │   │   │       │   ├── payments-tab.html
+│   │   │   │       │   └── payments-tab.ts
+│   │   │   │       ├── playbacks-tab
+│   │   │   │       │   ├── playbacks-tab.html
+│   │   │   │       │   └── playbacks-tab.ts
+│   │   │   │       ├── profiles-tab
+│   │   │   │       │   ├── profile-tab.ts
+│   │   │   │       │   └── profiles-tab.html
+│   │   │   │       ├── user-shell.html
+│   │   │   │       └── user-shell.ts
+│   │   │   ├── home
+│   │   │   │   ├── home.html
+│   │   │   │   └── home.ts
+│   │   │   ├── login
+│   │   │   │   ├── login.html
+│   │   │   │   └── login.ts
+│   │   │   ├── register
+│   │   │   │   ├── register.html
+│   │   │   │   └── register.ts
+│   │   │   ├── search
+│   │   │   │   ├── search-page.html
+│   │   │   │   └── search-page.ts
+│   │   │   ├── subscription
+│   │   │   │   ├── subscriptions-tab.html
+│   │   │   │   └── subscriptions-tab.ts
+│   │   │   ├── watch
+│   │   │   │   ├── watch.html
+│   │   │   │   └── watch.ts
+│   │   │   └── watchlist
+│   │   │       ├── watchlist.html
+│   │   │       └── watchlist.ts
+│   │   ├── models
+│   │   │   ├── content.model.ts
+│   │   │   ├── episode.model.ts
+│   │   │   ├── payment.model.ts
+│   │   │   ├── plan.model.ts
+│   │   │   ├── playback.model.ts
+│   │   │   ├── profile.model.ts
+│   │   │   ├── subscription.model.ts
+│   │   │   ├── user.model.ts
+│   │   │   └── watchlist.model.ts
+│   │   └── shared
+│   │       └── components
+│   │           ├── header
+│   │           │   ├── header.html
+│   │           │   ├── header.scss
+│   │           │   └── header.ts
+│   │           ├── sidebar
+│   │           │   ├── sidebar.html
+│   │           │   └── sidebar.ts
+│   │           ├── video-card
+│   │           │   ├── video-card.html
+│   │           │   └── video-card.ts
+│   │           ├── video-grid
+│   │           │   ├── video-grid.html
+│   │           │   └── video-grid.ts
+│   │           └── video-player
+│   │               └── video-player.ts
+│   ├── index.html
+│   ├── main.ts
+│   └── styles.scss
+├── tsconfig.app.json
+├── tsconfig.json
+└── tsconfig.spec.json
 ```
 
 ---
