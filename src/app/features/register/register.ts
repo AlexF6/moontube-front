@@ -80,6 +80,7 @@ export class Register {
             this.loading = false;
             this.authUi.closeRegister();
             this.router.navigate(['/']);
+            
           },
           error: (loginErr) => {
             this.loading = false;
