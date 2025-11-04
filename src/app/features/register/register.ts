@@ -96,7 +96,6 @@ export class Register {
       error: (err) => {
         this.loading = false;
         
-        // Handle specific errors from your backend
         if (err.status === 400) {
           if (err.error?.detail?.includes('Email already registered')) {
             this.errorMsg = 'This email is already registered. Please use a different email or login.';
