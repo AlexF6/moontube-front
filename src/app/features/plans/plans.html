@@ -1,0 +1,142 @@
+<div class="space-y-6">
+  <!-- Header and Filters -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 py-4 border-b border-gray-700/50">
+    <div>
+      <h2 class="text-2xl font-bold text-white mb-1">Available Plans</h2>
+      <p class="text-gray-400 text-sm">Choose the perfect plan for your streaming needs</p>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl backdrop-blur-sm">
+      <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <span class="text-sm">{{ error() }}</span>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex flex-col items-center justify-center py-16 space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-2 border-orange-500 border-t-transparent"></div>
+      <p class="text-gray-400 text-sm">Loading available plans...</p>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && plans().length === 0) {
+    <div class="text-center py-16 space-y-4">
+      <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <div class="space-y-2">
+        <div class="text-gray-300 text-xl font-medium">No plans found</div>
+        <p class="text-gray-500 max-w-md mx-auto text-sm">
+          No plans match your current filter criteria. Try adjusting your search or filters.
+        </p>
+      </div>
+    </div>
+  }
+
+  <!-- Plans Grid -->
+  @if (!loading() && plans().length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (plan of plans(); track plan.id) {
+        <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-orange-500/50 transition-all duration-300 group relative">
+          
+          <!-- Popularity Badge -->
+          @if (getPopularityBadge(plan)) {
+            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2">
+              <span class="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide">
+                {{ getPopularityBadge(plan) }}
+              </span>
+            </div>
+          }
+
+          <!-- Current Plan Indicator -->
+          @if (isCurrentPlan(plan)) {
+            <div class="absolute -top-2 left-1/2 transform -translate-x-1/2">
+              <span class="bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide">
+                Current Plan
+              </span>
+            </div>
+          }
+
+          <!-- Plan Header -->
+          <div class="text-center mb-6">
+            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-orange-300 transition-colors duration-200">
+              {{ plan.name }}
+            </h3>
+            <div class="flex items-center justify-center gap-2 mb-3">
+              <span class="px-3 py-1 rounded-full text-xs font-semibold border"
+                    [class]="getQualityBadgeClass(plan.video_quality)">
+                {{ plan.video_quality }}
+              </span>
+            </div>
+            <div class="flex items-baseline justify-center gap-1">
+              <span class="text-4xl font-bold text-white">{{ getPlanPrice(plan) }}</span>
+              <span class="text-gray-400 text-sm">/month</span>
+            </div>
+          </div>
+
+          <!-- Plan Features -->
+          <div class="space-y-3 mb-6">
+            @for (feature of getPlanFeatures(plan); track feature) {
+              <div class="flex items-center gap-3 text-gray-300 text-sm">
+                <svg class="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span>{{ feature }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Additional Plan Details -->
+          <div class="space-y-2 text-xs text-gray-400 border-t border-gray-700/50 pt-4 mb-6">
+            <div class="flex justify-between">
+              <span>Resolution:</span>
+              <span class="text-white font-medium">
+                @switch (plan.video_quality) {
+                  @case ('SD') { 480p }
+                  @case ('HD') { 720p }
+                  @case ('FHD') { 1080p }
+                  @case ('UHD') { 2160p }
+                  @default { {{ plan.video_quality }} }
+                }
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span>Plan ID:</span>
+              <span class="text-white font-mono text-xs">{{ plan.id.slice(-8) }}</span>
+            </div>
+          </div>
+
+          <!-- Subscribe Button -->
+<button
+  (click)="handleSubscribe(plan)"
+  [disabled]="buttonDisabled(plan)"
+  class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 
+         disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 
+         transform group-hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+  @if (isCurrentPlan(plan)) {
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+  } @else if (actionPlanId() === plan.id) {
+    <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+  } @else {
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+    </svg>
+  }
+  <span>{{ buttonLabel(plan) }}</span>
+</button>
+        </div>
+      }
+    </div>
+  }
+</div>
