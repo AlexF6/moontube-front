@@ -30,11 +30,17 @@ export class ProfilesService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
 
-  // ---------- Reactive state for "active profile" ----------
+  // ---------- Reactive state ----------
+  readonly profileEpoch = signal(0);
   readonly profiles = signal<ProfileList[]>([]);
   readonly loading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
+  // Track if we already loaded once (to avoid duplicate loads from multiple components)
+  readonly loadedOnce = signal<boolean>(false);
+  readonly hasLoadedOnce = computed(() => this.loadedOnce());
+
+  // Active profile signals
   private _activeId = signal<string | null>(null);
   /** Current active profile id (or null) */
   readonly activeId = computed(() => this._activeId());
@@ -47,7 +53,7 @@ export class ProfilesService {
   readonly hasMultiple = computed(() => this.profiles().length > 1);
 
   constructor() {
-    // Restore from localStorage
+    // Restore active profile from localStorage
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) this._activeId.set(stored);
 
@@ -63,13 +69,18 @@ export class ProfilesService {
   }
 
   /** Load current user's profiles and reconcile the active one */
-  loadMyProfiles(): void {
+  loadMyProfiles(force = false): void {
+    if (!force && (this.loading() || this.loadedOnce())) return;
+
     this.loading.set(true);
     this.error.set(null);
-    this.http.get<ProfileList[]>(`${this.base}/me/profiles`, { withCredentials: true })
+
+    this.http
+      .get<ProfileList[]>(`${this.base}/me/profiles`, { withCredentials: true })
       .subscribe({
         next: (rows) => {
           this.profiles.set(rows);
+
           // Ensure active is valid
           const current = this._activeId();
           if (!rows.length) {
@@ -77,6 +88,8 @@ export class ProfilesService {
           } else if (!current || !rows.some(p => p.id === current)) {
             this._activeId.set(rows[0].id); // pick first as default
           }
+
+          this.loadedOnce.set(true);
           this.loading.set(false);
         },
         error: (err) => {
@@ -84,7 +97,7 @@ export class ProfilesService {
           this.profiles.set([]);
           this.error.set('Failed to load profiles');
           this.loading.set(false);
-        }
+        },
       });
   }
 

@@ -4,6 +4,7 @@ import { AuthUiService } from '../../core/auth-ui.service';
 import { AuthService } from '../../core/auth.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { ProfilesService } from '../../core/services/profiles.service'; // ⬅️ NUEVO
 
 @Component({
   selector: 'app-login',
@@ -16,6 +17,7 @@ export class Login {
   form: FormGroup;
   private auth = inject(AuthService);
   private router = inject(Router);
+  private profiles = inject(ProfilesService); // ⬅️ NUEVO
 
   errorMsg = '';
   isLoading = false;
@@ -48,7 +50,9 @@ export class Login {
 
     this.auth.login({ email: identifier, password }).subscribe({
       next: () => {
-        // Login successful - user data will be set automatically via the service
+        // 🔥 Cargar perfiles inmediatamente tras login
+        this.profiles.loadMyProfiles(true);
+
         this.isLoading = false;
         this.authUi.closeLogin();
         this.router.navigate(['/']);
@@ -70,7 +74,6 @@ export class Login {
     }
     
     this.form.get('password')?.reset();
-    
     setTimeout(() => this.emailInput?.nativeElement?.focus(), 100);
   }
 }

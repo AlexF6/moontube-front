@@ -61,24 +61,30 @@ export class Header implements OnDestroy {
   });
 
   constructor() {
-    // Search debouncing
+    // Debounce de búsqueda (igual que antes)
     this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(q => this.updateUrl(q));
 
-    // Load user profiles if authenticated
-    if (this.auth.user()) {
-      this.profiles.loadMyProfiles();
-    }
+    // ❌ Quita este if (es frágil):
+    // if (this.auth.user()) {
+    //   this.profiles.loadMyProfiles();
+    // }
 
-    // Effect to handle profile changes and refresh data
+    // ✅ Reacciona cuando user() cambia a autenticado:
+    effect(() => {
+      const u = this.auth.user();
+      if (u && !this.profiles.loading() && !this.profiles.hasLoadedOnce?.()) {
+        this.profiles.loadMyProfiles();
+      }
+    });
+
+    // Mantén tu effect para cambios de perfil
     effect(() => {
       const activeProfile = this.profiles.active();
       const activeId = this.profiles.activeId();
-      
-      // When active profile changes, refresh profile-specific data
       if (activeProfile && activeId) {
         this.refreshProfileData(activeId);
       }
@@ -129,21 +135,26 @@ export class Header implements OnDestroy {
     this.profileMenuOpen.set(!this.profileMenuOpen());
   }
 
-  async chooseProfile(id: string) {
-    if (this.switchingProfile()) return;
+async chooseProfile(id: string) {
+  if (this.switchingProfile()) return;
+  this.switchingProfile.set(true);
+  this.profileMenuOpen.set(false);
+
+  try {
+    await this.profiles.setActiveProfile(id);
     
-    this.switchingProfile.set(true);
-    this.profileMenuOpen.set(false);
+    // ✅ Navigate to current route to refresh data without full page reload
+    const currentUrl = this.router.url.split('?')[0];
+    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+      this.router.navigate([currentUrl]);
+    });
     
-    try {
-      await this.profiles.setActiveProfile(id);
-      // The effect will automatically trigger refreshProfileData
-    } catch (error) {
-      console.error('Failed to switch profile:', error);
-    } finally {
-      this.switchingProfile.set(false);
-    }
+  } catch (error) {
+    console.error('Failed to switch profile:', error);
+  } finally {
+    this.switchingProfile.set(false);
   }
+}
 
   // Refresh profile-specific data when profile changes
   private refreshProfileData(profileId: string) {
