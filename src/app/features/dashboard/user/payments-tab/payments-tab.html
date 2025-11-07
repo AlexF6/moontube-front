@@ -67,9 +67,9 @@
                         [class]="getStatusBadgeClass(payment.status)">
                     {{ payment.status }}
                   </span>
-                  <span class="text-gray-400 text-sm">
+                  <!-- <span class="text-gray-400 text-sm">
                     {{ shortId(payment.id) }}
-                  </span>
+                  </span> -->
                   @if (hasProvider(payment)) {
                     <span class="text-gray-400 text-sm">
                       via {{ payment.provider }}

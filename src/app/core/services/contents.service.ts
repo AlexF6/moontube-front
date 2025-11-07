@@ -106,4 +106,29 @@ export class ContentsService {
     );
   }
 
+  getMyContent(id: string) {
+    return this.http.get<Content>(`${this.base}/me/contents/${id}`, {
+      withCredentials: true,
+    });
+  }
+
+  /** (Opcional) GET /me/contents - si más adelante lo usas para listados */
+  getMyContents(params: {
+    q?: string | null;
+    type_q?: 'MOVIE' | 'SERIES' | 'VIDEOS' | null;
+    limit?: number | null;
+    offset?: number | null;
+  } = {}) {
+    let httpParams = new HttpParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== '') {
+        httpParams = httpParams.set(k, String(v));
+      }
+    });
+    return this.http.get<Content[]>(`${this.base}/me/contents`, {
+      params: httpParams,
+      withCredentials: true,
+    });
+  }
+
 }

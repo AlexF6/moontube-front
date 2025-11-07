@@ -1,31 +1,10 @@
 <!-- src/app/features/dashboard/user/playbacks/playbacks-tab.html -->
 <div class="space-y-6">
-  <!-- Header + Filters -->
+  <!-- Simplified Header -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
       <h2 class="text-2xl font-bold text-orange-400 mb-1">My Playbacks</h2>
       <p class="text-gray-400 text-sm">Your recent viewing activity</p>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-3">
-      <label class="text-gray-300 text-sm">Completed:</label>
-      <select
-        [value]="completedFilter()"
-        (change)="onCompletedChange($event)"
-        class="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
-        <option value="ALL">All</option>
-        <option value="YES">Completed</option>
-        <option value="NO">In progress</option>
-      </select>
-
-      <input
-        type="text"
-        placeholder="Device (e.g. Chrome, TV...)"
-        [value]="deviceFilter()"
-        (input)="deviceFilter.set($any($event.target).value)"
-        (change)="onFilterChange()"
-        class="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-      />
     </div>
   </div>
 
@@ -47,7 +26,7 @@
   @if (!loading() && playbacks().length === 0) {
     <div class="text-center py-12">
       <div class="text-gray-400 text-lg mb-1">No playbacks found</div>
-      <p class="text-gray-500">Try adjusting filters.</p>
+      <p class="text-gray-500">Your playback history will appear here.</p>
     </div>
   }
 
@@ -65,15 +44,13 @@
               </div>
               <div>
                 <div class="text-white font-medium">
-                  Content: <span class="font-mono">{{ shortId(pb.content_id) }}</span>
+                  <span class="text-orange-300">{{ pb.contentTitle || shortId(pb.content_id) }}</span>
                   @if (pb.episode_id) {
-                    <span class="text-gray-400"> • Episode:</span>
-                    <span class="text-white font-mono">{{ shortId(pb.episode_id) }}</span>
+                    <span class="text-gray-400"> • </span>
+                    <span class="text-blue-300">{{ pb.episodeTitle || shortId(pb.episode_id) }}</span>
                   }
                 </div>
                 <div class="text-gray-400 text-sm">
-                  Playback: <span class="font-mono">{{ shortId(pb.id) }}</span>
-                  <span class="mx-2">•</span>
                   Device: {{ pb.device || '—' }}
                 </div>
               </div>
