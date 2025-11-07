@@ -1,9 +1,12 @@
 // src/app/features/subscription/subscriptions-tab.ts
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SubscriptionsService } from '../../core/services/subscriptions.service';
 import { SubscriptionListItem, SubscriptionStatus } from '../../models/subscription.model';
+import { PlansService } from '../../core/services/plans.service';
+import { PlanList } from '../../models/plan.model';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-subscriptions-tab',
@@ -13,7 +16,14 @@ import { SubscriptionListItem, SubscriptionStatus } from '../../models/subscript
 })
 export class SubscriptionsTabComponent implements OnInit {
   private subscriptionsService = inject(SubscriptionsService);
+  private plansService = inject(PlansService);
 
+  plans = signal<PlanList[]>([]);
+  planById = computed(() => {
+    const map = new Map<string, PlanList>();
+    for (const p of this.plans()) map.set(p.id, p);
+    return map;
+  });
   subscriptions = signal<SubscriptionListItem[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
@@ -27,9 +37,18 @@ export class SubscriptionsTabComponent implements OnInit {
     { value: SubscriptionStatus.PAST_DUE, label: 'Past Due' }
   ] as const;
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.loadSubscriptions();
+    try {
+      const res = await firstValueFrom(this.plansService.listMe());
+      this.plans.set(res);
+    } catch (err) {
+      console.error('Error loading plans:', err);
+      this.error.set('Failed to load plans');
+    }
   }
+
+  planName = (id: string) => this.planById().get(id)?.name ?? id.slice(-8);
 
   async loadSubscriptions(): Promise<void> {
     this.loading.set(true);

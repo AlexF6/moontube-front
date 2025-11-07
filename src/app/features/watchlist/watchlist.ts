@@ -9,8 +9,10 @@ import { ProfilesService } from '../../core/services/profiles.service';
 
 import type { Watchlist, WatchlistList, WatchlistUpdate } from '../../models/watchlist.model';
 import type { ProfileList } from '../../models/profile.model';
+import { ContentsService } from '../../core/services/contents.service';
+import { ContentList } from '../../models/content.model';
 
-import { forkJoin, of, firstValueFrom } from 'rxjs';
+import { forkJoin, of, firstValueFrom, map } from 'rxjs';
 
 interface Filters {
   content_id: string;
@@ -31,11 +33,15 @@ type GroupRow = { profile: ProfileList; items: WatchlistList[] };
 export class WatchlistComponent implements OnInit {
   private watchlistSvc = inject(WatchlistService);
   private profilesSvc = inject(ProfilesService);
+  private contentsSvc = inject(ContentsService);
+
   private auth = inject(AuthService);
 
   // ------------ State base ------------
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
+
+  contentTitles = signal<{[key: string]: string}>({});
 
   // Modo de visualización
   // - grouped: secciones por perfil
@@ -86,24 +92,74 @@ export class WatchlistComponent implements OnInit {
   // Derivados
   readonly hasProfiles = computed(() => this.profiles().length > 0);
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.loadProfilesAndData();
   }
 
+  private async loadContentTitles(contentIds: string[]): Promise<void> {
+    const uniqueIds = [...new Set(contentIds)]; // Remove duplicates
+    
+    // Filter out IDs we already have
+    const existingTitles = this.contentTitles();
+    const idsToLoad = uniqueIds.filter(id => !existingTitles[id] && id);
+    
+    if (idsToLoad.length === 0) return;
+    
+    try {
+      // Load all contents and filter to the ones we need
+      const contents = await firstValueFrom(
+        this.contentsSvc.getSmartContents({
+          limit: 100, // Adjust as needed
+          offset: 0
+        }).pipe(
+          map(contents => contents.filter(content => idsToLoad.includes(content.id)))
+        )
+      );
+      
+      // Create title mapping
+      const titleMap: {[key: string]: string} = {};
+      contents.forEach(content => {
+        titleMap[content.id] = content.title;
+      });
+      
+      // Update the signal with new titles
+      this.contentTitles.update(current => ({ ...current, ...titleMap }));
+    } catch (error) {
+      console.error('Failed to load content titles:', error);
+    }
+  }
+
+  getContentTitle(contentId: string): string {
+    return this.contentTitles()[contentId] || this.shortId(contentId);
+  }
+
+  private waitForProfiles(timeout = 2000): Promise<boolean> {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      
+      const checkProfiles = () => {
+        const profiles = this.profilesSvc.profiles();
+        
+        if (profiles && profiles.length > 0) {
+          resolve(true);
+        } else if (Date.now() - startTime > timeout) {
+          resolve(false);
+        } else {
+          setTimeout(checkProfiles, 100);
+        }
+      };
+      
+      checkProfiles();
+    });
+  }
   // ------------ Loaders ------------
   private async loadProfilesAndData() {
     this.loading.set(true);
     this.error.set(null);
 
     try {
-      // Asegúrate de tener los perfiles en memoria
-      // (si ya están cargados por el Header/otro sitio, no hace daño)
       this.profilesSvc.loadMyProfiles(true);
-      // Espera breve a que el servicio los deje listos (no bloqueante fuerte).
-      // Alternativa determinista: lee directamente del endpoint aquí.
-      // Para simplicidad: intentamos leerlos del servicio tras un pequeño delay.
-      await new Promise((r) => setTimeout(r, 50));
-
+      await this.waitForProfiles();
       const list = this.profilesSvc.profiles();
       this.profiles.set(list ?? []);
 
@@ -147,6 +203,13 @@ export class WatchlistComponent implements OnInit {
       });
 
       this.groupedRows.set(rows);
+
+      // NEW: Load content titles for all items
+      const allContentIds = rows.flatMap(group => 
+        group.items.map(item => item.content_id)
+      );
+      await this.loadContentTitles(allContentIds);
+
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to load watchlist by profile.');
       this.groupedRows.set([]);
@@ -158,8 +221,7 @@ export class WatchlistComponent implements OnInit {
   private async loadSingle() {
     const base = this.baseParams();
 
-    // Si "all", mostramos TODO combinado (no recomendado si quieres estrictamente separar)
-    // Por la solicitud, el modo single usualmente usa un perfil específico:
+    // Si "all", mostramos TODO combinado
     const pid = this.selectedProfileId();
     if (!pid || pid === 'all') {
       // Combina todo
@@ -178,6 +240,11 @@ export class WatchlistComponent implements OnInit {
         this.watchlistSvc.getMyWatchlists({ ...base, profile_id: pid })
       );
       this.watchlists.set(rows ?? []);
+
+      // NEW: Load content titles for the single profile watchlist
+      const contentIds = rows.map(item => item.content_id);
+      await this.loadContentTitles(contentIds);
+
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to load watchlist.');
       this.watchlists.set([]);

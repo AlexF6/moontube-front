@@ -160,9 +160,6 @@ async chooseProfile(id: string) {
   private refreshProfileData(profileId: string) {
     // Trigger any profile-specific data reloads here
     // For example, refresh watch history, recommendations, etc.
-    console.log('Profile changed, refreshing data for:', profileId);
-    
-    // You can add service calls here to refresh profile-specific data
     // Example: this.watchHistoryService.refresh(profileId);
     // Example: this.recommendationsService.refresh(profileId);
   }
