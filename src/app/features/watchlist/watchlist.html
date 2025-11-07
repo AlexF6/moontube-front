@@ -91,8 +91,8 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   @if (group.profile.avatar) {
-                    <img 
-                      [src]="group.profile.avatar" 
+                    <img
+                      [src]="group.profile.avatar"
                       class="w-9 h-9 rounded-lg"
                       alt="Profile avatar"
                       onerror="this.style.display='none'"
@@ -120,13 +120,21 @@
                   @for (item of group.items; track item.id) {
                     <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
                       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <!-- Content -->
+                        <!-- Content (thumbnail + title) -->
                         <div class="flex items-start gap-4 flex-1">
-                          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center font-bold shadow-lg group-hover:scale-105 transition-transform duration-200">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                            </svg>
-                          </div>
+                          <!-- THUMBNAIL -->
+                          @if (getContentThumb(item.content_id)) {
+                            <div class="w-24 h-16 rounded-xl overflow-hidden bg-gray-800/60 border border-gray-700/60 shadow-lg">
+                              <img [src]="getContentThumb(item.content_id)" alt="Thumbnail"
+                                   class="w-full h-full object-cover"
+                                   onerror="this.style.display='none'">
+                            </div>
+                          } @else {
+                            <div class="w-16 h-16 rounded-xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-center text-gray-400 text-sm">
+                              No image
+                            </div>
+                          }
+
                           <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-3 mb-2">
                               <div class="text-white font-medium">
@@ -150,8 +158,7 @@
                           <button
                             (click)="deleteWatchlist(item)"
                             [disabled]="loading()"
-                            class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed"
-                          >
+                            class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
@@ -182,7 +189,7 @@
             Page {{ (filters().offset / filters().limit) + 1 }}
           </span>
           <button
-            (click)="nextPage()" 
+            (click)="nextPage()"
             [disabled]="!hasNextPage || loading()"
             class="flex items-center gap-2 px-3 py-2 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
             Next
@@ -195,64 +202,71 @@
     }
   }
 
-<!-- ====== SINGLE MODE ====== -->
-@if (!loading() && viewMode() === 'single') {
-  @if (watchlists().length === 0) {
-    <!-- ... existing empty state ... -->
-  } @else {
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-white">Watchlist Items</h3>
-        <div class="text-xs text-gray-400">
-          {{ watchlists().length }} item(s)
+  <!-- ====== SINGLE MODE ====== -->
+  @if (!loading() && viewMode() === 'single') {
+    @if (watchlists().length === 0) {
+      <div class="text-center py-12 text-gray-400">No items.</div>
+    } @else {
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-white">Watchlist Items</h3>
+          <div class="text-xs text-gray-400">
+            {{ watchlists().length }} item(s)
+          </div>
         </div>
-      </div>
 
-      <div class="grid gap-4">
-        @for (item of watchlists(); track item.id) {
-          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div class="flex items-start gap-4 flex-1">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center font-bold shadow-lg group-hover:scale-105 transition-transform duration-200">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                  </svg>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-3 mb-2">
-                    <div class="text-white font-medium">
-                      <span class="text-gray-400 text-sm font-normal">Content:</span>
-                      <span class="ml-1">{{ getContentTitle(item.content_id) }}</span>
+        <div class="grid gap-4">
+          @for (item of watchlists(); track item.id) {
+            <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
+              <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-start gap-4 flex-1">
+                  <!-- THUMBNAIL -->
+                  @if (getContentThumb(item.content_id)) {
+                    <div class="w-24 h-16 rounded-xl overflow-hidden bg-gray-800/60 border border-gray-700/60 shadow-lg">
+                      <img [src]="getContentThumb(item.content_id)" alt="Thumbnail"
+                           class="w-full h-full object-cover"
+                           onerror="this.style.display='none'">
                     </div>
-                    <!-- UPDATED: Show profile name instead of ID -->
-                    <span class="text-xs text-gray-500">Profile: {{ getProfileName(item.profile_id) }}</span>
-                  </div>
-                  <div class="flex items-center gap-4 text-gray-400 text-sm">
-                    <span class="flex items-center gap-1">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      Added: {{ formatDate(item.added_at) }}
-                    </span>
+                  } @else {
+                    <div class="w-16 h-16 rounded-xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-center text-gray-400 text-sm">
+                      No image
+                    </div>
+                  }
+
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <div class="text-white font-medium">
+                        <span class="text-gray-400 text-sm font-normal">Content:</span>
+                        <span class="ml-1">{{ getContentTitle(item.content_id) }}</span>
+                      </div>
+                      <span class="text-xs text-gray-500">Profile: {{ getProfileName(item.profile_id) }}</span>
+                    </div>
+                    <div class="flex items-center gap-4 text-gray-400 text-sm">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Added: {{ formatDate(item.added_at) }}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="flex gap-2 lg:pl-4">
-                <button
-                  (click)="deleteWatchlist(item)"
-                  [disabled]="loading()"
-                  class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                  </svg>
-                  <span>Remove</span>
-                </button>
+                <div class="flex gap-2 lg:pl-4">
+                  <button
+                    (click)="deleteWatchlist(item)"
+                    [disabled]="loading()"
+                    class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white text-sm rounded-xl transition-all duration-200 disabled:cursor-not-allowed">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    <span>Remove</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        }
-      </div>
+          }
+        </div>
 
         <!-- Pagination -->
         <div class="flex items-center gap-3 justify-end pt-2">

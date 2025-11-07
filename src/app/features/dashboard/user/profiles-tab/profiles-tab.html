@@ -2,7 +2,7 @@
   <!-- Header and Actions -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
-      <h2 class="text-2xl font-bold text-orange-400 mb-2">Manage Profiles</h2>
+      <h2 class="text-2xl font-bold text-orange-500 mb-2">Manage Profiles</h2>
       <p class="text-gray-400 text-sm">Create and manage your viewing profiles</p>
     </div>
 
@@ -16,8 +16,8 @@
   </div>
 
   @if (!canCreateMore()) {
-    <div class="bg-amber-900/40 border border-amber-600/50 text-amber-200 px-4 py-3 rounded-lg">
-      You already have the maximum number of profiles ({{ MAX_PROFILES_PER_USER }}).
+    <div class="bg-amber-900/10 text-amber-200/80 px-4 py-3 rounded-lg">
+      You already have the maximum number of profiles for your plan ({{ MAX_PROFILES_PER_USER }}).
     </div>
   }
 
@@ -53,7 +53,7 @@
   @if (!loading() && profiles().length > 0) {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       @for (profile of profiles(); track profile.id) {
-        <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors">
+        <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors">
           <!-- Profile Header -->
           <div class="flex items-center gap-4 mb-4">
             @if (profile.avatar) {
