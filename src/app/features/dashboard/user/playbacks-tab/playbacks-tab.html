@@ -1,10 +1,24 @@
 <!-- src/app/features/dashboard/user/playbacks/playbacks-tab.html -->
 <div class="space-y-6">
-  <!-- Simplified Header -->
+  <!-- Header + Filtros -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
       <h2 class="text-2xl font-bold text-orange-400 mb-1">My Playbacks</h2>
       <p class="text-gray-400 text-sm">Your recent viewing activity</p>
+    </div>
+
+    <!-- Filtro completed -->
+    <div class="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2">
+      <label class="text-sm text-gray-300">Completed:</label>
+      <select
+        class="bg-gray-900 border border-gray-700 text-white text-sm rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        [ngModel]="completedFilter()"
+        (ngModelChange)="onChangeCompletedFilter($event)"
+      >
+        <option value="all">All</option>
+        <option value="true">Only completed</option>
+        <option value="false">Only in progress</option>
+      </select>
     </div>
   </div>
 
@@ -68,11 +82,19 @@
 
           <!-- Progress bar -->
           <div class="mt-4">
-            <div class="h-2 bg-gray-700 rounded">
-              <div class="h-2 rounded bg-orange-500" [style.width.%]="progressPercent(pb.progress_seconds)"></div>
+            <div class="h-2 bg-gray-700 rounded overflow-hidden">
+              <div
+                class="h-2 bg-orange-500"
+                [style.width.%]="pb.progressPct ?? progressPercent(pb.progress_seconds, pb.duration_seconds)">
+              </div>
             </div>
             <div class="flex justify-between text-xs text-gray-400 mt-1">
-              <span>{{ formatDuration(pb.progress_seconds) }}</span>
+              <span>
+                {{ formatDuration(pb.progress_seconds) }}
+                @if (pb.duration_seconds) {
+                  <span>/ {{ formatDuration(pb.duration_seconds) }}</span>
+                }
+              </span>
               <span>{{ pb.completed ? 'Completed' : 'In progress' }}</span>
             </div>
           </div>

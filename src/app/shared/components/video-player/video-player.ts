@@ -1,5 +1,5 @@
 // src/app/shared/components/video-player/video-player.ts
-import { Component, ElementRef, Input, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild, OnDestroy, AfterViewInit, Output, EventEmitter } from '@angular/core';
 import Hls from 'hls.js';
 import * as Plyr from 'plyr'; 
 import { CommonModule } from '@angular/common';
@@ -53,8 +53,16 @@ export class VideoPlayerPlyr implements AfterViewInit, OnDestroy {
   @Input() captionsLabel?: string;
   @Input() captionsLang?: string;
 
-  private player: any; 
+  @Output() ready = new EventEmitter<HTMLVideoElement>();
+  @Output() position = new EventEmitter<{ current: number; duration: number }>();
+  @Output() ended = new EventEmitter<{ current: number; duration: number }>();
+
+  private player: any;
   private hls?: Hls;
+  private timeUpdateHandler?: () => void;
+  private pauseHandler?: () => void;
+  private endedHandler?: () => void;
+  private loadedMetaHandler?: () => void;
 
   private options: Plyr.Options = {
     controls: [
@@ -98,8 +106,51 @@ export class VideoPlayerPlyr implements AfterViewInit, OnDestroy {
 
   private initPlyr() {
     const PlyrConstructor = (Plyr as any).default || Plyr;
-    
-    this.player = new PlyrConstructor(this.videoEl.nativeElement, this.options);
+    const video = this.videoEl.nativeElement;
+
+    this.player = new PlyrConstructor(video, this.options);
+
+    const emitPosition = () => {
+      const current = Math.floor(video.currentTime || 0);
+      const duration = isFinite(video.duration) ? Math.floor(video.duration) : 0;
+      this.position.emit({ current, duration });
+    };
+
+    const throttle = (fn: () => void, ms: number) => {
+      let last = 0;
+      let scheduled = false;
+      return () => {
+        const now = Date.now();
+        if (now - last >= ms) {
+          last = now;
+          fn();
+        } else if (!scheduled) {
+          scheduled = true;
+          setTimeout(() => {
+            scheduled = false;
+            last = Date.now();
+            fn();
+          }, ms - (now - last));
+        }
+      };
+    };
+
+    this.timeUpdateHandler = throttle(emitPosition, 8000);
+    this.pauseHandler = emitPosition;
+    this.endedHandler = () => {
+      emitPosition();
+      const current = Math.floor(video.currentTime || 0);
+      const duration = isFinite(video.duration) ? Math.floor(video.duration) : 0;
+      this.ended.emit({ current, duration });
+    };
+    this.loadedMetaHandler = emitPosition;
+
+    video.addEventListener('timeupdate', this.timeUpdateHandler);
+    video.addEventListener('pause', this.pauseHandler);
+    video.addEventListener('ended', this.endedHandler);
+    video.addEventListener('loadedmetadata', this.loadedMetaHandler);
+
+    this.ready.emit(video);
     
     if (this.hls) {
         this.player.on('qualitychange', (event: any) => {
@@ -121,9 +172,17 @@ export class VideoPlayerPlyr implements AfterViewInit, OnDestroy {
             }
         });
     }
+    this.ready.emit(this.videoEl.nativeElement);
   }
 
   ngOnDestroy() {
+    const video = this.videoEl?.nativeElement;
+    if (video) {
+      if (this.timeUpdateHandler) video.removeEventListener('timeupdate', this.timeUpdateHandler);
+      if (this.pauseHandler) video.removeEventListener('pause', this.pauseHandler);
+      if (this.endedHandler) video.removeEventListener('ended', this.endedHandler);
+      if (this.loadedMetaHandler) video.removeEventListener('loadedmetadata', this.loadedMetaHandler);
+    }
     this.player?.destroy();
     this.hls?.destroy();
   }

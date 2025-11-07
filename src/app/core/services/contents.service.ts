@@ -85,10 +85,10 @@ export class ContentsService {
 
   // ---------- Smart (try admin, fallback to public) ----------
   getSmartContents(params: QueryParams) {
-    return this.getContents(params).pipe(
+    return this.getPublicContents(params).pipe(
       catchError((err) => {
         if (err?.status === 401 || err?.status === 403) {
-          return this.getPublicContents(params);
+          return this.getContents(params);
         }
         return throwError(() => err);
       })
@@ -96,10 +96,10 @@ export class ContentsService {
   }
 
   getSmartContent(id: string) {
-    return this.getContent(id).pipe(
+    return this.getPublicContent(id).pipe(
       catchError((err) => {
         if (err?.status === 401 || err?.status === 403) {
-          return this.getPublicContent(id);
+          return this.getContent(id);
         }
         return throwError(() => err);
       })

@@ -71,8 +71,11 @@
           <!-- Direct Video Files (MP4, WebM, HLS, etc.) -->
           @else if (videoSource() === 'direct' && video()!.video_url) {
             <app-video-player
-              [src]="video()!.video_url ?? ''"
-              [poster]="''"
+              [src]="video()?.video_url ?? ''"
+              [poster]="video()?.thumbnail ?? ''"
+              (ready)="onPlayerReady($event)"
+              (position)="onPlayerPosition($event)"
+              (ended)="onPlayerEnded($event)"
             ></app-video-player>
           }
           

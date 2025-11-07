@@ -13,6 +13,7 @@ import type { Episode } from '../../../../models/episode.model';
 interface PlaybackWithTitles extends PlaybackListItem {
   contentTitle?: string;
   episodeTitle?: string;
+  progressPct?: number; // derivado para UI
 }
 
 @Component({
@@ -34,6 +35,9 @@ export class PlaybacksTabComponent implements OnInit {
   private contentCache = new Map<string, Content>();
   private episodeCache = new Map<string, Episode>();
 
+  // Filtros simples (extiende si quieres por device/completed/date range)
+  readonly completedFilter = signal<'all' | 'true' | 'false'>('all');
+
   totalShown = computed(() => this.playbacks().length);
 
   ngOnInit(): void {
@@ -48,15 +52,32 @@ export class PlaybacksTabComponent implements OnInit {
       const list = await firstValueFrom(
         this.playbacksSvc.getMyPlaybacks({
           limit: 50,
-          offset: 0
+          offset: 0,
+          completed:
+            this.completedFilter() === 'all'
+              ? null
+              : this.completedFilter() === 'true'
         })
       );
 
-      const playbacksWithTitles = list ?? [];
-      this.playbacks.set(playbacksWithTitles);
-      
-      // Load titles efficiently
-      await this.loadTitlesForPlaybacks(playbacksWithTitles);
+      const normalized = (list ?? []).map(pb => ({
+        ...pb,
+        progressPct: this.computeProgressPct(pb.progress_seconds, pb.duration_seconds),
+      }));
+
+      this.playbacks.set(normalized);
+
+      // Cargar títulos eficientemente
+      await this.loadTitlesForPlaybacks(normalized);
+
+      // Recalcular títulos y dejar IDs cortos como fallback
+      this.playbacks.update(current =>
+        current.map(pb => ({
+          ...pb,
+          contentTitle: pb.content_id ? this.getTitleFromCache(pb.content_id, this.contentCache) : undefined,
+          episodeTitle: pb.episode_id ? this.getTitleFromCache(pb.episode_id, this.episodeCache) : undefined
+        }))
+      );
     } catch (e: any) {
       console.error(e);
       const detail = e?.error?.detail;
@@ -66,37 +87,33 @@ export class PlaybacksTabComponent implements OnInit {
     }
   }
 
+  onChangeCompletedFilter(v: 'all' | 'true' | 'false') {
+    this.completedFilter.set(v);
+    void this.load();
+  }
+
   private async loadTitlesForPlaybacks(playbacks: PlaybackWithTitles[]): Promise<void> {
     const contentIds = new Set<string>();
     const episodeIds = new Set<string>();
 
-    // O(n) collection of unique IDs
     for (const pb of playbacks) {
       if (pb.content_id) contentIds.add(pb.content_id);
       if (pb.episode_id) episodeIds.add(pb.episode_id);
     }
 
-    // Parallel loading of content and episodes
-    const [contentResults, episodeResults] = await Promise.all([
+    // Carga paralela
+    await Promise.all([
       this.loadContents(Array.from(contentIds)),
       this.loadEpisodes(Array.from(episodeIds))
     ]);
-
-    // O(n) update of playbacks with titles
-    this.playbacks.update(currentPlaybacks => 
-      currentPlaybacks.map(pb => ({
-        ...pb,
-        contentTitle: pb.content_id ? this.getTitleFromCache(pb.content_id, this.contentCache) : undefined,
-        episodeTitle: pb.episode_id ? this.getTitleFromCache(pb.episode_id, this.episodeCache) : undefined
-      }))
-    );
   }
 
   private async loadContents(contentIds: string[]): Promise<void> {
-    const promises = contentIds
+    const tasks = contentIds
       .filter(id => !this.contentCache.has(id))
       .map(async contentId => {
         try {
+          // Usa tu endpoint “me” si lo tienes; si no, el público/normal
           const content = await firstValueFrom(this.contentsSvc.getMyContent(contentId));
           this.contentCache.set(contentId, content);
         } catch (error) {
@@ -104,11 +121,11 @@ export class PlaybacksTabComponent implements OnInit {
         }
       });
 
-    await Promise.all(promises);
+    await Promise.all(tasks);
   }
 
   private async loadEpisodes(episodeIds: string[]): Promise<void> {
-    const promises = episodeIds
+    const tasks = episodeIds
       .filter(id => !this.episodeCache.has(id))
       .map(async episodeId => {
         try {
@@ -119,7 +136,7 @@ export class PlaybacksTabComponent implements OnInit {
         }
       });
 
-    await Promise.all(promises);
+    await Promise.all(tasks);
   }
 
   private getTitleFromCache(id: string, cache: Map<string, { title?: string }>): string {
@@ -127,36 +144,46 @@ export class PlaybacksTabComponent implements OnInit {
   }
 
   async markAsCompleted(playbackId: string): Promise<void> {
-    // O(1) lookup with Map (if we had one) but O(n) is acceptable for small lists
     const currentPlaybacks = this.playbacks();
-    const playbackIndex = currentPlaybacks.findIndex(p => p.id === playbackId);
-    
-    if (playbackIndex === -1) return;
+    const idx = currentPlaybacks.findIndex(p => p.id === playbackId);
+    if (idx === -1) return;
 
     // Optimistic update
+    const prev = currentPlaybacks[idx];
+    const nowISO = new Date().toISOString();
+
     this.playbacks.update(list => {
       const copy = [...list];
-      copy[playbackIndex] = { 
-        ...copy[playbackIndex], 
-        completed: true, 
-        ended_at: new Date().toISOString() 
+      copy[idx] = {
+        ...copy[idx],
+        completed: true,
+        ended_at: copy[idx].ended_at ?? nowISO
       };
       return copy;
     });
 
     try {
-      await firstValueFrom(this.playbacksSvc.markPlaybackCompleted(playbackId));
+      const updated = await firstValueFrom(this.playbacksSvc.markPlaybackCompleted(playbackId));
+      // Sincroniza (por si backend ajustó timestamps o campos)
+      this.playbacks.update(list => {
+        const copy = [...list];
+        copy[idx] = {
+          ...copy[idx],
+          completed: updated.completed,
+          ended_at: updated.ended_at ?? copy[idx].ended_at,
+          progress_seconds: updated.progress_seconds,
+          duration_seconds: updated.duration_seconds,
+          progressPct: this.computeProgressPct(updated.progress_seconds, updated.duration_seconds),
+        };
+        return copy;
+      });
     } catch (e) {
       console.error('Failed to mark playback as completed:', e);
       this.error.set('Failed to update playback');
       // Rollback
       this.playbacks.update(list => {
         const copy = [...list];
-        copy[playbackIndex] = { 
-          ...copy[playbackIndex], 
-          completed: false,
-          ended_at: currentPlaybacks[playbackIndex].ended_at
-        };
+        copy[idx] = { ...prev };
         return copy;
       });
     }
@@ -165,9 +192,9 @@ export class PlaybacksTabComponent implements OnInit {
   async deletePlayback(playbackId: string): Promise<void> {
     if (!confirm('Are you sure you want to delete this playback record?')) return;
 
-    // Optimistic removal - O(n) but necessary
-    const previousPlaybacks = this.playbacks();
-    this.playbacks.set(previousPlaybacks.filter(pb => pb.id !== playbackId));
+    // Optimistic removal
+    const prev = this.playbacks();
+    this.playbacks.set(prev.filter(pb => pb.id !== playbackId));
 
     try {
       await firstValueFrom(this.playbacksSvc.deleteMyPlayback(playbackId));
@@ -175,10 +202,11 @@ export class PlaybacksTabComponent implements OnInit {
       console.error('Failed to delete playback:', e);
       this.error.set('Failed to delete playback');
       // Rollback
-      this.playbacks.set(previousPlaybacks);
+      this.playbacks.set(prev);
     }
   }
 
+  // Helpers de UI
   shortId(v: unknown): string {
     return typeof v === 'string' && v.length >= 8 ? v.slice(-8) :
            typeof v === 'string' ? v : '—';
@@ -203,7 +231,18 @@ export class PlaybacksTabComponent implements OnInit {
       : `${m}:${sec.toString().padStart(2, '0')}`;
   }
 
-  progressPercent(p?: number | null): number {
-    return Math.min(100, Math.floor(((p ?? 0) / 1800) * 100));
+  progressPercent(p?: number | null, d?: number | null): number {
+    // Conserva firma si ya la usabas en plantilla; internamente delega.
+    return this.computeProgressPct(p, d);
+  }
+
+  private computeProgressPct(progress?: number | null, duration?: number | null): number {
+    const prog = Math.max(0, Number(progress ?? 0));
+    const dur = Number(duration ?? 0);
+    if (!dur || dur <= 0) {
+      // Sin duración: aproximación suave (30 min = 1800s) para no romper UI
+      return Math.min(100, Math.floor((prog / 1800) * 100));
+    }
+    return Math.min(100, Math.floor((prog / dur) * 100));
   }
 }

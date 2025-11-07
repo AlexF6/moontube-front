@@ -1,11 +1,12 @@
 // src/app/features/watch/watch.ts
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { VideoPlayerPlyr } from '../../shared/components/video-player/video-player';
 import { ContentsService } from '../../core/services/contents.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
-import { ProfilesService } from '../../core/services/profiles.service'; // ⬅️ NEW
+import { ProfilesService } from '../../core/services/profiles.service';
+import { PlaybacksService } from '../../core/services/playbacks.service';
 import type { Content, ContentList } from '../../models/content.model';
 
 @Component({
@@ -14,15 +15,22 @@ import type { Content, ContentList } from '../../models/content.model';
   imports: [VideoPlayerPlyr],
   templateUrl: './watch.html',
 })
-export class Watch implements OnInit {
+export class Watch implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private contentsService = inject(ContentsService);
   private watchlist = inject(WatchlistService);
-  private profiles = inject(ProfilesService); // ⬅️ NEW
+  private profiles = inject(ProfilesService);
   private sanitizer = inject(DomSanitizer);
+  private playbacks = inject(PlaybacksService);
 
   // State
+  private startedOnce = false;
+  private tick?: any;
+  private videoRef: HTMLVideoElement | null = null;
+  private _cleanup?: () => void;
+
+  readonly playbackId = signal<string | null>(null);
   readonly videoId = signal<string | null>(null);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -137,14 +145,124 @@ export class Watch implements OnInit {
   });
 
   ngOnInit() {
-    // If header didn’t already, you can still call it here safely (no-op if loaded)
+    // Ensure profiles loaded (no-op if cached)
     this.profiles.loadMyProfiles();
 
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       this.videoId.set(id);
+      // Reiniciar estado de reproducción al cambiar de video
+      this.resetPlaybackState();
       this.loadVideo();
     });
+  }
+
+  // Emite el player con el <video> listo
+  onPlayerReady(video: HTMLVideoElement) {
+    if (this.startedOnce) return;
+    this.startedOnce = true;
+    this.videoRef = video;
+
+    const activePid = this.profiles.activeId();
+    const contentId = this.videoId();
+    if (!activePid || !contentId) return;
+
+    const device = (navigator.userAgent || 'unknown').toLowerCase().slice(0, 200);
+
+    this.playbacks.startMyPlayback({
+      profile_id: activePid,
+      content_id: contentId,
+      device
+    }).subscribe({
+      next: (pb) => {
+        this.playbackId.set(pb.id);
+
+        // --- PROGRESS LOOP ---
+        const send = () => {
+          const id = this.playbackId();
+          if (!id) return;
+          const current = Math.floor(video.currentTime || 0);
+          const duration = Math.floor(video.duration || 0) || null;
+
+          this.playbacks.updateMyPlayback(id, {
+            progress_seconds: current,
+            duration_seconds: duration ?? undefined
+          }).subscribe({ error: () => {} });
+        };
+
+        // 1) cada 3s
+        this.tick = setInterval(send, 3000);
+
+        // 2) y en cada timeupdate (más responsivo)
+        const onTime = () => send();
+        video.addEventListener('timeupdate', onTime);
+
+        // 3) al terminar
+        const onEnded = () => {
+          const id = this.playbackId();
+          if (!id) return;
+          this.playbacks.updateMyPlayback(id, {
+            progress_seconds: Math.floor(video.duration || 0),
+            duration_seconds: Math.floor(video.duration || 0),
+            completed: true
+          }).subscribe({ complete: () => {} });
+        };
+        video.addEventListener('ended', onEnded);
+
+        // cleanup cuando destruyas el componente
+        this._cleanup = () => {
+          video.removeEventListener('timeupdate', onTime);
+          video.removeEventListener('ended', onEnded);
+          if (this.tick) { clearInterval(this.tick); this.tick = undefined; }
+        };
+      },
+      error: (e) => console.error('startMyPlayback failed', e)
+    });
+  }
+
+  // (handlers alternos si tu player emite eventos propios)
+  onPlayerPosition(evt: { current: number; duration: number }) {
+    const id = this.playbackId();
+    if (!id) return;
+    this.playbacks.updateMyPlayback(id, {
+      progress_seconds: Math.max(0, evt.current|0),
+      duration_seconds: evt.duration > 0 ? evt.duration|0 : undefined
+    }).subscribe({ error: (e) => console.debug('update heartbeat err (ignored)', e) });
+  }
+
+  onPlayerEnded(evt: { current: number; duration: number }) {
+    const id = this.playbackId();
+    if (!id) return;
+    this.playbacks.updateMyPlayback(id, {
+      progress_seconds: (evt.duration && evt.duration > 0) ? evt.duration|0 : (evt.current|0),
+      duration_seconds: evt.duration > 0 ? evt.duration|0 : undefined,
+      completed: true
+    }).subscribe({
+      error: (e) => console.debug('update ended err (ignored)', e)
+    });
+  }
+
+  ngOnDestroy() {
+    // Limpia listeners/interval
+    if (this._cleanup) this._cleanup();
+
+    // Flush final (best-effort)
+    const id = this.playbackId();
+    if (id && this.videoRef) {
+      const current = Math.floor(this.videoRef.currentTime || 0);
+      const duration = Number.isFinite(this.videoRef.duration) ? Math.floor(this.videoRef.duration) : undefined;
+      this.playbacks.updateMyPlayback(id, {
+        progress_seconds: current,
+        duration_seconds: duration
+      }).subscribe({ error: () => {} });
+    }
+  }
+
+  private resetPlaybackState() {
+    if (this._cleanup) this._cleanup();
+    this.startedOnce = false;
+    this.playbackId.set(null);
+    this.videoRef = null;
   }
 
   private loadVideo() {
@@ -258,10 +376,10 @@ export class Watch implements OnInit {
     this.savingWatchlist.set(true);
 
     if (!this.inWatchlist()) {
-      // ➕ Add (backend will pick the only profile if user has 1; otherwise we pass activePid)
+      // ➕ Add
       this.watchlist.createMyWatchlist({
         content_id: contentId,
-        profile_id: activePid, // can be undefined if user has 1 profile
+        profile_id: activePid,
       }).subscribe({
         next: () => { this.inWatchlist.set(true); this.savingWatchlist.set(false); },
         error: (err) => {
@@ -270,7 +388,7 @@ export class Watch implements OnInit {
         }
       });
     } else {
-      // 🗑️ Remove — we REQUIRE active profile to know which pair to delete
+      // 🗑️ Remove — need active profile
       if (!activePid) {
         this.savingWatchlist.set(false);
         return;
