@@ -13,7 +13,8 @@ import type { Episode } from '../../../../models/episode.model';
 interface PlaybackWithTitles extends PlaybackListItem {
   contentTitle?: string;
   episodeTitle?: string;
-  progressPct?: number; // derivado para UI
+  thumbnail?: string;
+  progressPct?: number;
 }
 
 @Component({
@@ -31,13 +32,10 @@ export class PlaybacksTabComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
 
-  // O(1) lookup caches
   private contentCache = new Map<string, Content>();
   private episodeCache = new Map<string, Episode>();
 
-  // Filtros simples (extiende si quieres por device/completed/date range)
   readonly completedFilter = signal<'all' | 'true' | 'false'>('all');
-
   totalShown = computed(() => this.playbacks().length);
 
   ngOnInit(): void {
@@ -53,10 +51,7 @@ export class PlaybacksTabComponent implements OnInit {
         this.playbacksSvc.getMyPlaybacks({
           limit: 50,
           offset: 0,
-          completed:
-            this.completedFilter() === 'all'
-              ? null
-              : this.completedFilter() === 'true'
+          completed: this.completedFilter() === 'all' ? null : this.completedFilter() === 'true'
         })
       );
 
@@ -66,16 +61,15 @@ export class PlaybacksTabComponent implements OnInit {
       }));
 
       this.playbacks.set(normalized);
-
-      // Cargar títulos eficientemente
       await this.loadTitlesForPlaybacks(normalized);
 
-      // Recalcular títulos y dejar IDs cortos como fallback
+      // Update with titles and thumbnails
       this.playbacks.update(current =>
         current.map(pb => ({
           ...pb,
           contentTitle: pb.content_id ? this.getTitleFromCache(pb.content_id, this.contentCache) : undefined,
-          episodeTitle: pb.episode_id ? this.getTitleFromCache(pb.episode_id, this.episodeCache) : undefined
+          episodeTitle: pb.episode_id ? this.getTitleFromCache(pb.episode_id, this.episodeCache) : undefined,
+          thumbnail: this.getThumbnailForPlayback(pb)
         }))
       );
     } catch (e: any) {
@@ -101,7 +95,7 @@ export class PlaybacksTabComponent implements OnInit {
       if (pb.episode_id) episodeIds.add(pb.episode_id);
     }
 
-    // Carga paralela
+    // Parallel loading
     await Promise.all([
       this.loadContents(Array.from(contentIds)),
       this.loadEpisodes(Array.from(episodeIds))
@@ -113,7 +107,6 @@ export class PlaybacksTabComponent implements OnInit {
       .filter(id => !this.contentCache.has(id))
       .map(async contentId => {
         try {
-          // Usa tu endpoint “me” si lo tienes; si no, el público/normal
           const content = await firstValueFrom(this.contentsSvc.getMyContent(contentId));
           this.contentCache.set(contentId, content);
         } catch (error) {
@@ -143,6 +136,76 @@ export class PlaybacksTabComponent implements OnInit {
     return cache.get(id)?.title || this.shortId(id);
   }
 
+  private getThumbnailForPlayback(pb: PlaybackListItem): string | undefined {
+    // Always use content thumbnail since episodes don't have thumbnails
+    const content = this.contentCache.get(pb.content_id);
+    return content?.thumbnail;
+  }
+
+  // Episode number helper for thumbnail badge
+  getEpisodeNumber(episodeId: string): string {
+    const episode = this.episodeCache.get(episodeId);
+    if (episode) {
+      return `${episode.season_number || 1}x${episode.episode_number?.toString().padStart(2, '0') || '01'}`;
+    }
+    return 'E';
+  }
+
+  // Device name shortening
+  shortenDeviceName(device?: string | null): string {
+    if (!device) return '—';
+    
+    // Common device patterns
+    const patterns = [
+      // iPhone patterns
+      /(iPhone\s*(?:Pro|Plus)?\s*\w*)/i,
+      /(iPad\s*(?:Pro|Air|Mini)?\s*\w*)/i,
+      /(MacBook\s*(?:Pro|Air)?\s*\w*)/i,
+      /(Android\s*\w*)/i,
+      /(Windows\s*\w*)/i,
+      // Browser patterns
+      /(Chrome|Firefox|Safari|Edge)\s*\w*/i,
+      // Generic fallback - take first 2 words
+      /^(\w+\s+\w+)/,
+    ];
+
+    for (const pattern of patterns) {
+      const match = device.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+
+    // Ultimate fallback: first 15 chars
+    return device.length > 15 ? device.substring(0, 15) + '...' : device;
+  }
+
+  // Relative time formatting for better UX
+  formatRelativeTime(dateString?: string | null): string {
+    if (!dateString) return '—';
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      const diffDays = diffHours / 24;
+
+      if (diffHours < 1) {
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        return `${diffMins}m ago`;
+      } else if (diffHours < 24) {
+        return `${Math.floor(diffHours)}h ago`;
+      } else if (diffDays < 7) {
+        return `${Math.floor(diffDays)}d ago`;
+      } else {
+        return date.toLocaleDateString();
+      }
+    } catch {
+      return this.formatDate(dateString);
+    }
+  }
+
   async markAsCompleted(playbackId: string): Promise<void> {
     const currentPlaybacks = this.playbacks();
     const idx = currentPlaybacks.findIndex(p => p.id === playbackId);
@@ -164,7 +227,7 @@ export class PlaybacksTabComponent implements OnInit {
 
     try {
       const updated = await firstValueFrom(this.playbacksSvc.markPlaybackCompleted(playbackId));
-      // Sincroniza (por si backend ajustó timestamps o campos)
+      // Synchronize (in case backend adjusted timestamps or fields)
       this.playbacks.update(list => {
         const copy = [...list];
         copy[idx] = {
@@ -206,7 +269,7 @@ export class PlaybacksTabComponent implements OnInit {
     }
   }
 
-  // Helpers de UI
+  // UI Helpers
   shortId(v: unknown): string {
     return typeof v === 'string' && v.length >= 8 ? v.slice(-8) :
            typeof v === 'string' ? v : '—';
@@ -215,7 +278,7 @@ export class PlaybacksTabComponent implements OnInit {
   formatDate(dt?: string | null): string {
     if (!dt) return '—';
     try {
-      return new Date(dt).toLocaleString();
+      return new Date(dt).toLocaleDateString() + ' ' + new Date(dt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
       return dt;
     }
@@ -232,7 +295,6 @@ export class PlaybacksTabComponent implements OnInit {
   }
 
   progressPercent(p?: number | null, d?: number | null): number {
-    // Conserva firma si ya la usabas en plantilla; internamente delega.
     return this.computeProgressPct(p, d);
   }
 
@@ -240,7 +302,7 @@ export class PlaybacksTabComponent implements OnInit {
     const prog = Math.max(0, Number(progress ?? 0));
     const dur = Number(duration ?? 0);
     if (!dur || dur <= 0) {
-      // Sin duración: aproximación suave (30 min = 1800s) para no romper UI
+      // Without duration: soft approximation (30 min = 1800s) to not break UI
       return Math.min(100, Math.floor((prog / 1800) * 100));
     }
     return Math.min(100, Math.floor((prog / dur) * 100));
