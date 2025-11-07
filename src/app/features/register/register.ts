@@ -4,6 +4,7 @@ import { AuthUiService } from '../../core/auth-ui.service';
 import { AuthService } from '../../core/auth.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ProfilesService } from '../../core/services/profiles.service'; // ⬅️ NUEVO
 
 function matchPasswords(group: AbstractControl): ValidationErrors | null {
   const p = group.get('password')?.value;
@@ -26,6 +27,7 @@ export class Register {
 
   private auth = inject(AuthService);
   private router = inject(Router);
+  private profiles = inject(ProfilesService); // ⬅️ NUEVO
 
   constructor(private fb: FormBuilder, public authUi: AuthUiService) {
     this.form = this.fb.group({
@@ -46,14 +48,8 @@ export class Register {
   onEsc() { this.authUi.closeRegister(); }
 
   get pwGroup() { return this.form.get('passwords') as FormGroup; }
-  
-  get passwordControl() {
-    return this.pwGroup.get('password') as FormControl;
-  }
-
-  get confirmControl() {
-    return this.pwGroup.get('confirm') as FormControl;
-  }
+  get passwordControl() { return this.pwGroup.get('password') as FormControl; }
+  get confirmControl() { return this.pwGroup.get('confirm') as FormControl; }
   
   submit() {
     if (this.form.invalid) {
@@ -68,23 +64,20 @@ export class Register {
     const { name, email } = this.form.value;
     const { password } = this.pwGroup.value;
 
-    // Call the actual AuthService register method
     this.auth.register({ name, email, password }).subscribe({
-      next: (user) => {
+      next: () => {
         this.successMsg = 'Account created successfully! Logging you in...';
-        
-        // Auto-login after successful registration
+
+        // Auto-login y luego carga de perfiles
         this.auth.login({ email, password }).subscribe({
           next: () => {
-            // Login successful - user data will be set automatically via the service
+            this.profiles.loadMyProfiles(true); // ⬅️ fuerza la carga
             this.loading = false;
             this.authUi.closeRegister();
             this.router.navigate(['/']);
-            
           },
-          error: (loginErr) => {
+          error: () => {
             this.loading = false;
-            // If auto-login fails, redirect to login
             this.successMsg = 'Account created! Please login to continue.';
             setTimeout(() => {
               this.authUi.closeRegister();
@@ -95,7 +88,6 @@ export class Register {
       },
       error: (err) => {
         this.loading = false;
-        
         if (err.status === 400) {
           if (err.error?.detail?.includes('Email already registered')) {
             this.errorMsg = 'This email is already registered. Please use a different email or login.';
@@ -108,11 +100,7 @@ export class Register {
         } else {
           this.errorMsg = err.error?.detail ?? err.error?.message ?? 'Registration failed. Please try again.';
         }
-
-        // Clear password fields on error
         this.pwGroup.reset();
-        
-        // Focus back to name input
         setTimeout(() => this.nameInput?.nativeElement?.focus(), 100);
       },
     });

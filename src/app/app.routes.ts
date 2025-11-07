@@ -8,6 +8,7 @@ import { AuthGuard } from './core/guards/auth.guard';
 import { WatchlistComponent } from './features/watchlist/watchlist';
 import { SubscriptionsTabComponent } from './features/subscription/subscriptions-tab';
 import { SearchPageComponent } from './features/search/search-page';
+import { PlansComponent } from './features/plans/plans';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -17,4 +18,5 @@ export const routes: Routes = [
   { path: 'dashboard/user', component: UserShell, canActivate: [AuthGuard] },
   { path: 'playlists', component: WatchlistComponent, canActivate: [AuthGuard] },
   { path: 'subscriptions', component: SubscriptionsTabComponent, canActivate: [AuthGuard] },
+  { path: 'plans', component: PlansComponent },
 ];

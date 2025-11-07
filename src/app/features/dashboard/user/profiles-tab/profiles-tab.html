@@ -8,11 +8,18 @@
 
     <button
       (click)="openCreateModal()"
-      class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors flex items-center gap-2">
+      [disabled]="!canCreateMore()"
+      class="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2">
       <span>+</span>
       <span>Add New Profile</span>
     </button>
   </div>
+
+  @if (!canCreateMore()) {
+    <div class="bg-amber-900/40 border border-amber-600/50 text-amber-200 px-4 py-3 rounded-lg">
+      You already have the maximum number of profiles ({{ MAX_PROFILES_PER_USER }}).
+    </div>
+  }
 
   <!-- Error Message -->
   @if (error()) {
@@ -34,9 +41,9 @@
       <div class="text-gray-400 text-lg mb-4">No profiles found</div>
       <p class="text-gray-500 mb-6">Create your first profile to get started with personalized viewing.</p>
       <button
-        (click)="openCreateModal()
-        "
-        class="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+        (click)="openCreateModal()"
+        [disabled]="!canCreateMore()"
+        class="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
         Create Your First Profile
       </button>
     </div>
@@ -123,7 +130,7 @@
               (ngModelChange)="setNew('maturity_rating', $event)"
               name="maturity_rating"
               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
-              <!-- nullable option: '' will be coerced to null by the service -->
+              <!-- nullable option: '' -> null en el service -->
               <option [ngValue]="''">— None —</option>
               @for (rating of maturityRatings; track rating.value) {
                 <option [value]="rating.value">{{ rating.label }}</option>
@@ -140,7 +147,8 @@
             </button>
             <button
               type="submit"
-              class="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+              [disabled]="!canCreateMore()"
+              class="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
               Create Profile
             </button>
           </div>
