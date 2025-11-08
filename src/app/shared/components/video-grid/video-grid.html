@@ -1,14 +1,9 @@
-<!-- src/app/shared/components/video-grid/video-grid.html -->
 <div class="p-4 sm:p-6 min-w-[300px]">
-  <!-- Loading State -->
   @if (loading()) {
     <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
       @for (item of skeletonItems; track item) {
         <div class="animate-pulse space-y-3">
-          <!-- Thumbnail skeleton -->
           <div class="bg-gradient-to-br from-zinc-700 to-zinc-600 rounded-xl aspect-video mb-2"></div>
-          
-          <!-- Content skeleton -->
           <div class="space-y-2">
             <div class="bg-gradient-to-br from-zinc-700 to-zinc-600 rounded h-4 w-full"></div>
             <div class="bg-gradient-to-br from-zinc-700 to-zinc-600 rounded h-3 w-2/3"></div>
@@ -18,22 +13,17 @@
     </div>
   }
 
-  <!-- Error State -->
   @if (error() && !loading()) {
     <div class="text-center py-8 sm:py-12 px-4">
       <div class="text-6xl mb-4">📡</div>
       <h3 class="text-lg sm:text-xl font-semibold text-white mb-2">Connection Issue</h3>
       <p class="text-zinc-400 mb-6 text-sm sm:text-base">{{ error() }}</p>
-      <button 
-        (click)="retry()"
-        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 font-medium"
-      >
+      <button (click)="retry()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 font-medium">
         🔄 Try Again
       </button>
     </div>
   }
 
-  <!-- Empty State -->
   @if (isEmpty()) {
     <div class="text-center py-8 sm:py-12 px-4">
       <div class="text-6xl mb-4">🎬</div>
@@ -42,22 +32,17 @@
     </div>
   }
 
-  <!-- Success State -->
   @if (showContent()) {
     <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       @for (video of processedVideos(); track video.id) {
-        <a 
-          class="block group transition-all duration-300 hover:scale-105 active:scale-95" 
-          [routerLink]="video.route"
-        >
-          <app-video-card 
+        <a class="block group transition-all duration-300 hover:scale-105 active:scale-95" [routerLink]="video.route">
+          <app-video-card
             [thumbnail]="video.thumbnail"
-            [duration]="video.duration"
             [title]="video.title"
-            [channelAvatar]="''"
-            [channelName]="''"
-            [views]="''"
-            [date]="''">
+            [duration]="video.duration"
+            [width]="video.width"
+            [height]="video.height"
+            [isLcp]="video.isLcp">
           </app-video-card>
         </a>
       }

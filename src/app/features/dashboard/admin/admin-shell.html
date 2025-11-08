@@ -5,47 +5,54 @@
 
   <!-- Tabs -->
   <div class="border-b border-gray-700 mb-8">
-    <div class="flex flex-wrap gap-2">
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='users' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('users')">Users</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='content' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('content')">Content</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='plans' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('plans')">Plans</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='subscriptions' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('subscriptions')">Subscriptions</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='payments' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('payments')">Payments</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='profiles' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('profiles')">Profiles</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='watchlists' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('watchlists')">watchlists</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='episodes' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('episodes')">episodes</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='playbacks' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('playbacks')">playbacks</button>
-    </div>
+    <nav class="flex flex-wrap gap-2">
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/users"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Users</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/content"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Content</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/plans"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Plans</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/subscriptions"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Subscriptions</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/payments"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Payments</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/profiles"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Profiles</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/watchlists"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Watchlists</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/episodes"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Episodes</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/admin/playbacks"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Playbacks</a>
+    </nav>
   </div>
 
   <!-- Body -->
-  @switch (activeTab()) {
-    @case ('users') { <app-users-tab /> }
-    @case ('content') { <app-content-tab /> }
-    @case ('plans') { <app-plans-tab /> }
-    @case ('subscriptions') { <app-subscriptions-tab /> }
-    @case ('payments') { <app-payments-tab /> }
-    @case ('profiles') { <app-profiles-tab /> }
-    @case ('watchlists') { <app-watchlists-tab /> }
-    @case ('episodes') { <app-episodes-tab/> }
-    @case ('playbacks') { <app-playbacks-tab/> }
-  }
+  <router-outlet></router-outlet>
 </div>
