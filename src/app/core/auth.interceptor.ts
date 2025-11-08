@@ -3,55 +3,48 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { environment } from '../enviroments/enviroment';
 import { inject } from '@angular/core';
 import { AuthService } from './auth.service';
-import { Router } from '@angular/router';
-import { catchError, EMPTY, throwError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 
-const API_ORIGIN = new URL(environment.apiUrl).origin;
+// ✅ Normalización robusta para /api o URLs absolutas
+const ORIGIN = window.location.origin;
+const API_URL = new URL(environment.apiUrl, ORIGIN);   // e.g. '/api' -> 'http://localhost:4200/api'
+const API_ORIGIN = API_URL.origin;                     // 'http://localhost:4200'
+const API_BASE_PATH = API_URL.pathname.replace(/\/$/, ''); // '/api' (sin slash final)
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  const router = inject(Router);
 
-  // 1) No interceptar terceros (YouTube, Vimeo, etc.) ni assets locales
   try {
-    const url = new URL(req.url, window.location.origin);
-    if (url.origin !== API_ORIGIN || url.pathname.startsWith('/assets/')) {
-      return next(req);
+    const reqUrl = new URL(req.url, ORIGIN);
+
+    // 1) Ignorar terceros y assets locales
+    if (reqUrl.origin !== API_ORIGIN) return next(req);
+    if (!reqUrl.pathname.startsWith(API_BASE_PATH)) return next(req); // no es contra la API
+    if (reqUrl.pathname.startsWith('/assets/')) return next(req);
+
+    // 2) Públicos (p. ej. /api/public/...) → sin credenciales
+    const isPublic = reqUrl.pathname.startsWith(`${API_BASE_PATH}/public/`);
+    if (isPublic) {
+      return next(req.clone({ withCredentials: false }));
     }
 
-    // 2) Endpoints públicos → sin credenciales
-    if (url.pathname.startsWith('/public/')) {
-      return next(req.clone({ withCredentials: false })).pipe(
-        catchError((err: HttpErrorResponse) => {
-          if (err.status === 401) {
-            auth.forceLogout('/');
-            return EMPTY;
-          }
-          return throwError(() => err);
-        })
-      );
-    }
-
-    // 3) Endpoints privados → con credenciales
-    return next(req.clone({ withCredentials: true })).pipe(
+    // 3) Privados → con credenciales
+    const cloned = req.clone({ withCredentials: true });
+    return next(cloned).pipe(
       catchError((err: HttpErrorResponse) => {
         if (err.status === 401) {
-          auth.forceLogout('/'); // limpia estado y navega
-          return EMPTY;
+          // No forzar logout por GET /auth/me; deja que AuthService lo maneje
+          const isAuthMe = reqUrl.pathname === `${API_BASE_PATH}/auth/me`;
+          const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+          if (isMutation && !isAuthMe) {
+            auth.forceLogout('/');
+          }
         }
         return throwError(() => err);
       })
     );
   } catch {
-    // Si falla el parseo de URL, no tocar el request
-    return next(req).pipe(
-      catchError((err: HttpErrorResponse) => {
-        if (err.status === 401) {
-          auth.forceLogout('/');
-          return EMPTY;
-        }
-        return throwError(() => err);
-      })
-    );
+    // Si falla el parseo, no tocar la request
+    return next(req);
   }
 };

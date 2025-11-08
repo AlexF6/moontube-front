@@ -2,13 +2,18 @@
 import { inject } from '@angular/core';
 import { Router, UrlTree, CanMatchFn } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { filter, map, take } from 'rxjs';
 
-/** Requiere usuario y flag is_admin; si no, redirige al home público */
 export const AdminGuard: CanMatchFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (auth.isLoading()) return false;
-
-  return auth.user()?.is_admin ? true : router.createUrlTree(['/']);
+  return toObservable(auth.isLoading).pipe(
+    filter(loading => loading === false),
+    take(1),
+    map((): boolean | UrlTree => {
+      return auth.user()?.is_admin ? true : router.createUrlTree(['/']);
+    })
+  );
 };
