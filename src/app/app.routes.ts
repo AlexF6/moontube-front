@@ -16,7 +16,7 @@ export const routes: Routes = [
   { path: 'search', component: SearchPageComponent },
   { path: 'dashboard/admin', component: AdminShell, canActivate: [AuthGuard, AdminGuard] },
   { path: 'dashboard/user', component: UserShell, canActivate: [AuthGuard] },
-  { path: 'playlists', component: WatchlistComponent, canActivate: [AuthGuard] },
+  { path: 'watchlists', component: WatchlistComponent, canActivate: [AuthGuard] },
   { path: 'subscriptions', component: SubscriptionsTabComponent, canActivate: [AuthGuard] },
   { path: 'plans', component: PlansComponent },
 ];

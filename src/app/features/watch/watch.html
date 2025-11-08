@@ -103,31 +103,28 @@
           <h1 class="text-2xl font-bold text-white leading-tight">{{ title() }}</h1>
 
           <!-- Actions: Add to My List with skeleton state -->
-<!-- Actions row (inside Video Info) -->
-<div class="flex flex-wrap items-center gap-3">
-  <button
-    (click)="toggleWatchlist()
-"
-    class="px-4 py-2 rounded-lg border transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-    [class]="watchlistButtonClass()"
-    [disabled]="isWatchlistButtonDisabled()"
-  >
-    @if (inWatchlist() === null) {
-      <div class="flex items-center gap-2">
-        <div class="w-4 h-4 bg-zinc-500 rounded animate-pulse"></div>
-        <span>Checking...</span>
-      </div>
-    } @else {
-      {{ watchlistButtonText() }}
-    }
-  </button>
+          <!-- Actions row (inside Video Info) -->
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              (click)="toggleWatchlist()"
+              class="px-4 py-2 rounded-lg border transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              [class]="watchlistButtonClass()"
+              [disabled]="isWatchlistButtonDisabled()"
+              aria-label="Toggle watchlist"
+            >
+              <!-- Spinner cuando está guardando -->
+              @if (savingWatchlist()) {
+                <span class="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin inline-block"></span>
+              }
+              <span>{{ watchlistButtonText() }}</span>
+            </button>
 
-  @if (needsActiveProfile()) {
-    <span class="text-sm text-amber-400">
-      Select a profile in the header to continue.
-    </span>
-  }
-</div>
+            @if (needsActiveProfile()) {
+              <span class="text-sm text-amber-400">
+                Select a profile in the header to continue.
+              </span>
+            }
+          </div>
 
 
           <!-- Metadata -->

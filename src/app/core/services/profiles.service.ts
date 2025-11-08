@@ -68,6 +68,15 @@ export class ProfilesService {
     });
   }
 
+  reset() {
+    this.profiles.set([]);
+    this._activeId.set(null);
+    this.loadedOnce.set(false);
+    this.loading.set(false);
+    this.error.set(null);
+    localStorage.removeItem('active_profile_id');
+  }
+
   /** Load current user's profiles and reconcile the active one */
   loadMyProfiles(force = false): void {
     if (!force && (this.loading() || this.loadedOnce())) return;

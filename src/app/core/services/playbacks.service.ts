@@ -28,6 +28,7 @@ interface QueryParams {
 }
 
 interface MyPlaybackQueryParams {
+  profile_id?: string | null; 
   completed?: boolean | null;
   device?: string | null;       // /me usa "device"
   content_id?: string | null;

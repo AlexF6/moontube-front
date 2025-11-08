@@ -56,11 +56,11 @@ export class Sidebar {
     }
   }
 
-  navigateToPlaylist() {
+  navigateToWatchlist() {
     if (this.blockSidebar()) return; // 🔒
     const user = this.authService.user();
     if (user) {
-      this.router.navigate(["/playlists"]);
+      this.router.navigate(["/watchlists"]);
       this.closeIfMobile();
     } else {
       this.authUi.openLogin();

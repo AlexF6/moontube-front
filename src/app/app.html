@@ -10,8 +10,17 @@
 </div>
 
 @if (authUi.isLoginOpen() || authUi.isRegisterOpen()) {
-  <div class="fixed inset-0 z-40 bg-black/60"
-       (click)="authUi.isLoginOpen() ? authUi.closeLogin() : authUi.closeRegister()"></div>
+  <!-- Overlay con blur -->
+  <div
+    class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
+    (click)="authUi.isLoginOpen() ? authUi.closeLogin() : authUi.closeRegister()">
+  </div>
+
+  <!-- Contenedor centrado que NO cierra al hacer click dentro -->
+  <div class="fixed inset-0 z-50 grid place-items-center p-4">
+    <div class="pointer-events-auto" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      @if (authUi.isLoginOpen())    { <app-login    class="block"></app-login> }
+      @if (authUi.isRegisterOpen()) { <app-register class="block"></app-register> }
+    </div>
+  </div>
 }
-@if (authUi.isLoginOpen())    { <app-login    class="z-50"></app-login> }
-@if (authUi.isRegisterOpen()) { <app-register class="z-50"></app-register> }

@@ -3,6 +3,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../enviroments/enviroment';
 import { tap, catchError, of } from 'rxjs';
+import { Router } from '@angular/router';
 
 type User = {
   id: string;
@@ -39,7 +40,7 @@ export class AuthService {
   user = signal<User | null>(null);
   isLoading = signal(true);
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private router: Router) {
     this.checkAuthStatus();
   }
 
@@ -100,21 +101,28 @@ export class AuthService {
     }
 
   logout() {
-    return this.http.post<{message: string}>(`${this.base}/auth/logout`, {}, { 
-      withCredentials: true 
+    return this.http.post<{message: string}>(`${this.base}/auth/logout`, {}, {
+      withCredentials: true
     }).pipe(
-      tap(() => {
-        this.clearLocalSession();
-      }),
+      tap(() => this.clearLocalSession()),
       catchError((error) => {
+        // Si el backend ya eliminó la cookie o falla, igual limpiamos cliente
         this.clearLocalSession();
         return of(error);
       })
     );
   }
 
+  forceLogout(redirectTo: string = '/login') {
+    this.clearLocalSession();
+    this.router.navigateByUrl(redirectTo);
+  }
+
   private clearLocalSession() {
     this.user.set(null);
+    this.isLoading.set(false);
+    // Tip: si guardas cosas en localStorage relacionadas a sesión, límpialas aquí
+    localStorage.removeItem('active_profile_id');
   }
 
   me() {

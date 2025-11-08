@@ -160,6 +160,20 @@ export class Header implements OnDestroy {
   }
 
   logout() {
-    this.auth.logout().subscribe();
+    // Cerrar UI y menús antes de salir
+    this.profileMenuOpen.set(false);
+    this.ui.close();
+
+    this.auth.logout().subscribe({
+      next: () => {
+        this.profiles.reset();
+        // Redirige fuera de rutas protegidas/permisos
+        this.router.navigateByUrl('/');
+      },
+      error: () => {
+        this.profiles.reset();
+        this.router.navigateByUrl('/');
+      }
+    });
   }
 }
