@@ -1,5 +1,5 @@
 // src/app/core/auth.service.ts
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../enviroments/enviroment';
 import { tap, catchError, of } from 'rxjs';
@@ -35,6 +35,7 @@ type LoginResponse = {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private base = environment.apiUrl;
+  initialized = computed(() => !this.isLoading());
   user = signal<User | null>(null);
   isLoading = signal(true);
 

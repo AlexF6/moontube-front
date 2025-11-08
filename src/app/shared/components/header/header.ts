@@ -30,7 +30,7 @@ export class Header implements OnDestroy {
   readonly profileMenuOpen = signal(false);
   readonly searchFocused = signal(false);
   readonly hasMultipleProfiles = computed(() => this.profiles.profiles().length > 1);
-  
+
   // Loading states
   readonly profilesLoading = computed(() => this.profiles.loading());
   readonly profilesError = computed(() => this.profiles.error());
@@ -61,27 +61,15 @@ export class Header implements OnDestroy {
   });
 
   constructor() {
-    // Debounce de búsqueda (igual que antes)
+    // Debounce de búsqueda
     this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(q => this.updateUrl(q));
 
-    // ❌ Quita este if (es frágil):
-    // if (this.auth.user()) {
-    //   this.profiles.loadMyProfiles();
-    // }
-
-    // ✅ Reacciona cuando user() cambia a autenticado:
-    effect(() => {
-      const u = this.auth.user();
-      if (u && !this.profiles.loading() && !this.profiles.hasLoadedOnce?.()) {
-        this.profiles.loadMyProfiles();
-      }
-    });
-
-    // Mantén tu effect para cambios de perfil
+    // ⛳️ Ya no dispares loadMyProfiles aquí; lo hace SessionBootstrapService.
+    // Mantén solo el efecto que reacciona al cambio del perfil activo:
     effect(() => {
       const activeProfile = this.profiles.active();
       const activeId = this.profiles.activeId();
@@ -109,7 +97,6 @@ export class Header implements OnDestroy {
   }
 
   onSearchBlur() {
-    // Small delay to allow clicks on clear/search buttons
     setTimeout(() => this.searchFocused.set(false), 150);
   }
 
@@ -125,7 +112,6 @@ export class Header implements OnDestroy {
   clearSearch() {
     this.query = '';
     this.updateUrl('');
-    // Focus back to input after clear
     const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
     if (searchInput) searchInput.focus();
   }
@@ -135,33 +121,27 @@ export class Header implements OnDestroy {
     this.profileMenuOpen.set(!this.profileMenuOpen());
   }
 
-async chooseProfile(id: string) {
-  if (this.switchingProfile()) return;
-  this.switchingProfile.set(true);
-  this.profileMenuOpen.set(false);
+  chooseProfile(id: string) {
+    if (this.switchingProfile()) return;
+    this.switchingProfile.set(true);
+    this.profileMenuOpen.set(false);
 
-  try {
-    await this.profiles.setActiveProfile(id);
-    
-    // ✅ Navigate to current route to refresh data without full page reload
-    const currentUrl = this.router.url.split('?')[0];
-    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-      this.router.navigate([currentUrl]);
-    });
-    
-  } catch (error) {
-    console.error('Failed to switch profile:', error);
-  } finally {
-    this.switchingProfile.set(false);
+    try {
+      this.profiles.setActiveProfile(id); // sync
+
+      const currentUrl = this.router.url.split('?')[0];
+      this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+        this.router.navigate([currentUrl]);
+      });
+    } catch (error) {
+      console.error('Failed to switch profile:', error);
+    } finally {
+      this.switchingProfile.set(false);
+    }
   }
-}
 
-  // Refresh profile-specific data when profile changes
   private refreshProfileData(profileId: string) {
-    // Trigger any profile-specific data reloads here
-    // For example, refresh watch history, recommendations, etc.
-    // Example: this.watchHistoryService.refresh(profileId);
-    // Example: this.recommendationsService.refresh(profileId);
+    // Hook para refrescar data dependiente de perfil
   }
 
   // Navigation
@@ -170,7 +150,6 @@ async chooseProfile(id: string) {
     this.ui.close();
   }
 
-  // Profile avatar color
   getProfileColor(index: number): string {
     return this.profileColors[index % this.profileColors.length] || 'bg-gradient-to-br from-zinc-600 to-zinc-700';
   }

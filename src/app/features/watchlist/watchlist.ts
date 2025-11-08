@@ -2,6 +2,7 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+import { AuthService } from '../../core/auth.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
 import { ProfilesService } from '../../core/services/profiles.service';
 import { ContentsService } from '../../core/services/contents.service';
@@ -21,7 +22,6 @@ interface Filters {
 }
 
 type GroupRow = { profile: ProfileList; items: WatchlistList[] };
-
 type ContentMeta = { title: string; thumbnail?: string | null };
 
 @Component({
@@ -31,6 +31,8 @@ type ContentMeta = { title: string; thumbnail?: string | null };
   templateUrl: './watchlist.html',
 })
 export class WatchlistComponent implements OnInit {
+  // Services
+  private auth = inject(AuthService);
   private watchlistSvc = inject(WatchlistService);
   private profilesSvc = inject(ProfilesService);
   private contentsSvc = inject(ContentsService);
@@ -57,7 +59,7 @@ export class WatchlistComponent implements OnInit {
     offset: 0
   });
 
-  // Computed properties
+  // ------------ Computed ------------
   readonly hasProfiles = computed(() => this.profiles().length > 0);
   readonly allGroupsEmpty = computed(() => {
     const rows = this.groupedRows();
@@ -86,8 +88,10 @@ export class WatchlistComponent implements OnInit {
     return map;
   });
 
-  ngOnInit(): void {
-    this.loadProfilesAndData();
+  // ------------ Lifecycle ------------
+  async ngOnInit(): Promise<void> {
+    await this.waitForAuthReady();
+    await this.loadProfilesAndData();
   }
 
   // ------------ Content Meta (title + thumbnail) ------------
@@ -136,8 +140,11 @@ export class WatchlistComponent implements OnInit {
     this.error.set(null);
 
     try {
-      this.profilesSvc.loadMyProfiles(true);
-      await this.waitForProfiles();
+      // Carga condicional de perfiles (sin force)
+      if (!this.profilesSvc.hasLoadedOnce?.() && !this.profilesSvc.loading?.()) {
+        this.profilesSvc.loadMyProfiles();
+      }
+      await this.waitUntilProfilesReady();
 
       const list = this.profilesSvc.profiles();
       this.profiles.set(list ?? []);
@@ -300,23 +307,25 @@ export class WatchlistComponent implements OnInit {
   }
 
   // ------------ Helpers ------------
-  private waitForProfiles(timeout = 2000): Promise<boolean> {
-    return new Promise((resolve) => {
-      const startTime = Date.now();
+  private async waitForAuthReady(): Promise<void> {
+    // espera a que la sesión esté resuelta (con o sin usuario)
+    while (this.auth.isLoading()) {
+      await new Promise(r => setTimeout(r, 50));
+    }
+  }
 
-      const checkProfiles = () => {
-        const profiles = this.profilesSvc.profiles();
+  private async waitUntilProfilesReady(): Promise<void> {
+    // Si ya tienes perfiles, salir
+    if (this.profilesSvc.profiles()?.length) return;
 
-        if (profiles?.length) {
-          resolve(true);
-        } else if (Date.now() - startTime > timeout) {
-          resolve(false);
-        } else {
-          setTimeout(checkProfiles, 100);
+    // Espera activa pero sin force; chequea cada 50ms y sale cuando loading = false
+    await new Promise<void>(resolve => {
+      const t = setInterval(() => {
+        if (!this.profilesSvc.loading?.()) {
+          clearInterval(t);
+          resolve();
         }
-      };
-
-      checkProfiles();
+      }, 50);
     });
   }
 

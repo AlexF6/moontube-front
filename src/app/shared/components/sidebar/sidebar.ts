@@ -1,9 +1,10 @@
-import { Component, HostListener, inject } from "@angular/core";
+// sidebar.ts
+import { Component, HostListener, inject, computed } from "@angular/core";
 import { Router, RouterLink, RouterLinkActive } from "@angular/router";
-
 import { UiStateService } from "../../../core/ui-state.service";
 import { AuthService } from "../../../core/auth.service";
 import { AuthUiService } from "../../../core/auth-ui.service";
+import { ProfilesService } from "../../../core/services/profiles.service";
 
 @Component({
   selector: "app-sidebar",
@@ -15,35 +16,36 @@ export class Sidebar {
   private authService = inject(AuthService);
   private router = inject(Router);
   private authUi = inject(AuthUiService);
+  public profiles = inject(ProfilesService);
 
   constructor(public ui: UiStateService) {}
 
   isDesktop = window.innerWidth >= 768;
+  @HostListener("window:resize") onResize() { this.isDesktop = window.innerWidth >= 768; }
 
-  @HostListener("window:resize")
-  onResize() {
-    this.isDesktop = window.innerWidth >= 768;
-  }
+  // ✅ La sesión está lista cuando initialized() es true
+  readonly sessionReady = computed(() => this.authService.initialized());
 
-  get user() {
-    return this.authService.user();
-  }
+  // ✅ Si no hay usuario, perfiles "ready" por definición; si hay, deben haberse cargado al menos 1 vez
+  readonly profilesReady = computed(() => {
+    const hasUser = !!this.authService.user();
+    if (!hasUser) return true;
+    const loadedOnce = this.profiles.hasLoadedOnce?.() ?? (this.profiles.profiles().length > 0);
+    return loadedOnce && !this.profiles.loading();
+  });
 
-  /** Helpers to decide active UI (so "Home" isn't always active) */
-  isActiveExact(path: string): boolean {
-    return this.router.url === path;
-  }
-  isActiveStartsWith(prefix: string): boolean {
-    return this.router.url.startsWith(prefix);
-  }
+  // 🚫 Bloqueo maestro
+  readonly blockSidebar = computed(() => !this.sessionReady() || !this.profilesReady());
 
-  /** Close the sidebar on mobile after navigating */
-  private closeIfMobile() {
-    if (!this.isDesktop) this.ui.close();
-  }
+  get user() { return this.authService.user(); }
 
-  /** Guarded navigations (open login if needed) */
+  isActiveExact(path: string) { return this.router.url === path; }
+  isActiveStartsWith(prefix: string) { return this.router.url.startsWith(prefix); }
+
+  private closeIfMobile() { if (!this.isDesktop) this.ui.close(); }
+
   navigateToDashboard() {
+    if (this.blockSidebar()) return; // 🔒
     const user = this.authService.user();
     if (user) {
       this.router.navigate([user.is_admin ? "/dashboard/admin" : "/dashboard/user"]);
@@ -55,6 +57,7 @@ export class Sidebar {
   }
 
   navigateToPlaylist() {
+    if (this.blockSidebar()) return; // 🔒
     const user = this.authService.user();
     if (user) {
       this.router.navigate(["/playlists"]);
@@ -66,6 +69,7 @@ export class Sidebar {
   }
 
   navigateToSubscriptions() {
+    if (this.blockSidebar()) return; // 🔒
     const user = this.authService.user();
     if (user) {
       this.router.navigate(["/subscriptions"]);
