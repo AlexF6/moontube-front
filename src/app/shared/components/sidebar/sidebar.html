@@ -8,11 +8,13 @@
 <aside
   role="navigation"
   aria-label="Main"
-  class="fixed md:static top-0 left-0 z-50 w-[280px] h-full md:h-auto
+  class="fixed md:relative top-0 left-0 z-50 w-[280px] h-full md:h-auto md:w-full
          bg-black transition-transform duration-300
-         flex flex-col px-4 py-[28px] relative"
+         flex flex-col px-4 py-[28px]"
   [class.-translate-x-full]="!ui.isSidebarOpen() && !isDesktop"
   [class.translate-x-0]="ui.isSidebarOpen() || isDesktop"
+  [class.fixed]="!isDesktop"
+  [class.relative]="isDesktop"
 
   [attr.inert]="blockSidebar() ? '' : null"
   [attr.aria-busy]="blockSidebar() ? 'true' : null"

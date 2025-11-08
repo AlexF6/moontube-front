@@ -23,10 +23,8 @@ export class Sidebar {
   isDesktop = window.innerWidth >= 768;
   @HostListener("window:resize") onResize() { this.isDesktop = window.innerWidth >= 768; }
 
-  // ✅ La sesión está lista cuando initialized() es true
   readonly sessionReady = computed(() => this.authService.initialized());
 
-  // ✅ Si no hay usuario, perfiles "ready" por definición; si hay, deben haberse cargado al menos 1 vez
   readonly profilesReady = computed(() => {
     const hasUser = !!this.authService.user();
     if (!hasUser) return true;
@@ -34,7 +32,6 @@ export class Sidebar {
     return loadedOnce && !this.profiles.loading();
   });
 
-  // 🚫 Bloqueo maestro
   readonly blockSidebar = computed(() => !this.sessionReady() || !this.profilesReady());
 
   get user() { return this.authService.user(); }
@@ -45,7 +42,7 @@ export class Sidebar {
   private closeIfMobile() { if (!this.isDesktop) this.ui.close(); }
 
   navigateToDashboard() {
-    if (this.blockSidebar()) return; // 🔒
+    if (this.blockSidebar()) return;
     const user = this.authService.user();
     if (user) {
       this.router.navigate([user.is_admin ? "/dashboard/admin" : "/dashboard/user"]);
@@ -57,7 +54,7 @@ export class Sidebar {
   }
 
   navigateToWatchlist() {
-    if (this.blockSidebar()) return; // 🔒
+    if (this.blockSidebar()) return;
     const user = this.authService.user();
     if (user) {
       this.router.navigate(["/watchlists"]);
@@ -69,7 +66,7 @@ export class Sidebar {
   }
 
   navigateToSubscriptions() {
-    if (this.blockSidebar()) return; // 🔒
+    if (this.blockSidebar()) return;
     const user = this.authService.user();
     if (user) {
       this.router.navigate(["/subscriptions"]);
