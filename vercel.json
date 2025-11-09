@@ -3,6 +3,7 @@
   "buildCommand": "pnpm ng build --configuration production",
   "outputDirectory": "dist/moontube/browser",
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://marijuana-sur-welding-loc.trycloudflare.com/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
