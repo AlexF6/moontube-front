@@ -1,10 +1,8 @@
 {
-  "builds": [
-    { "src": "dist/moontube/browser/**", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/favicon.ico", "dest": "/favicon.ico" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "version": 2,
+  "buildCommand": "pnpm ng build --configuration production",
+  "outputDirectory": "dist/moontube/browser",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
