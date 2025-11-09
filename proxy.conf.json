@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "pnpm ng build --configuration production",
-  "outputDirectory": "dist/moontube-front/browser",
+  "outputDirectory": "dist/moontube/browser",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
