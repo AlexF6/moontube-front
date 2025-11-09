@@ -1,34 +1,37 @@
-<!-- src/app/shared/components/video-card/video-card.html -->
 <div class="group cursor-pointer">
-  <!-- Thumbnail Container -->
   <div class="relative mb-3 rounded-xl overflow-hidden bg-gradient-to-br from-zinc-800 to-zinc-700 aspect-video shadow-lg">
-    <!-- Loading state -->
     @if (!imageLoaded && !imageError) {
       <div class="absolute inset-0 bg-gradient-to-br from-zinc-700 to-zinc-600 animate-pulse"></div>
     }
-    
-    <!-- Error state -->
+
     @if (imageError) {
       <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-700">
         <div class="text-zinc-500 text-2xl">🎬</div>
       </div>
     }
-    
-    <!-- Actual image -->
-    <img 
-      [src]="thumbnail" 
+
+    <!-- Imagen optimizada -->
+    <img
+      [ngSrc]="thumbnail"
+      [attr.srcset]="srcset(thumbnail)"
+      [attr.sizes]="sizes"
+      [width]="640" 
+      [height]="360"
       [alt]="title"
+
+
+      [priority]="true"
+      decoding="async"
       (load)="onImageLoad()"
       (error)="onImageError()"
       [class.opacity-0]="!imageLoaded || imageError"
       [class.opacity-100]="imageLoaded && !imageError"
-      class="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+      class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
     />
-    
-    <!-- Gradient overlay on hover -->
+
+    <!-- Overlay hover -->
     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-    
-    <!-- Duration Badge -->
+
     @if (duration) {
       <div class="absolute bottom-2 right-2 bg-black/90 text-white text-xs px-2 py-1 rounded-md font-medium backdrop-blur-sm">
         {{ duration }}
@@ -36,17 +39,10 @@
     }
   </div>
 
-  <!-- Video Info -->
   <div class="px-1">
-    <!-- Title -->
     <h3 class="text-white font-semibold line-clamp-2 group-hover:text-blue-400 transition-colors duration-200 text-sm leading-tight mb-1">
       {{ title }}
     </h3>
-    
-    <!-- Metadata placeholder for consistent spacing -->
-    <div class="text-zinc-400 text-xs">
-      <!-- Intentionally left empty for future use -->
-      &nbsp;
-    </div>
+    <div class="text-zinc-400 text-xs">&nbsp;</div>
   </div>
 </div>

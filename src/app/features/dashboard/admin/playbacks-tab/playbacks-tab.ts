@@ -1,4 +1,3 @@
-// src/app/features/dashboard/admin/playbacks-tab/playbacks-tab.ts
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,14 +11,19 @@ import { EpisodesService } from '../../../../core/services/episodes.service';
 import type { ProfileList } from '../../../../models/profile.model';
 import type { ContentList } from '../../../../models/content.model';
 import type { EpisodeList } from '../../../../models/episode.model';
-import type { Playback, PlaybackCreate, PlaybackUpdate, PlaybackListItem } from '../../../../models/playback.model';
+import type {
+  Playback,
+  PlaybackCreate,
+  PlaybackUpdate,
+  PlaybackListItem
+} from '../../../../models/playback.model';
 
 interface QueryParams {
   profile_id: string | null;
   content_id: string | null;
   episode_id: string | null;
   completed: boolean | null;
-  device_q: string | null;
+  device_q: string | null;      // <- admin usa device_q
   started_from: string | null;
   started_to: string | null;
   ended_from: string | null;
@@ -42,7 +46,7 @@ export class PlaybacksTabComponent implements OnInit {
   private contentsService = inject(ContentsService);
   private episodesService = inject(EpisodesService);
 
-  // State signals
+  // --------- State ---------
   error = signal<string | null>(null);
   items = signal<PlaybackListItem[]>([]);
   total = signal<number>(0);
@@ -51,7 +55,7 @@ export class PlaybacksTabComponent implements OnInit {
   isUpdating = signal<boolean>(false);
   editOpen = signal<boolean>(false);
 
-  // Query & lists
+  // --------- Query ---------
   query = signal<QueryParams>({
     profile_id: null,
     content_id: null,
@@ -68,6 +72,7 @@ export class PlaybacksTabComponent implements OnInit {
     offset: 0,
   });
 
+  // --------- Lookups ---------
   profiles = signal<ProfileList[]>([]);
   contentItems = signal<ContentList[]>([]);
   episodes = signal<EpisodeList[]>([]);
@@ -75,7 +80,7 @@ export class PlaybacksTabComponent implements OnInit {
   isContentLoading = signal<boolean>(false);
   isEpisodesLoading = signal<boolean>(false);
 
-  // denormalized display maps
+  // --------- Denormalized maps ---------
   profileNameMap = computed(() => {
     const map = new Map<string, string>();
     for (const p of this.profiles()) map.set(p.id, p.name);
@@ -96,12 +101,12 @@ export class PlaybacksTabComponent implements OnInit {
     return map;
   });
 
-  // Create form – match backend optional fields
+  // --------- Create form (admin) ---------
   newPlayback = signal<PlaybackCreate>({
     profile_id: '',
     content_id: '',
     episode_id: null,
-    started_at: undefined,
+    started_at: undefined,   // server default = now
     ended_at: null,
     progress_seconds: 0,
     completed: false,
@@ -113,9 +118,10 @@ export class PlaybacksTabComponent implements OnInit {
     return !!np.profile_id && !!np.content_id && (np.progress_seconds ?? 0) >= 0;
   });
 
+  // --------- Edit ---------
   editing = signal<Playback | null>(null);
 
-  // ---------- SAFE BIND HELPERS ----------
+  // --------- Helpers (bindings seguros) ---------
   onQueryChange<K extends keyof QueryParams>(key: K, value: QueryParams[K]) {
     this.query.update(q => ({ ...q, [key]: value }));
   }
@@ -124,11 +130,17 @@ export class PlaybacksTabComponent implements OnInit {
     this.newPlayback.update(e => ({ ...e, [key]: value }));
   }
 
+  // --------- Lifecycle ---------
   async ngOnInit() {
-    await Promise.all([this.loadProfiles(), this.loadContent(), this.loadEpisodes()]);
+    await Promise.all([
+      this.loadProfiles(),
+      this.loadContent(),
+      this.loadEpisodes(),
+    ]);
     await this.loadPlaybacks();
   }
 
+  // --------- Load lists ---------
   private async loadProfiles() {
     try {
       this.isProfilesLoading.set(true);
@@ -165,6 +177,7 @@ export class PlaybacksTabComponent implements OnInit {
     }
   }
 
+  // --------- CRUD admin (/playbacks) ---------
   async loadPlaybacks() {
     try {
       this.isLoading.set(true);
@@ -184,15 +197,12 @@ export class PlaybacksTabComponent implements OnInit {
       this.error.set('Profile, Content, and valid Progress are required');
       return;
     }
-
     try {
       this.isCreating.set(true);
       this.error.set(null);
-      const np = this.newPlayback();
+      await firstValueFrom(this.playbacksService.createPlayback(this.newPlayback()));
 
-      await firstValueFrom(this.playbacksService.createPlayback(np));
-
-      // Reset form to clean defaults
+      // reset limpio
       this.newPlayback.set({
         profile_id: '',
         content_id: '',
@@ -215,8 +225,8 @@ export class PlaybacksTabComponent implements OnInit {
   async openEdit(playbackId: string) {
     try {
       this.error.set(null);
-      const playback = await firstValueFrom(this.playbacksService.getPlayback(playbackId));
-      this.editing.set(playback || null);
+      const pb = await firstValueFrom(this.playbacksService.getPlayback(playbackId));
+      this.editing.set(pb || null);
       this.editOpen.set(true);
     } catch (err) {
       this.error.set(this.getErrorMessage(err));
@@ -250,7 +260,6 @@ export class PlaybacksTabComponent implements OnInit {
 
   async remove(playbackId: string) {
     if (!confirm('Are you sure you want to delete this playback record?')) return;
-
     try {
       this.error.set(null);
       await firstValueFrom(this.playbacksService.deletePlayback(playbackId));
@@ -260,8 +269,9 @@ export class PlaybacksTabComponent implements OnInit {
     }
   }
 
+  // --------- Filters ---------
   applyFilters() {
-    this.query.update((q) => ({ ...q, offset: 0 }));
+    this.query.update(q => ({ ...q, offset: 0 }));
     void this.loadPlaybacks();
   }
 
@@ -284,6 +294,7 @@ export class PlaybacksTabComponent implements OnInit {
     void this.loadPlaybacks();
   }
 
+  // --------- UI helpers ---------
   clearError() {
     this.error.set(null);
   }
@@ -308,7 +319,6 @@ export class PlaybacksTabComponent implements OnInit {
     const hours = Math.floor(s / 3600);
     const minutes = Math.floor((s % 3600) / 60);
     const seconds = s % 60;
-
     if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
     if (minutes > 0) return `${minutes}m ${seconds}s`;
     return `${seconds}s`;

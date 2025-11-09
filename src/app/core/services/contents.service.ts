@@ -85,10 +85,10 @@ export class ContentsService {
 
   // ---------- Smart (try admin, fallback to public) ----------
   getSmartContents(params: QueryParams) {
-    return this.getContents(params).pipe(
+    return this.getPublicContents(params).pipe(
       catchError((err) => {
         if (err?.status === 401 || err?.status === 403) {
-          return this.getPublicContents(params);
+          return this.getContents(params);
         }
         return throwError(() => err);
       })
@@ -96,14 +96,39 @@ export class ContentsService {
   }
 
   getSmartContent(id: string) {
-    return this.getContent(id).pipe(
+    return this.getPublicContent(id).pipe(
       catchError((err) => {
         if (err?.status === 401 || err?.status === 403) {
-          return this.getPublicContent(id);
+          return this.getContent(id);
         }
         return throwError(() => err);
       })
     );
+  }
+
+  getMyContent(id: string) {
+    return this.http.get<Content>(`${this.base}/me/contents/${id}`, {
+      withCredentials: true,
+    });
+  }
+
+  /** (Opcional) GET /me/contents - si más adelante lo usas para listados */
+  getMyContents(params: {
+    q?: string | null;
+    type_q?: 'MOVIE' | 'SERIES' | 'VIDEOS' | null;
+    limit?: number | null;
+    offset?: number | null;
+  } = {}) {
+    let httpParams = new HttpParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== '') {
+        httpParams = httpParams.set(k, String(v));
+      }
+    });
+    return this.http.get<Content[]>(`${this.base}/me/contents`, {
+      params: httpParams,
+      withCredentials: true,
+    });
   }
 
 }

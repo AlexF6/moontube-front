@@ -87,11 +87,11 @@ export class WatchlistService {
     });
   }
 
-  updateMyWatchlist(id: string, patch: WatchlistUpdate) {
-    return this.http.put<Watchlist>(`${this.base}/me/watchlist/${id}`, patch, {
-      withCredentials: true,
-    });
-  }
+  // updateMyWatchlist(id: string, patch: WatchlistUpdate) {
+  //   return this.http.put<Watchlist>(`${this.base}/me/watchlist/${id}`, patch, {
+  //     withCredentials: true,
+  //   });
+  // }
 
   deleteMyWatchlist(id: string) {
     return this.http.delete<void>(`${this.base}/me/watchlist/${id}`, {

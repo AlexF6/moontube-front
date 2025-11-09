@@ -58,121 +58,87 @@
   <!-- Subscriptions List -->
   @if (!loading() && subscriptions().length > 0) {
     <div class="grid gap-4">
-      @for (subscription of subscriptions(); track subscription.id) {
-        <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50 backdrop-blur-sm hover:border-gray-600/50 transition-all duration-300 group">
-          <!-- Header Section -->
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-            <div class="flex items-start gap-4 flex-1">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center font-bold shadow-lg group-hover:scale-105 transition-transform duration-200">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex flex-wrap items-center gap-3 mb-2">
-                  <h3 class="text-lg font-semibold text-white">
-                    Subscription #{{ subscription.id.slice(-8) }}
-                  </h3>
-                  <span
-                    class="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase border"
-                    [class]="getStatusBadgeClass(subscription.status)">
-                    {{ subscription.status.replace('_', ' ') }}
+      @for (g of groupedByPlan(); track g.planId) {
+        <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50">
+          <div class="flex items-start justify-between gap-4 mb-4">
+            <div class="min-w-0">
+              <h3 class="text-lg font-semibold text-white">
+                {{ planName(g.planId) }}
+              </h3>
+              <div class="mt-1 text-gray-400 text-sm">
+                @if (g.current) {
+                  Estado: 
+                  <span class="px-2 py-0.5 rounded-full border text-xs"
+                        [class]="getStatusBadgeClass(g.current.status)">
+                    {{ g.current.status.replace('_',' ') }}
                   </span>
-                </div>
-                <div class="flex items-center gap-2 text-gray-400 text-sm">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                  </svg>
-                  <span>Plan: {{ planName(subscription.plan_id) }}</span>
-                </div>
+                } @else {
+                  <span class="text-gray-500">Sin suscripción activa</span>
+                }
               </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="flex gap-3 lg:pl-4">
-              @if (isActive(subscription)) {
-                <button
-                  (click)="cancelSubscription(subscription)"
-                  [disabled]="isProcessing(subscription.id, 'cancel')"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white rounded-xl text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed">
-                  @if (isProcessing(subscription.id, 'cancel')) {
-                    <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
-                    <span>Canceling...</span>
-                  } @else {
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                    <span>Cancel</span>
-                  }
+            <div class="flex gap-2">
+              @if (g.current && isActive(g.current)) {
+                <button (click)="cancelSubscription(g.current!)"
+                        [disabled]="isProcessing(g.current!.id,'cancel')"
+                        class="px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm">
+                  Cancel
                 </button>
               }
-              @if (isCanceled(subscription)) {
+              @if (!g.current || isCanceled(g.current)) {
+                <!-- Solo permite reactivar si NO hay otra activa en este plan -->
                 <button
-                  (click)="reactivateSubscription(subscription)"
-                  [disabled]="isProcessing(subscription.id, 'reactivate')"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white rounded-xl text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed">
-                  @if (isProcessing(subscription.id, 'reactivate')) {
-                    <div class="animate-spin rounded-full h-4 w-4 border border-white border-t-transparent"></div>
-                    <span>Reactivating...</span>
-                  } @else {
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    <span>Reactivate</span>
-                  }
+                  (click)="reactivateSubscription(g.current!)"
+                  [disabled]="hasActiveForPlan(g.planId) || (g.current && isProcessing(g.current.id,'reactivate'))"
+                  class="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm disabled:opacity-60">
+                  Reactivate
                 </button>
               }
             </div>
           </div>
 
-          <!-- Subscription Details Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
-            <div class="space-y-2">
-              <label class="text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                Start Date
-              </label>
-              <div class="text-white font-medium">{{ formatDate(subscription.start_date) }}</div>
+          <!-- Detalles actuales -->
+          @if (g.current) {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div><div class="text-gray-400 text-xs uppercase">Start Date</div>
+                  <div class="text-white font-medium">{{ formatDate(g.current.start_date) }}</div></div>
+              <div><div class="text-gray-400 text-xs uppercase">End Date</div>
+                  <div class="text-white font-medium">
+                    {{ g.current.end_date ? formatDate(g.current.end_date) : 'No end date' }}
+                  </div></div>
+              <div><div class="text-gray-400 text-xs uppercase">Renews At</div>
+                  <div class="text-white font-medium">
+                    {{ g.current.renews_at ? formatDate(g.current.renews_at) : 'Not set' }}
+                  </div></div>
             </div>
+          }
 
-            <div class="space-y-2">
-              <label class="text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                End Date
-              </label>
-              <div class="text-white font-medium">
-                {{ subscription.end_date ? formatDate(subscription.end_date) : 'No end date' }}
+          <!-- Historial colapsable -->
+          @if (g.history.length > 0) {
+            <details class="mt-4">
+              <summary class="cursor-pointer text-gray-300 hover:text-white text-sm">Show history ({{ g.history.length }})</summary>
+              <div class="mt-3 space-y-2">
+                @for (h of g.history; track h.id) {
+                  <div class="flex items-center justify-between text-sm bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded-full border text-xs" [class]="getStatusBadgeClass(h.status)">
+                        {{ h.status.replace('_',' ') }}
+                      </span>
+                      <span class="text-gray-300">Started: {{ formatDate(h.start_date) }}</span>
+                      <span class="text-gray-500">•</span>
+                      <span class="text-gray-300">Ended: {{ h.end_date ? formatDate(h.end_date) : '—' }}</span>
+                      @if (h.canceled_at) {
+                        <span class="text-gray-500">•</span>
+                        <span class="text-gray-300">Canceled: {{ formatDate(h.canceled_at) }}</span>
+                      }
+                    </div>
+                    <span class="text-gray-500">#{{ h.id.slice(-8) }}</span>
+                  </div>
+                }
               </div>
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Renews At
-              </label>
-              <div class="text-white font-medium">
-                {{ subscription.renews_at ? formatDate(subscription.renews_at) : 'Not set' }}
-              </div>
-            </div>
-
-            @if (subscription.canceled_at) {
-              <div class="space-y-2">
-                <label class="text-gray-400 text-xs font-medium uppercase tracking-wider flex items-center gap-1">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  Canceled At
-                </label>
-                <div class="text-white font-medium">{{ formatDate(subscription.canceled_at) }}</div>
-              </div>
-            }
-          </div>
+            </details>
+          }
         </div>
       }
     </div>

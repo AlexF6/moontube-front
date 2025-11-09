@@ -1,0 +1,9 @@
+{
+  "/api": {
+    "target": "https://marijuana-sur-welding-loc.trycloudflare.com",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": { "^/api": "" }
+  }
+}

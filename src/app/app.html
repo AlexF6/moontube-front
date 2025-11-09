@@ -1,17 +1,41 @@
-<div class="text-white">
-  <div class="flex">
-    <app-sidebar></app-sidebar>
-    <main class="flex-col w-full">
-      <app-header></app-header>
+<!-- Shell principal: se “apaga” cuando hay modal -->
+<div
+  class="flex text-white"
+  [attr.inert]="modalOpen() ? '' : null"
+  [attr.aria-hidden]="modalOpen() ? 'true' : null"
+>
+  <app-sidebar></app-sidebar>
 
-      <router-outlet></router-outlet>
-    </main>
-  </div>
+  <main class="flex-col w-full">
+    <app-header></app-header>
+    <router-outlet></router-outlet>
+  </main>
 </div>
 
-@if (authUi.isLoginOpen() || authUi.isRegisterOpen()) {
-  <div class="fixed inset-0 z-40 bg-black/60"
-       (click)="authUi.isLoginOpen() ? authUi.closeLogin() : authUi.closeRegister()"></div>
+@if (modalOpen()) {
+  <div
+    class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
+    (click)="authUi.isLoginOpen() ? authUi.closeLogin() : authUi.closeRegister()">
+  </div>
+
+  <div class="fixed inset-0 z-50 grid place-items-center p-4">
+    <div class="pointer-events-auto" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      @switch (true) {
+        @case (authUi.isLoginOpen()) {
+          @defer (when authUi.isLoginOpen()) {
+            <app-login class="block"></app-login>
+          } @placeholder {
+            <div class="w-[420px] h-[420px] rounded-xl bg-black/70 border border-white/10 animate-pulse"></div>
+          }
+        }
+        @case (authUi.isRegisterOpen()) {
+          @defer (when authUi.isRegisterOpen()) {
+            <app-register class="block"></app-register>
+          } @placeholder {
+            <div class="w-[520px] h-[520px] rounded-xl bg-black/70 border border-white/10 animate-pulse"></div>
+          }
+        }
+      }
+    </div>
+  </div>
 }
-@if (authUi.isLoginOpen())    { <app-login    class="z-50"></app-login> }
-@if (authUi.isRegisterOpen()) { <app-register class="z-50"></app-register> }

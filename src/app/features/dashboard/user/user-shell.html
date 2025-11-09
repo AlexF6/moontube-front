@@ -6,30 +6,28 @@
   <!-- Tabs -->
   <div class="border-b border-gray-700 mb-8">
     <div class="flex flex-wrap gap-2">
-      <!-- <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='subscriptions' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('subscriptions')">My Subscriptions</button> -->
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='payments' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('payments')">Payment History</button>
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='profiles' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('profiles')">Profiles</button>
-      <!-- <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='watchlists' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('watchlists')">My Watchlist</button> -->
-      <button class="px-4 py-2 border-b-2 transition-colors"
-              [class]="activeTab()==='playbacks' ? 'border-orange-500 text-orange-400' : 'border-transparent text-gray-400 hover:text-orange-300'"
-              (click)="setTab('playbacks')">Viewing History</button>
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/user/account"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Account</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/user/payments"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Payment History</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/user/profiles"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Profiles</a>
+
+      <a class="px-4 py-2 border-b-2 transition-colors border-transparent text-gray-400 hover:text-orange-300"
+         routerLink="/dashboard/user/playbacks"
+         routerLinkActive="border-orange-500 text-orange-400"
+         [routerLinkActiveOptions]="{ exact: true }">Viewing History</a>
     </div>
   </div>
 
   <!-- Body -->
-  @switch (activeTab()) {
-    @case ('payments') { <app-payments-tab /> }
-    <!-- @case ('subscriptions') { <app-subscriptions-tab /> } -->
-    @case ('profiles') { <app-profiles-tab /> }
-    <!-- @case ('watchlists') { <app-watchlists-tab /> } -->
-    @case ('playbacks') { <app-playbacks-tab /> }
-  }
+  <router-outlet></router-outlet>
 </div>

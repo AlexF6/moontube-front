@@ -116,27 +116,27 @@
           </div>
 
           <!-- Subscribe Button -->
-<button
-  (click)="handleSubscribe(plan)"
-  [disabled]="buttonDisabled(plan)"
-  class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 
-         disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 
-         transform group-hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-  @if (isCurrentPlan(plan)) {
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-    </svg>
-  } @else if (actionPlanId() === plan.id) {
-    <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-  } @else {
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-    </svg>
-  }
-  <span>{{ buttonLabel(plan) }}</span>
-</button>
-        </div>
-      }
+          <button
+            (click)="handleSubscribe(plan)"
+            [disabled]="buttonDisabled(plan)"
+            class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 
+                  disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 
+                  transform group-hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            @if (isCurrentPlan(plan)) {
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            } @else if (actionPlanId() === plan.id) {
+              <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            } @else {
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+            }
+            <span>{{ buttonLabel(plan) }}</span>
+          </button>
     </div>
-  }
+      }
+  </div>
+    }
 </div>
