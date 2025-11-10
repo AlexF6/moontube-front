@@ -1,9 +1,8 @@
-<!-- Shell principal: se “apaga” cuando hay modal -->
+<!-- Shell principal -->
 <div
   class="flex text-white"
   [attr.inert]="modalOpen() ? '' : null"
-  [attr.aria-hidden]="modalOpen() ? 'true' : null"
->
+  [attr.aria-hidden]="modalOpen() ? 'true' : null">
   <app-sidebar></app-sidebar>
 
   <main class="flex-col w-full">
@@ -13,27 +12,57 @@
 </div>
 
 @if (modalOpen()) {
+  <!-- Overlay global -->
   <div
     class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
-    (click)="authUi.isLoginOpen() ? authUi.closeLogin() : authUi.closeRegister()">
+    (click)="
+      authUi.isLoginOpen() ? authUi.closeLogin()
+      : authUi.isRegisterOpen() ? authUi.closeRegister()
+      : authUi.isLogoutConfirmOpen() ? authUi.closeLogoutConfirm()
+      : null">
   </div>
 
   <div class="fixed inset-0 z-50 grid place-items-center p-4">
     <div class="pointer-events-auto" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
       @switch (true) {
         @case (authUi.isLoginOpen()) {
-          @defer (when authUi.isLoginOpen()) {
-            <app-login class="block"></app-login>
-          } @placeholder {
-            <div class="w-[420px] h-[420px] rounded-xl bg-black/70 border border-white/10 animate-pulse"></div>
-          }
+          @defer (when authUi.isLoginOpen()) { <app-login class="block"></app-login> }
+          @placeholder { <div class="w-[420px] h-[420px] rounded-xl bg-black/70 border border-white/10 animate-pulse"></div> }
         }
         @case (authUi.isRegisterOpen()) {
-          @defer (when authUi.isRegisterOpen()) {
-            <app-register class="block"></app-register>
-          } @placeholder {
-            <div class="w-[520px] h-[520px] rounded-xl bg-black/70 border border-white/10 animate-pulse"></div>
-          }
+          @defer (when authUi.isRegisterOpen()) { <app-register class="block"></app-register> }
+          @placeholder { <div class="w-[520px] h-[520px] rounded-xl bg-black/70 border border-white/10 animate-pulse"></div> }
+        }
+        @case (authUi.isLogoutConfirmOpen()) {
+          <div class="w-[420px] rounded-2xl border border-white/10 bg-zinc-900 backdrop-blur-xl p-6 text-zinc-100">
+            <div class="flex items-start gap-3">
+              <div class="p-2 rounded-xl bg-orange-500/15 border border-orange-500/30">
+                <svg class="w-5 h-5 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 13v-2H7V8l-5 4 5 4v-3h9Z"></path>
+                  <path d="M20 3h-8a2 2 0 0 0-2 2v4h2V5h8v14h-8v-4h-2v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold" id="logout-title">Confirm logout</h3>
+                <p class="mt-1 text-sm text-zinc-300">You are about to sign out. Any unsaved changes might be lost.</p>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-zinc-800/70">
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700"
+                (click)="authUi.closeLogoutConfirm()">
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white"
+                (click)="confirmLogoutGlobal()">
+                Logout
+              </button>
+            </div>
+          </div>
         }
       }
     </div>

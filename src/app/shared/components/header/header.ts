@@ -79,6 +79,11 @@ export class Header implements OnDestroy {
     });
   }
 
+  openLogoutConfirm() {
+    if (this.switchingProfile()) return;
+    this.authUi.openLogoutConfirm();
+  }
+
   // Search handlers
   onInput(event: Event) {
     const value = (event.target as HTMLInputElement).value;

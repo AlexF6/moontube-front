@@ -31,12 +31,12 @@
     </div>
   }
 
-  <!-- Profile Information -->
+  <!-- Account Information -->
   @if (user() && !loading()) {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Profile Card -->
+      <!-- Account Card -->
       <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 border border-gray-700">
-        <h3 class="text-xl font-semibold text-white mb-4">Profile Information</h3>
+        <h3 class="text-xl font-semibold text-white mb-4">Account Information</h3>
         
         <div class="space-y-4">
           <div>
@@ -83,7 +83,7 @@
           <button
             (click)="openEditModal()"
             class="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
-            Edit Profile
+            Update account
           </button>
         </div>
       </div>
@@ -98,12 +98,11 @@
             <p class="text-gray-300">Last changed: {{ formatDate(user()!.updated_at) }}</p>
           </div>
 
-          <div class="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4">
+          <div class="bg-amber-900/10 border border-amber-700/50 rounded-lg p-4">
             <div class="flex items-start gap-3">
-              <div class="text-amber-400 mt-0.5">ℹ</div>
-              <div class="text-amber-200 text-sm">
+              <div class="text-amber-500 text-sm">
                 <p class="font-medium mb-1">Password Requirements</p>
-                <ul class="list-disc list-inside space-y-1 text-amber-300">
+                <ul class="list-disc list-inside space-y-1 text-amber-500">
                   <li>At least 6 characters long</li>
                   <li>You'll need to enter your current password to make changes</li>
                 </ul>
@@ -125,8 +124,11 @@
 
   <!-- Edit Profile Modal -->
   @if (showEditModal()) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4
+            bg-black/10 backdrop-blur-lg"
+      role="dialog" aria-modal="true">
+      <div class="bg-black backdrop-blur-sm rounded-xl p-6 w-full max-w-md border border-gray-700">
         <h3 class="text-xl font-bold text-orange-400 mb-4">Edit Profile</h3>
 
         <form (submit)="updateProfile(); $event.preventDefault()" class="space-y-4">
@@ -179,8 +181,11 @@
 
   <!-- Change Password Modal -->
   @if (showPasswordModal()) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4
+            bg-black/10 backdrop-blur-lg"
+      role="dialog" aria-modal="true">
+      <div class="bg-black backdrop-blur-lg rounded-xl p-6 w-full max-w-md border border-gray-700">
         <h3 class="text-xl font-bold text-orange-400 mb-4">Change Password</h3>
 
         <form (submit)="changePassword(); $event.preventDefault()" class="space-y-4">

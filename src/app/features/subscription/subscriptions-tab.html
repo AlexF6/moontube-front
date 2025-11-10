@@ -1,5 +1,5 @@
 <!-- src/app/features/subscription/subscriptions-tab.html -->
-<div class="space-y-6">
+<div class="space-y-6 px-4">
   <!-- Header and Filters -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 py-4 border-b border-gray-700/50">
     <div>
@@ -12,7 +12,7 @@
       <select
         [value]="selectedStatus()"
         (change)="onStatusChange($event)"
-        class="px-4 py-2.5 bg-gray-800/80 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 backdrop-blur-sm">
+        class="px-4 py-2.5 bg-gray-900 border border-gray-600 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200 backdrop-blur-sm">
         @for (option of statusOptions; track option.value) {
           <option [value]="option.value">{{ option.label }}</option>
         }

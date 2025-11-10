@@ -9,21 +9,25 @@
     <button
       (click)="openCreateModal()"
       [disabled]="!canCreateMore()"
-      class="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2">
-      <span>+</span>
+      class="px-4 py-2 rounded-lg text-white
+             bg-orange-500 hover:bg-orange-600 active:translate-y-[1px]
+             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70
+             disabled:bg-gray-600 disabled:cursor-not-allowed
+             transition-transform transition-colors duration-150 flex items-center gap-2">
+      <span class="font-mono text-lg leading-none">+</span>
       <span>Add New Profile</span>
     </button>
   </div>
 
   @if (!canCreateMore()) {
-    <div class="bg-amber-900/10 text-amber-200/80 px-4 py-3 rounded-lg">
+    <div class="bg-amber-900/5 text-amber-500/80 px-4 py-3 rounded-lg border border-amber-700/40">
       You already have the maximum number of profiles for your plan ({{ MAX_PROFILES_PER_USER }}).
     </div>
   }
 
   <!-- Error Message -->
   @if (error()) {
-    <div class="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+    <div class="bg-red-900/40 border border-red-700/60 text-red-200 px-4 py-3 rounded-lg" aria-live="polite">
       {{ error() }}
     </div>
   }
@@ -37,13 +41,17 @@
 
   <!-- Empty State -->
   @if (!loading() && profiles().length === 0) {
-    <div class="text-center py-12">
-      <div class="text-gray-400 text-lg mb-4">No profiles found</div>
-      <p class="text-gray-500 mb-6">Create your first profile to get started with personalized viewing.</p>
+    <div class="text-center py-12 border border-dashed border-gray-700/60 rounded-2xl">
+      <div class="text-gray-300 text-lg mb-2">No profiles found</div>
+      <p class="text-gray-400 mb-6">Create your first profile to personalize your experience.</p>
       <button
         (click)="openCreateModal()"
         [disabled]="!canCreateMore()"
-        class="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
+        class="px-6 py-3 rounded-xl text-white
+               bg-orange-500 hover:bg-orange-600 active:translate-y-[1px]
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70
+               disabled:bg-gray-600 disabled:cursor-not-allowed
+               transition-transform transition-colors duration-150">
         Create Your First Profile
       </button>
     </div>
@@ -51,16 +59,20 @@
 
   <!-- Profiles Grid -->
   @if (!loading() && profiles().length > 0) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
       @for (profile of profiles(); track profile.id) {
-        <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors">
+        <div
+          class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6
+                 border border-gray-700/60 hover:border-gray-600/60
+                 shadow-sm hover:shadow-md
+                 transition-all duration-200">
           <!-- Profile Header -->
           <div class="flex items-center gap-4 mb-4">
             @if (profile.avatar) {
               <img
                 [src]="profile.avatar"
                 [alt]="profile.name"
-                class="w-16 h-16 rounded-full object-cover border-2 border-gray-600">
+                class="w-16 h-16 rounded-full object-cover border-2 border-gray-600" />
             } @else {
               <div
                 [innerHTML]="getDefaultAvatar(profile.name)"
@@ -76,15 +88,21 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex gap-2 pt-4 border-t border-gray-700">
+          <div class="flex gap-2 pt-4 border-t border-gray-700/60">
             <button
               (click)="openEditModal(profile)"
-              class="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors text-sm">
+              class="flex-1 px-3 py-2 rounded-lg text-white
+                     bg-gray-700 hover:bg-gray-600 active:translate-y-[1px]
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500/60
+                     transition-transform transition-colors duration-150 text-sm">
               Edit
             </button>
             <button
               (click)="deleteProfile(profile)"
-              class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors text-sm">
+              class="flex-1 px-3 py-2 rounded-lg text-white
+                     bg-red-600 hover:bg-red-700 active:translate-y-[1px]
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60
+                     transition-transform transition-colors duration-150 text-sm">
               Delete
             </button>
           </div>
@@ -95,8 +113,13 @@
 
   <!-- Create Profile Modal -->
   @if (showCreateModal()) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4
+             bg-black/20 backdrop-blur-md"
+      role="dialog" aria-modal="true">
+      <div
+        class="w-full max-w-md rounded-2xl border border-orange-500/70
+               bg-black backdrop-blur-xl shadow-2xl p-6">
         <h3 class="text-xl font-bold text-orange-400 mb-4">Create New Profile</h3>
 
         <form (submit)="createProfile(); $event.preventDefault()" class="space-y-4">
@@ -108,8 +131,15 @@
               (ngModelChange)="setNew('name', $event)"
               name="name"
               required
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="Enter profile name">
+              class="w-full px-3 py-2
+                     bg-gray-800/70 border border-gray-600/60 rounded-lg
+                     text-white placeholder:text-gray-400/70
+                     caret-orange-500
+                     outline-none ring-1 ring-inset ring-transparent
+                     focus:ring-2 focus:ring-orange-500/70 focus:border-orange-500/40
+                     transition-shadow transition-colors duration-150"
+              placeholder="Enter profile name"
+              aria-label="Profile name" />
           </div>
 
           <div>
@@ -119,8 +149,16 @@
               [ngModel]="newProfile().avatar"
               (ngModelChange)="setNew('avatar', $event)"
               name="avatar"
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="https://example.com/avatar.jpg">
+              class="w-full px-3 py-2
+                     bg-gray-800/70 border border-gray-600/60 rounded-lg
+                     text-white placeholder:text-gray-400/70
+                     caret-orange-500
+                     outline-none ring-1 ring-inset ring-transparent
+                     focus:ring-2 focus:ring-orange-500/70 focus:border-orange-500/40
+                     transition-shadow transition-colors duration-150"
+              placeholder="https://example.com/avatar.jpg"
+              aria-label="Avatar URL" />
+            <p class="mt-1 text-xs text-gray-400/80">Optional. Use a square image for best results.</p>
           </div>
 
           <div>
@@ -129,8 +167,13 @@
               [ngModel]="newProfile().maturity_rating"
               (ngModelChange)="setNew('maturity_rating', $event)"
               name="maturity_rating"
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
-              <!-- nullable option: '' -> null en el service -->
+              class="w-full px-3 py-2
+                     bg-gray-800 border border-gray-600/60 rounded-lg
+                     text-white placeholder:text-gray-400/70
+                     outline-none ring-1 ring-inset ring-transparent
+                     focus:ring-2 focus:ring-orange-500/70 focus:border-orange-500/40
+                     transition-shadow transition-colors duration-150"
+              aria-label="Maturity rating">
               <option [ngValue]="''">— None —</option>
               @for (rating of maturityRatings; track rating.value) {
                 <option [value]="rating.value">{{ rating.label }}</option>
@@ -142,13 +185,20 @@
             <button
               type="button"
               (click)="closeCreateModal()"
-              class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+              class="flex-1 px-4 py-2 rounded-lg text-white
+                     bg-gray-700 hover:bg-gray-600 active:translate-y-[1px]
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500/60
+                     transition-transform transition-colors duration-150">
               Cancel
             </button>
             <button
               type="submit"
               [disabled]="!canCreateMore()"
-              class="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors">
+              class="flex-1 px-4 py-2 rounded-lg text-white
+                     bg-orange-500 hover:bg-orange-600 active:translate-y-[1px]
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70
+                     disabled:bg-gray-600 disabled:cursor-not-allowed
+                     transition-transform transition-colors duration-150">
               Create Profile
             </button>
           </div>
@@ -159,8 +209,13 @@
 
   <!-- Edit Profile Modal -->
   @if (showEditModal()) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4
+             bg-black/20 backdrop-blur-md"
+      role="dialog" aria-modal="true">
+      <div
+        class="w-full max-w-md rounded-2xl border border-orange-500/70
+               bg-black backdrop-blur-xl shadow-2xl p-6">
         <h3 class="text-xl font-bold text-orange-400 mb-4">Edit Profile</h3>
 
         <form (submit)="updateProfile(); $event.preventDefault()" class="space-y-4">
@@ -172,8 +227,15 @@
               (ngModelChange)="setEdit('name', $event)"
               name="editName"
               required
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="Enter profile name">
+              class="w-full px-3 py-2
+                     bg-gray-800 border border-gray-600/60 rounded-lg
+                     text-white placeholder:text-gray-400/70
+                     caret-orange-500
+                     outline-none ring-1 ring-inset ring-transparent
+                     focus:ring-2 focus:ring-orange-500/70 focus:border-orange-500/40
+                     transition-shadow transition-colors duration-150"
+              placeholder="Enter profile name"
+              aria-label="Profile name (edit)" />
           </div>
 
           <div>
@@ -183,8 +245,16 @@
               [ngModel]="editProfile().avatar"
               (ngModelChange)="setEdit('avatar', $event)"
               name="editAvatar"
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="https://example.com/avatar.jpg">
+              class="w-full px-3 py-2
+                     bg-gray-800/70 border border-gray-600/60 rounded-lg
+                     text-white placeholder:text-gray-400/70
+                     caret-orange-500
+                     outline-none ring-1 ring-inset ring-transparent
+                     focus:ring-2 focus:ring-orange-500/70 focus:border-orange-500/40
+                     transition-shadow transition-colors duration-150"
+              placeholder="https://example.com/avatar.jpg"
+              aria-label="Avatar URL (edit)" />
+            <p class="mt-1 text-xs text-gray-400/80">Optional. Use a square image for best results.</p>
           </div>
 
           <div>
@@ -193,7 +263,13 @@
               [ngModel]="editProfile().maturity_rating"
               (ngModelChange)="setEdit('maturity_rating', $event)"
               name="editMaturityRating"
-              class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+              class="w-full px-3 py-2
+                     bg-gray-800 border border-gray-600/60 rounded-lg
+                     text-white placeholder:text-gray-400/70
+                     outline-none ring-1 ring-inset ring-transparent
+                     focus:ring-2 focus:ring-orange-500/70 focus:border-orange-500/40
+                     transition-shadow transition-colors duration-150"
+              aria-label="Maturity rating (edit)">
               <option [ngValue]="''">— None —</option>
               @for (rating of maturityRatings; track rating.value) {
                 <option [value]="rating.value">{{ rating.label }}</option>
@@ -205,12 +281,18 @@
             <button
               type="button"
               (click)="closeEditModal()"
-              class="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+              class="flex-1 px-4 py-2 rounded-lg text-white
+                     bg-gray-700 hover:bg-gray-600 active:translate-y-[1px]
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500/60
+                     transition-transform transition-colors duration-150">
               Cancel
             </button>
             <button
               type="submit"
-              class="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+              class="flex-1 px-4 py-2 rounded-lg text-white
+                     bg-orange-500 hover:bg-orange-600 active:translate-y-[1px]
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70
+                     transition-transform transition-colors duration-150">
               Update Profile
             </button>
           </div>

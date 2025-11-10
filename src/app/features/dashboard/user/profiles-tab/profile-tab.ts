@@ -1,3 +1,4 @@
+// src/app/features/dashboard/user/profiles-tab/profiles-tab.ts
 import { Component, OnInit, WritableSignal, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +29,6 @@ export class ProfilesTabComponent implements OnInit {
   // UI state
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
-  profiles: WritableSignal<ProfileList[]> = signal<ProfileList[]>([]);
 
   showCreateModal = signal<boolean>(false);
   showEditModal = signal<boolean>(false);
@@ -36,7 +36,8 @@ export class ProfilesTabComponent implements OnInit {
   // Cap (manténlo sincronizado con el backend)
   readonly MAX_PROFILES_PER_USER = 2;
 
-  // Derivados
+  // Derivados usando el servicio
+  readonly profiles = computed(() => this.profilesSvc.profiles());
   readonly canCreateMore = computed(() => this.profiles().length < this.MAX_PROFILES_PER_USER);
 
   // Forms
@@ -47,7 +48,6 @@ export class ProfilesTabComponent implements OnInit {
     maturity_rating: 'G',
   });
 
-  // usa Partial<Profile> para flexibilidad
   editProfile: WritableSignal<Partial<Profile> & { id: string }> = signal({
     id: '',
     created_by: '',
@@ -77,55 +77,35 @@ export class ProfilesTabComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    // Esta pestaña es “user”, usa /me
-    this.profilesSvc.getMyProfiles().subscribe({
-      next: (rows) => {
-        this.profiles.set(rows ?? []);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        const msg =
-          err?.status === 403
-            ? 'You do not have permission to list profiles.'
-            : err?.error?.detail || 'Failed to load profiles.';
-        this.error.set(msg);
-        this.loading.set(false);
-      },
-    });
+    this.profilesSvc.loadMyProfiles(true);
+    // El propio servicio maneja loading interno; aquí solo apagamos el spinner local
+    // cuando termine el tick
+    queueMicrotask(() => this.loading.set(false));
   }
 
   // ------- Create -------
   openCreateModal(): void {
-    // Evita abrir el modal si ya alcanzó el límite
     if (!this.canCreateMore()) {
       this.error.set(`You can only have ${this.MAX_PROFILES_PER_USER} profiles.`);
       return;
     }
-
     this.newProfile.set({
-      user_id: '', // ignorado por /me
-      name: '',
-      avatar: null,
-      maturity_rating: 'G',
+      user_id: '', name: '', avatar: null, maturity_rating: 'G',
     });
     this.showCreateModal.set(true);
   }
 
-  closeCreateModal(): void {
-    this.showCreateModal.set(false);
-  }
+  closeCreateModal(): void { this.showCreateModal.set(false); }
 
   setNew<K extends keyof ProfileCreate>(key: K, value: ProfileCreate[K]): void {
     this.newProfile.update((prev) => ({ ...prev, [key]: value }));
   }
 
   createProfile(): void {
-    // Defensa extra
     if (!this.canCreateMore()) {
       this.error.set(`You can only have ${this.MAX_PROFILES_PER_USER} profiles.`);
       return;
     }
-
     const { name, avatar, maturity_rating } = this.newProfile();
     const body: ProfileCreateMe = {
       name,
@@ -137,10 +117,10 @@ export class ProfilesTabComponent implements OnInit {
     this.profilesSvc.createMyProfile(body).subscribe({
       next: () => {
         this.showCreateModal.set(false);
-        this.loadProfiles();
+        this.loading.set(false);
+        // No llames loadProfiles(); el servicio ya sincronizó y disparó signals
       },
       error: (err) => {
-        // Maneja el límite del backend (403)
         if (err?.status === 403 && /limit|maximum/i.test(err?.error?.detail ?? '')) {
           this.error.set(`You can only have ${this.MAX_PROFILES_PER_USER} profiles.`);
         } else {
@@ -153,7 +133,6 @@ export class ProfilesTabComponent implements OnInit {
 
   // ------- Edit / Update -------
   openEditModal(p: ProfileList): void {
-    // Para “user” basta con los datos del listado
     this.editProfile.set({
       id: p.id,
       created_by: '',
@@ -168,9 +147,7 @@ export class ProfilesTabComponent implements OnInit {
     this.showEditModal.set(true);
   }
 
-  closeEditModal(): void {
-    this.showEditModal.set(false);
-  }
+  closeEditModal(): void { this.showEditModal.set(false); }
 
   setEdit<K extends keyof ProfileUpdate>(key: K, value: ProfileUpdate[K]): void {
     this.editProfile.update((prev) => ({ ...prev, [key]: value }));
@@ -181,15 +158,14 @@ export class ProfilesTabComponent implements OnInit {
     const patch: ProfileUpdate = {
       name: current.name,
       avatar: current.avatar === '' ? null : (current.avatar ?? null),
-      maturity_rating:
-        current.maturity_rating === '' ? null : (current.maturity_rating ?? null),
+      maturity_rating: current.maturity_rating === '' ? null : (current.maturity_rating ?? null),
     };
 
     this.loading.set(true);
-    this.profilesSvc.updateMyProfile(current.id, patch).subscribe({
+    this.profilesSvc.updateMyProfile(current.id!, patch).subscribe({
       next: () => {
         this.showEditModal.set(false);
-        this.loadProfiles();
+        this.loading.set(false);
       },
       error: (err) => {
         this.error.set(err?.error?.detail || 'Failed to update profile.');
@@ -204,7 +180,7 @@ export class ProfilesTabComponent implements OnInit {
 
     this.loading.set(true);
     this.profilesSvc.deleteMyProfile(p.id).subscribe({
-      next: () => this.loadProfiles(),
+      next: () => { this.loading.set(false); },
       error: (err) => {
         this.error.set(err?.error?.detail || 'Failed to delete profile.');
         this.loading.set(false);
