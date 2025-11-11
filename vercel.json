@@ -2,7 +2,6 @@
   "version": 2,
   "buildCommand": "pnpm ng build --configuration production",
   "outputDirectory": "dist/moontube/browser",
-  "functions": { "api/**": { "runtime": "edge" } },
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
