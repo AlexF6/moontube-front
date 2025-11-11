@@ -1,9 +1,17 @@
 {
+
   "version": 2,
+
   "buildCommand": "pnpm ng build --configuration production",
+
   "outputDirectory": "dist/moontube/browser",
+
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/[...path]" },
+
+    { "source": "/api/(.*)", "destination": "${BACKEND_URL}/$1" },
+
     { "source": "/(.*)", "destination": "/index.html" }
+
   ]
+
 }
