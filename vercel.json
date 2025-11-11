@@ -2,8 +2,12 @@
   "version": 2,
   "buildCommand": "pnpm ng build --configuration production",
   "outputDirectory": "dist/moontube/browser",
+  "functions": {
+    "api/**": {
+      "runtime": "nodejs22.x"
+    }
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
