@@ -1,72 +1,60 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+export const config = { runtime: 'edge' };
 
-const UPSTREAM = process.env.BACKEND_URL;
+const HOP_BY_HOP = new Set([
+  'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
+  'te', 'trailers', 'transfer-encoding', 'upgrade', 'host', 'content-length'
+]);
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request): Promise<Response> {
+  const UPSTREAM = process.env.BACKEND_URL;
+  if (!UPSTREAM) {
+    return new Response(JSON.stringify({ error: 'Backend URL not configured' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+
   try {
-    if (!UPSTREAM) {
-      res.status(500).json({ error: 'Backend URL not configured' });
-      return;
-    }
-
-    const qp = req.query?.path;
-    const segments = Array.isArray(qp) ? qp : qp ? [qp] : [];
+    const url = new URL(req.url);
+    // /api/foo/bar -> ["api","foo","bar"] => "/foo/bar"
+    const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
     const path = '/' + segments.join('/');
 
-    // Get the full URL to extract query parameters
-    const fullUrl = req.url || '';
-    const query = fullUrl.includes('?') ? fullUrl.substring(fullUrl.indexOf('?')) : '';
-    const targetUrl = `${UPSTREAM}${path}${query}`;
+    const target = new URL(UPSTREAM);
+    target.pathname = (target.pathname.replace(/\/+$/, '') + path).replace(/\/{2,}/g, '/'); // sanea dobles /
+    target.search = url.search; // conserva ?query=...
 
-    const hopByHop = new Set([
-      'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
-      'te', 'trailers', 'transfer-encoding', 'upgrade', 'host', 'content-length'
-    ]);
+    // Copia de headers quitando hop-by-hop
+    const headers = new Headers();
+    req.headers.forEach((v, k) => {
+      if (!HOP_BY_HOP.has(k.toLowerCase())) headers.set(k, v);
+    });
 
-    const headers: Record<string, string> = {};
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (!value) continue;
-      if (hopByHop.has(key.toLowerCase())) continue;
-      headers[key] = Array.isArray(value) ? value.join(',') : value as string;
-    }
-
-    const method = (req.method || 'GET').toUpperCase();
+    // Reenvía el body tal cual (stream) para métodos con body
+    const method = req.method.toUpperCase();
     const hasBody = method !== 'GET' && method !== 'HEAD';
 
-    const upstreamResp = await fetch(targetUrl, {
+    const upstreamResp = await fetch(target.toString(), {
       method,
       headers,
-      body: hasBody && req.body ? JSON.stringify(req.body) : undefined,
+      body: hasBody ? req.body : undefined,
       redirect: 'manual'
     });
 
-    // Copy headers from upstream response
-    upstreamResp.headers.forEach((value: string, key: string) => {
-      if (!hopByHop.has(key.toLowerCase())) {
-        res.setHeader(key, value);
-      }
+    // Copia de headers de respuesta (sin hop-by-hop)
+    const respHeaders = new Headers();
+    upstreamResp.headers.forEach((v, k) => {
+      if (!HOP_BY_HOP.has(k.toLowerCase())) respHeaders.set(k, v);
     });
 
-    res.status(upstreamResp.status);
-
-    // Handle different response types
-    const contentType = upstreamResp.headers.get('content-type');
-    
-    if (contentType?.includes('application/json')) {
-      const data = await upstreamResp.json();
-      res.json(data);
-    } else if (contentType?.includes('text/')) {
-      const text = await upstreamResp.text();
-      res.send(text);
-    } else {
-      const arrayBuffer = await upstreamResp.arrayBuffer();
-      res.send(Buffer.from(arrayBuffer));
-    }
-  } catch (err) {
-    console.error('Proxy error:', err);
-    res.status(502).json({ 
-      error: 'Bad gateway', 
-      detail: err instanceof Error ? err.message : String(err) 
+    return new Response(upstreamResp.body, {
+      status: upstreamResp.status,
+      headers: respHeaders
+    });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: 'Bad gateway', detail: String(err?.message ?? err) }), {
+      status: 502,
+      headers: { 'content-type': 'application/json' }
     });
   }
 }
