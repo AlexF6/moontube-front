@@ -1,3 +1,4 @@
+// api/[...path].ts
 export const config = { runtime: 'edge' };
 
 const HOP_BY_HOP = new Set([
@@ -9,20 +10,26 @@ export default async function handler(req: Request): Promise<Response> {
   const UPSTREAM = process.env.BACKEND_URL;
   if (!UPSTREAM) {
     return new Response(JSON.stringify({ error: 'Backend URL not configured' }), {
-      status: 500, headers: { 'content-type': 'application/json' }
+      status: 500,
+      headers: { 'content-type': 'application/json' }
     });
   }
 
   try {
     const url = new URL(req.url);
-    const path = '/' + url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean).join('/');
+    // /api/foo/bar -> /foo/bar
+    const path = '/' + url.pathname.replace(/^\/api\/?/, '')
+      .split('/').filter(Boolean).join('/');
 
     const target = new URL(UPSTREAM);
     target.pathname = (target.pathname.replace(/\/+$/, '') + path).replace(/\/{2,}/g, '/');
     target.search = url.search;
 
+    // Copia headers quitando hop-by-hop
     const fwdHeaders = new Headers();
-    req.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) fwdHeaders.set(k, v); });
+    req.headers.forEach((v, k) => {
+      if (!HOP_BY_HOP.has(k.toLowerCase())) fwdHeaders.set(k, v);
+    });
 
     const method = req.method.toUpperCase();
     const hasBody = method !== 'GET' && method !== 'HEAD';
@@ -30,20 +37,27 @@ export default async function handler(req: Request): Promise<Response> {
     const upstreamResp = await fetch(target.toString(), {
       method,
       headers: fwdHeaders,
-      body: hasBody ? req.body : undefined,
+      body: hasBody ? req.body : undefined, // passthrough stream
       redirect: 'manual'
     });
 
     const respHeaders = new Headers();
-    respHeaders.set('x-proxy-target', target.toString()); // 👈 DEBUG
+    respHeaders.set('x-proxy-target', target.toString()); // DEBUG
     upstreamResp.headers.forEach((v, k) => {
       if (!HOP_BY_HOP.has(k.toLowerCase())) respHeaders.set(k, v);
     });
 
-    return new Response(upstreamResp.body, { status: upstreamResp.status, headers: respHeaders });
+    return new Response(upstreamResp.body, {
+      status: upstreamResp.status,
+      headers: respHeaders
+    });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: 'Bad gateway', detail: String(err?.message ?? err) }), {
-      status: 502, headers: { 'content-type': 'application/json' }
+    return new Response(JSON.stringify({
+      error: 'Bad gateway',
+      detail: String(err?.message ?? err)
+    }), {
+      status: 502,
+      headers: { 'content-type': 'application/json' }
     });
   }
 }
