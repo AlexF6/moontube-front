@@ -15,6 +15,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const url = new URL(req.url);
+    // /api/foo/bar -> /foo/bar
     const path = '/' + url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean).join('/');
 
     const target = new URL(UPSTREAM);
@@ -30,7 +31,7 @@ export default async function handler(req: Request): Promise<Response> {
     const upstreamResp = await fetch(target.toString(), {
       method,
       headers,
-      body: hasBody ? req.body : undefined,
+      body: hasBody ? req.body : undefined, // stream passthrough
       redirect: 'manual'
     });
 
