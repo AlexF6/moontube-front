@@ -240,7 +240,7 @@
           <option [ngValue]="''">Select Subscription</option>
           @for (subscription of getUserSubscriptions(newPayment().user_id); track subscription.id) {
             <option [ngValue]="subscription.id">
-              {{ subscription.id.slice(0, 8) }}... ({{ getUserName(subscription.user_id) }})
+              {{ getPlanName(subscription.plan_id) }} ({{ getUserName(subscription.user_id) }})
             </option>
           }
         </select>

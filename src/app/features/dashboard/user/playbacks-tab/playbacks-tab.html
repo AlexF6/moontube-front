@@ -1,31 +1,60 @@
 <!-- src/app/features/dashboard/user/playbacks/playbacks-tab.html -->
 <div class="space-y-6">
-  <!-- Header + Filters -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-    <div>
-      <h2 class="text-2xl font-bold text-orange-400 mb-1">My Playbacks</h2>
-      <p class="text-gray-400 text-sm">Your recent viewing activity</p>
-    </div>
+  <!-- Header + Controls -->
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-orange-400 mb-1">My Playbacks</h2>
+        <p class="text-gray-400 text-sm">Your recent viewing activity</p>
+      </div>
 
-    <div class="flex flex-wrap items-center gap-3">
-      <label class="text-gray-300 text-sm">Completed:</label>
-      <select
-        [value]="completedFilter()"
-        (change)="onCompletedChange($event)"
-        class="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
-        <option value="ALL">All</option>
-        <option value="YES">Completed</option>
-        <option value="NO">In progress</option>
-      </select>
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- View mode -->
+        <div class="inline-flex rounded-lg overflow-hidden border border-gray-700">
+          <button
+            class="px-3 py-2 text-sm"
+            [class.bg-orange-600]="viewMode() === 'grouped'"
+            [class.text-white]="viewMode() === 'grouped'"
+            [class.text-gray-300]="viewMode() !== 'grouped'"
+            (click)="onChangeView('grouped')">
+            Grouped
+          </button>
+          <button
+            class="px-3 py-2 text-sm"
+            [class.bg-orange-600]="viewMode() === 'single'"
+            [class.text-white]="viewMode() === 'single'"
+            [class.text-gray-300]="viewMode() !== 'single'"
+            (click)="onChangeView('single')">
+            Single
+          </button>
+        </div>
 
-      <input
-        type="text"
-        placeholder="Device (e.g. Chrome, TV...)"
-        [value]="deviceFilter()"
-        (input)="deviceFilter.set($any($event.target).value)"
-        (change)="onFilterChange()"
-        class="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-      />
+        <!-- Profile selector (only in single mode) -->
+        @if (viewMode() === 'single') {
+          <select
+            class="bg-gray-900 border border-gray-700 text-white text-sm rounded px-2 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            [ngModel]="selectedProfileId()"
+            (ngModelChange)="onChangeProfile($event)">
+            <option value="all">All profiles</option>
+            @for (p of profiles(); track p.id) {
+              <option [value]="p.id">{{ p.name }}</option>
+            }
+          </select>
+        }
+
+        <!-- Completed filter -->
+        <div class="flex items-center gap-2 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2">
+          <label class="text-sm text-gray-300">Completed:</label>
+          <select
+            class="bg-gray-900 border border-gray-700 text-white text-sm rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            [ngModel]="completedFilter()"
+            (ngModelChange)="onChangeCompletedFilter($event)">
+            <option value="all">All</option>
+            <option value="true">Only completed</option>
+            <option value="false">Only in progress</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -43,88 +72,322 @@
     </div>
   }
 
-  <!-- Empty -->
-  @if (!loading() && playbacks().length === 0) {
-    <div class="text-center py-12">
-      <div class="text-gray-400 text-lg mb-1">No playbacks found</div>
-      <p class="text-gray-500">Try adjusting filters.</p>
-    </div>
-  }
+  <!-- ===== SINGLE MODE ===== -->
+  @if (!loading() && viewMode() === 'single') {
+    @if (playbacks().length === 0) {
+      <div class="text-center py-12">
+        <div class="text-gray-400 text-lg mb-1">No playbacks found</div>
+        <p class="text-gray-500">Your playback history will appear here.</p>
+      </div>
+    } @else {
+      <div class="grid gap-4">
+        @for (pb of playbacks(); track pb.id) {
+          <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-5 border border-gray-700 hover:border-gray-600 transition-colors">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <!-- Left: Thumbnail + Content Info -->
+              <div class="flex items-start gap-4 flex-1 min-w-0">
+                <!-- Thumbnail -->
+                <div class="flex-shrink-0 relative">
+                  <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-700">
+                    @if (pb.thumbnail) {
+                      <img
+                        [src]="pb.thumbnail"
+                        [alt]="pb.contentTitle || 'Content thumbnail'"
+                        class="w-full h-full object-cover"
+                        (error)="pb.thumbnail = undefined" />
+                    } @else {
+                      <div class="w-full h-full flex items-center justify-center text-gray-400">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+                        </svg>
+                      </div>
+                    }
+                    <!-- Episode badge -->
+                    @if (pb.episode_id) {
+                      <div class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 py-0.5 rounded">
+                        E{{ getEpisodeNumber(pb.episode_id) }}
+                      </div>
+                    }
+                    <!-- Status dot -->
+                    <div
+                      class="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-gray-800"
+                      [class]="pb.completed ? 'bg-green-500' : 'bg-orange-500'">
+                    </div>
+                  </div>
+                </div>
 
-  <!-- List -->
-  @if (!loading() && playbacks().length > 0) {
-    <div class="grid gap-4">
-      @for (pb of playbacks(); track pb.id) {
-        <div class="bg-gray-800 rounded-lg p-5 border border-gray-700 hover:border-gray-600 transition-colors">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div class="flex items-center gap-4">
-              <div
-                class="w-10 h-10 rounded-full flex items-center justify-center font-bold"
-                [class]="pb.completed ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'">
-                {{ pb.completed ? '✓' : '▶' }}
-              </div>
-              <div>
-                <div class="text-white font-medium">
-                  Content: <span class="font-mono">{{ shortId(pb.content_id) }}</span>
+                <!-- Content Details -->
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h3 class="text-white font-semibold truncate">
+                      {{ pb.contentTitle || shortId(pb.content_id) }}
+                    </h3>
+                    @if (pb.completed) {
+                      <span class="flex-shrink-0 bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full">
+                        Completed
+                      </span>
+                    }
+                  </div>
+
                   @if (pb.episode_id) {
-                    <span class="text-gray-400"> • Episode:</span>
-                    <span class="text-white font-mono">{{ shortId(pb.episode_id) }}</span>
+                    <div class="text-blue-300 text-sm mb-2 truncate">
+                      {{ pb.episodeTitle || shortId(pb.episode_id) }}
+                    </div>
+                  }
+
+                  <!-- Metadata -->
+                  <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                    <div class="flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                      </svg>
+                      {{ formatDuration(pb.progress_seconds) }} / {{ formatDuration(pb.duration_seconds || 0) }}
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clip-rule="evenodd"/>
+                      </svg>
+                      {{ shortenDeviceName(pb.device) }}
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                      </svg>
+                      {{ formatRelativeTime(pb.started_at) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Actions -->
+              <div class="flex flex-col items-end gap-3 flex-shrink-0">
+                <div class="text-right text-sm">
+                  <div class="text-gray-400">Started</div>
+                  <div class="text-white">{{ formatDate(pb.started_at) }}</div>
+                  @if (pb.ended_at) {
+                    <div class="text-gray-400 mt-1">Ended</div>
+                    <div class="text-white">{{ formatDate(pb.ended_at) }}</div>
                   }
                 </div>
-                <div class="text-gray-400 text-sm">
-                  Playback: <span class="font-mono">{{ shortId(pb.id) }}</span>
-                  <span class="mx-2">•</span>
-                  Device: {{ pb.device || '—' }}
+
+                <div class="flex gap-2">
+                  @if (!pb.completed) {
+                    <button
+                      (click)="markAsCompleted(pb.id)"
+                      class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                      </svg>
+                      Complete
+                    </button>
+                  }
+                  <button
+                    (click)="deletePlayback(pb.id)"
+                    class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div class="text-right">
-              <div class="text-white text-sm">
-                Started: {{ formatDate(pb.started_at) }}
+            <!-- Progress bar -->
+            <div class="mt-4">
+              <div class="flex justify-between text-sm text-gray-400 mb-1">
+                <span>Progress: {{ progressPercent(pb.progress_seconds, pb.duration_seconds) }}%</span>
+                <span>{{ pb.completed ? 'Completed' : 'In progress' }}</span>
               </div>
-              <div class="text-gray-400 text-sm">
-                Ended: {{ formatDate(pb.ended_at) }}
+              <div class="h-2 bg-gray-700 rounded">
+                <div
+                  class="h-2 rounded bg-orange-500 transition-all duration-300"
+                  [style.width.%]="progressPercent(pb.progress_seconds, pb.duration_seconds)">
+                </div>
               </div>
             </div>
           </div>
-
-          <!-- Progress bar -->
-          <div class="mt-4">
-            <div class="h-2 bg-gray-700 rounded">
-              <div class="h-2 rounded bg-orange-500" [style.width.%]="progressPercent(pb.progress_seconds)"></div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-400 mt-1">
-              <span>{{ formatDuration(pb.progress_seconds) }}</span>
-              <span>{{ pb.completed ? 'Completed' : 'In progress' }}</span>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">
-            @if (!pb.completed) {
-              <button
-                (click)="markAsCompleted(pb.id)"
-                class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
-                Mark Completed
-              </button>
-            }
-            <button
-              (click)="deletePlayback(pb.id)"
-              class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
-              Delete
-            </button>
-          </div>
-        </div>
-      }
-    </div>
-
-    <!-- Summary -->
-    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-      <div class="flex justify-between items-center text-sm">
-        <span class="text-gray-400">Total items:</span>
-        <span class="text-white font-medium">{{ totalShown() }}</span>
+        }
       </div>
-    </div>
+
+      <!-- Summary -->
+      <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-4 border border-gray-700">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-400">Total items:</span>
+          <span class="text-white font-medium">{{ totalShown() }}</span>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ===== GROUPED MODE ===== -->
+  @if (!loading() && viewMode() === 'grouped') {
+    @if (groupedByProfile().length === 0) {
+      <div class="text-center py-12">
+        <div class="text-gray-400 text-lg mb-1">Nothing to show</div>
+        <p class="text-gray-500">No playbacks were found for your profiles.</p>
+      </div>
+    } @else {
+      <div class="space-y-8">
+        @for (group of groupedByProfile(); track group.profile.id) {
+          <section class="space-y-3">
+            <!-- Group header -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-300 font-semibold">
+                  {{ group.profile.name.charAt(0).toUpperCase() || '?' }}
+                </div>
+                <h3 class="text-lg font-semibold text-white">
+                  {{ group.profile.name }}
+                </h3>
+              </div>
+              <span class="text-xs text-gray-400">
+                {{ group.items.length }} item(s)
+              </span>
+            </div>
+
+            @if (group.items.length === 0) {
+              <div class="text-gray-500 text-sm border border-dashed border-gray-700 rounded-xl p-4">
+                No items for this profile yet.
+              </div>
+            } @else {
+              <div class="grid gap-4">
+                @for (pb of group.items; track pb.id) {
+                  <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-lg p-5 border border-gray-700 hover:border-gray-600 transition-colors">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <!-- Left: Thumbnail + Content Info -->
+                      <div class="flex items-start gap-4 flex-1 min-w-0">
+                        <!-- Thumbnail -->
+                        <div class="flex-shrink-0 relative">
+                          <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-700">
+                            @if (pb.thumbnail) {
+                              <img
+                                [src]="pb.thumbnail"
+                                [alt]="pb.contentTitle || 'Content thumbnail'"
+                                class="w-full h-full object-cover"
+                                (error)="pb.thumbnail = undefined" />
+                            } @else {
+                              <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+                                </svg>
+                              </div>
+                            }
+                            <!-- Episode badge -->
+                            @if (pb.episode_id) {
+                              <div class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-1 py-0.5 rounded">
+                                E{{ getEpisodeNumber(pb.episode_id) }}
+                              </div>
+                            }
+                            <!-- Status dot -->
+                            <div
+                              class="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-gray-800"
+                              [class]="pb.completed ? 'bg-green-500' : 'bg-orange-500'">
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Content Details -->
+                        <div class="min-w-0 flex-1">
+                          <div class="flex items-center gap-2 mb-1">
+                            <h3 class="text-white font-semibold truncate">
+                              {{ pb.contentTitle || shortId(pb.content_id) }}
+                            </h3>
+                            @if (pb.completed) {
+                              <span class="flex-shrink-0 bg-green-900 text-green-300 text-xs px-2 py-1 rounded-full">
+                                Completed
+                              </span>
+                            }
+                          </div>
+
+                          @if (pb.episode_id) {
+                            <div class="text-blue-300 text-sm mb-2 truncate">
+                              {{ pb.episodeTitle || shortId(pb.episode_id) }}
+                            </div>
+                          }
+
+                          <!-- Metadata -->
+                          <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                            <div class="flex items-center gap-1">
+                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                              </svg>
+                              {{ formatDuration(pb.progress_seconds) }} / {{ formatDuration(pb.duration_seconds || 0) }}
+                            </div>
+
+                            <div class="flex items-center gap-1">
+                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clip-rule="evenodd"/>
+                              </svg>
+                              {{ shortenDeviceName(pb.device) }}
+                            </div>
+
+                            <div class="flex items-center gap-1">
+                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                              </svg>
+                              {{ formatRelativeTime(pb.started_at) }}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Right: Actions -->
+                      <div class="flex flex-col items-end gap-3 flex-shrink-0">
+                        <div class="text-right text-sm">
+                          <div class="text-gray-400">Started</div>
+                          <div class="text-white">{{ formatDate(pb.started_at) }}</div>
+                          @if (pb.ended_at) {
+                            <div class="text-gray-400 mt-1">Ended</div>
+                            <div class="text-white">{{ formatDate(pb.ended_at) }}</div>
+                          }
+                        </div>
+
+                        <div class="flex gap-2">
+                          @if (!pb.completed) {
+                            <button
+                              (click)="markAsCompleted(pb.id)"
+                              class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors flex items-center gap-1">
+                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                              </svg>
+                              Complete
+                            </button>
+                          }
+                          <button
+                            (click)="deletePlayback(pb.id)"
+                            class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="mt-4">
+                      <div class="flex justify-between text-sm text-gray-400 mb-1">
+                        <span>Progress: {{ progressPercent(pb.progress_seconds, pb.duration_seconds) }}%</span>
+                        <span>{{ pb.completed ? 'Completed' : 'In progress' }}</span>
+                      </div>
+                      <div class="h-2 bg-gray-700 rounded">
+                        <div
+                          class="h-2 rounded bg-orange-500 transition-all duration-300"
+                          [style.width.%]="progressPercent(pb.progress_seconds, pb.duration_seconds)">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        }
+      </div>
+    }
   }
 </div>

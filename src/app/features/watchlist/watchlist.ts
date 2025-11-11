@@ -1,18 +1,17 @@
 // src/app/features/watchlist/watchlist.ts
-import { Component, OnInit, WritableSignal, signal, inject, computed } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 
-import { WatchlistService } from '../../core/services/watchlist.service';
 import { AuthService } from '../../core/auth.service';
+import { WatchlistService } from '../../core/services/watchlist.service';
 import { ProfilesService } from '../../core/services/profiles.service';
-
-import type { Watchlist, WatchlistList, WatchlistUpdate } from '../../models/watchlist.model';
-import type { ProfileList } from '../../models/profile.model';
 import { ContentsService } from '../../core/services/contents.service';
-import { ContentList } from '../../models/content.model';
 
-import { forkJoin, of, firstValueFrom, map } from 'rxjs';
+import type { WatchlistList } from '../../models/watchlist.model';
+import type { ProfileList } from '../../models/profile.model';
+import type { ContentList, Content } from '../../models/content.model';
+
+import { forkJoin, of, firstValueFrom } from 'rxjs';
 
 interface Filters {
   content_id: string;
@@ -23,59 +22,36 @@ interface Filters {
 }
 
 type GroupRow = { profile: ProfileList; items: WatchlistList[] };
+type ContentMeta = { title: string; thumbnail?: string | null };
 
 @Component({
   selector: 'app-watchlist',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './watchlist.html',
 })
 export class WatchlistComponent implements OnInit {
+  // Services
+  private auth = inject(AuthService);
   private watchlistSvc = inject(WatchlistService);
   private profilesSvc = inject(ProfilesService);
   private contentsSvc = inject(ContentsService);
 
-  private auth = inject(AuthService);
-
-  // ------------ State base ------------
+  // ------------ State ------------
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
 
-  contentTitles = signal<{[key: string]: string}>({});
+  // Mapa O(1) con título y miniatura
+  contentMeta = signal<Map<string, ContentMeta>>(new Map());
 
-  // Modo de visualización
-  // - grouped: secciones por perfil
-  // - single: selector de un perfil y lista plana
   viewMode = signal<'grouped' | 'single'>('grouped');
-
-  // Perfiles del usuario (solo /me)
   profiles = signal<ProfileList[]>([]);
   selectedProfileId = signal<string | 'all'>('all');
-
-  // Datos agrupados (grouped)
   groupedRows = signal<GroupRow[]>([]);
+  watchlists = signal<WatchlistList[]>([]);
 
-  // Lista plana (single)
-  watchlists: WritableSignal<WatchlistList[]> = signal<WatchlistList[]>([]);
-
-  // UI secundaria
-  showEditModal = signal<boolean>(false);
-  processingAction = signal<string | null>(null);
-
-  // Forms edición
-  editWatchlist: WritableSignal<Watchlist & { id: string }> = signal<any>({
-    id: '',
-    created_by: '',
-    updated_by: null,
-    created_at: '',
-    updated_at: null,
-    profile_id: '',
-    content_id: '',
-    added_at: '',
-  });
-
-  // Filtros comunes (se aplican a ambos modos)
-  filters: WritableSignal<Filters> = signal<Filters>({
+  // Filtros
+  filters = signal<Filters>({
     content_id: '',
     added_from: '',
     added_to: '',
@@ -83,83 +59,93 @@ export class WatchlistComponent implements OnInit {
     offset: 0
   });
 
+  // ------------ Computed ------------
+  readonly hasProfiles = computed(() => this.profiles().length > 0);
   readonly allGroupsEmpty = computed(() => {
     const rows = this.groupedRows();
-    if (!rows || rows.length === 0) return true; // si no hay grupos, consid. vacío
-    return rows.every(g => (g?.items?.length ?? 0) === 0);
+    return !rows.length || rows.every(g => !g.items.length);
+  });
+  readonly hasPreviousPage = computed(() => this.filters().offset > 0);
+  readonly hasNextPage = computed(() => {
+    if (this.viewMode() === 'single') {
+      return this.watchlists().length === this.filters().limit;
+    }
+    return this.groupedRows().some(g => g.items.length === this.filters().limit);
+  });
+  readonly headerTitle = computed(() =>
+    this.viewMode() === 'grouped' ? 'My Watchlist by Profile' : 'My Watchlist'
+  );
+  readonly headerDescription = computed(() =>
+    this.viewMode() === 'grouped'
+      ? 'Browse your watchlist organized per profile'
+      : 'Filter your watchlist by a specific profile or all'
+  );
+
+  // Mapa O(1) para nombres de perfil
+  readonly profileNames = computed(() => {
+    const map = new Map<string, string>();
+    this.profiles().forEach(profile => map.set(profile.id, profile.name));
+    return map;
   });
 
-  // Derivados
-  readonly hasProfiles = computed(() => this.profiles().length > 0);
-
+  // ------------ Lifecycle ------------
   async ngOnInit(): Promise<void> {
-    this.loadProfilesAndData();
+    await this.waitForAuthReady();
+    await this.loadProfilesAndData();
   }
 
-  private async loadContentTitles(contentIds: string[]): Promise<void> {
-    const uniqueIds = [...new Set(contentIds)]; // Remove duplicates
-    
-    // Filter out IDs we already have
-    const existingTitles = this.contentTitles();
-    const idsToLoad = uniqueIds.filter(id => !existingTitles[id] && id);
-    
-    if (idsToLoad.length === 0) return;
-    
+  // ------------ Content Meta (title + thumbnail) ------------
+  private async loadContentMeta(contentIds: string[]): Promise<void> {
+    // ids únicos que NO estén ya en el mapa
+    const uniqueIds = [...new Set(contentIds)].filter(id => id && !this.contentMeta().has(id));
+    if (!uniqueIds.length) return;
+
     try {
-      // Load all contents and filter to the ones we need
-      const contents = await firstValueFrom(
-        this.contentsSvc.getSmartContents({
-          limit: 100, // Adjust as needed
-          offset: 0
-        }).pipe(
-          map(contents => contents.filter(content => idsToLoad.includes(content.id)))
-        )
-      );
-      
-      // Create title mapping
-      const titleMap: {[key: string]: string} = {};
-      contents.forEach(content => {
-        titleMap[content.id] = content.title;
+      // Traemos cada contenido por id (admin/public fallback incluido)
+      const calls = uniqueIds.map(id => this.contentsSvc.getSmartContent(id));
+      const results = await firstValueFrom(forkJoin(calls));
+
+      const toMeta = (c: Content | ContentList): ContentMeta => ({
+        title: (c as any).title,
+        thumbnail: (c as any).thumbnail ?? null
       });
-      
-      // Update the signal with new titles
-      this.contentTitles.update(current => ({ ...current, ...titleMap }));
+
+      const newMap = new Map(this.contentMeta());
+      results.forEach((c, idx) => {
+        newMap.set(uniqueIds[idx], toMeta(c));
+      });
+      this.contentMeta.set(newMap);
     } catch (error) {
-      console.error('Failed to load content titles:', error);
+      console.error('Failed to load content meta:', error);
     }
   }
 
   getContentTitle(contentId: string): string {
-    return this.contentTitles()[contentId] || this.shortId(contentId);
+    return this.contentMeta().get(contentId)?.title || this.shortId(contentId);
   }
 
-  private waitForProfiles(timeout = 2000): Promise<boolean> {
-    return new Promise((resolve) => {
-      const startTime = Date.now();
-      
-      const checkProfiles = () => {
-        const profiles = this.profilesSvc.profiles();
-        
-        if (profiles && profiles.length > 0) {
-          resolve(true);
-        } else if (Date.now() - startTime > timeout) {
-          resolve(false);
-        } else {
-          setTimeout(checkProfiles, 100);
-        }
-      };
-      
-      checkProfiles();
-    });
+  getContentThumb(contentId: string): string | null {
+    const t = this.contentMeta().get(contentId)?.thumbnail;
+    return t && t.trim().length > 0 ? t : null;
   }
-  // ------------ Loaders ------------
-  private async loadProfilesAndData() {
+
+  // NEW: Get profile name by ID
+  getProfileName(profileId: string): string {
+    return this.profileNames().get(profileId) || this.shortId(profileId);
+  }
+
+  // ------------ Data Loading ------------
+  private async loadProfilesAndData(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
 
     try {
-      this.profilesSvc.loadMyProfiles(true);
-      await this.waitForProfiles();
+      // Carga condicional de perfiles (sin force)
+      if (!this.profilesSvc.hasLoadedOnce?.() && !this.profilesSvc.loading?.()) {
+        this.profilesSvc.loadMyProfiles();
+      }
+      await this.waitUntilProfilesReady();
+
       const list = this.profilesSvc.profiles();
       this.profiles.set(list ?? []);
 
@@ -175,10 +161,7 @@ export class WatchlistComponent implements OnInit {
     }
   }
 
-  private async loadGrouped() {
-    const rows: GroupRow[] = [];
-    const base = this.baseParams();
-
+  private async loadGrouped(): Promise<void> {
     const profiles = this.profiles();
     if (!profiles.length) {
       this.groupedRows.set([]);
@@ -189,26 +172,25 @@ export class WatchlistComponent implements OnInit {
     this.error.set(null);
 
     try {
-      const calls = profiles.map(p => {
-        const params = { ...base, profile_id: p.id };
-        return this.watchlistSvc.getMyWatchlists(params);
-      });
+      const base = this.baseParams();
+      const calls = profiles.map(p =>
+        this.watchlistSvc.getMyWatchlists({ ...base, profile_id: p.id })
+      );
 
       const results = await firstValueFrom(
-        (profiles.length ? forkJoin(calls) : of([])) as any
+        profiles.length ? forkJoin(calls) : of([])
       ) as WatchlistList[][];
 
-      profiles.forEach((p, idx) => {
-        rows.push({ profile: p, items: results[idx] ?? [] });
-      });
+      const rows: GroupRow[] = profiles.map((p, idx) => ({
+        profile: p,
+        items: results[idx] ?? []
+      }));
 
       this.groupedRows.set(rows);
 
-      // NEW: Load content titles for all items
-      const allContentIds = rows.flatMap(group => 
-        group.items.map(item => item.content_id)
-      );
-      await this.loadContentTitles(allContentIds);
+      // Cargar meta (title + thumbnail) para todos los items mostrados
+      const allContentIds = rows.flatMap(group => group.items.map(item => item.content_id));
+      await this.loadContentMeta(allContentIds);
 
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to load watchlist by profile.');
@@ -218,15 +200,12 @@ export class WatchlistComponent implements OnInit {
     }
   }
 
-  private async loadSingle() {
+  private async loadSingle(): Promise<void> {
+    const pid = this.selectedProfileId();
     const base = this.baseParams();
 
-    // Si "all", mostramos TODO combinado
-    const pid = this.selectedProfileId();
     if (!pid || pid === 'all') {
-      // Combina todo
-      await this.loadGrouped(); // ya carga por perfil
-      // Aplana para mostrar en modo single "all"
+      await this.loadGrouped();
       const flat = this.groupedRows().flatMap(g => g.items);
       this.watchlists.set(flat);
       return;
@@ -241,9 +220,8 @@ export class WatchlistComponent implements OnInit {
       );
       this.watchlists.set(rows ?? []);
 
-      // NEW: Load content titles for the single profile watchlist
-      const contentIds = rows.map(item => item.content_id);
-      await this.loadContentTitles(contentIds);
+      const contentIds = (rows ?? []).map(item => item.content_id);
+      await this.loadContentMeta(contentIds);
 
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to load watchlist.');
@@ -256,20 +234,19 @@ export class WatchlistComponent implements OnInit {
   private baseParams() {
     const f = this.filters();
     const params: any = {};
-    if (f.content_id) params.content_id = f.content_id;
-    if (f.added_from) params.added_from = f.added_from;
-    if (f.added_to) params.added_to = f.added_to;
-    if (f.limit) params.limit = f.limit;
-    if (f.offset) params.offset = f.offset;
+    Object.entries(f).forEach(([key, value]) => {
+      if (value) params[key] = value;
+    });
     return params;
   }
 
-  // ------------ Cambios de UI ------------
-  async toggleViewMode(mode: 'grouped' | 'single') {
+  // ------------ UI Actions ------------
+  async toggleViewMode(mode: 'grouped' | 'single'): Promise<void> {
     if (this.viewMode() === mode) return;
+
     this.viewMode.set(mode);
-    // Reset de paginación al cambiar modo
     this.filters.update(prev => ({ ...prev, offset: 0 }));
+
     if (mode === 'grouped') {
       await this.loadGrouped();
     } else {
@@ -277,103 +254,39 @@ export class WatchlistComponent implements OnInit {
     }
   }
 
-  async onChangeProfile(profileId: string | 'all') {
+  async onChangeProfile(profileId: string | 'all'): Promise<void> {
     this.selectedProfileId.set(profileId);
-    // Reset offset
     this.filters.update(prev => ({ ...prev, offset: 0 }));
     await this.loadSingle();
   }
 
-  // ------------ Edit / Update ------------
-  openEditModal(w: WatchlistList): void {
-    this.editWatchlist.set({
-      id: w.id,
-      created_by: '',
-      updated_by: null,
-      created_at: w.added_at ?? '',
-      updated_at: null,
-      profile_id: w.profile_id,
-      content_id: w.content_id,
-      added_at: w.added_at ?? '',
-    } as any);
-    this.showEditModal.set(true);
-  }
-
-  closeEditModal(): void {
-    this.showEditModal.set(false);
-  }
-
-  setEdit<K extends keyof WatchlistUpdate>(key: K, value: WatchlistUpdate[K]): void {
-    this.editWatchlist.update((prev) => ({ ...prev, [key]: value } as any));
-  }
-  
-
-  updateWatchlist(): void {
-    const current = this.editWatchlist();
-    const patch: WatchlistUpdate = {
-      profile_id: current.profile_id,
-      content_id: current.content_id,
-    };
-
-    this.loading.set(true);
-    this.processingAction.set(`edit-${current.id}`);
-
-    // /me endpoint
-    this.watchlistSvc.updateMyWatchlist(current.id, patch).subscribe({
-      next: () => {
-        this.showEditModal.set(false);
-        // Refresca según modo
-        if (this.viewMode() === 'grouped') {
-          this.loadGrouped();
-        } else {
-          this.loadSingle();
-        }
-        this.processingAction.set(null);
-      },
-      error: (err) => {
-        if (err.status === 409) {
-          this.error.set('This would create a duplicate watchlist item.');
-        } else if (err.status === 404) {
-          this.error.set('Profile, Content, or Watchlist item not found.');
-        } else if (err.status === 403) {
-          this.error.set('You do not have permission to modify this watchlist item.');
-        } else {
-          this.error.set(err?.error?.detail || 'Failed to update watchlist item.');
-        }
-        this.loading.set(false);
-        this.processingAction.set(null);
-      },
-    });
-  }
-
   // ------------ Delete ------------
-  deleteWatchlist(w: WatchlistList): void {
+  async deleteWatchlist(w: WatchlistList): Promise<void> {
     if (!confirm(`Are you sure you want to remove this item from your watchlist?`)) return;
 
     this.loading.set(true);
-    this.processingAction.set(`delete-${w.id}`);
 
-    // /me endpoint
-    this.watchlistSvc.deleteMyWatchlist(w.id).subscribe({
-      next: () => {
-        if (this.viewMode() === 'grouped') {
-          this.loadGrouped();
-        } else {
-          this.loadSingle();
-        }
-        this.processingAction.set(null);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail || 'Failed to delete watchlist item.');
-        this.loading.set(false);
-        this.processingAction.set(null);
-      },
-    });
+    try {
+      await firstValueFrom(this.watchlistSvc.deleteMyWatchlist(w.id));
+
+      if (this.viewMode() === 'grouped') {
+        await this.loadGrouped();
+      } else {
+        await this.loadSingle();
+      }
+    } catch (err: any) {
+      this.error.set(err?.error?.detail || 'Failed to delete watchlist item.');
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   // ------------ Pagination ------------
   async nextPage(): Promise<void> {
-    this.filters.update(prev => ({ ...prev, offset: prev.offset + prev.limit }));
+    this.filters.update(prev => ({
+      ...prev,
+      offset: prev.offset + prev.limit
+    }));
     if (this.viewMode() === 'grouped') {
       await this.loadGrouped();
     } else {
@@ -382,7 +295,10 @@ export class WatchlistComponent implements OnInit {
   }
 
   async previousPage(): Promise<void> {
-    this.filters.update(prev => ({ ...prev, offset: Math.max(0, prev.offset - prev.limit) }));
+    this.filters.update(prev => ({
+      ...prev,
+      offset: Math.max(0, prev.offset - prev.limit)
+    }));
     if (this.viewMode() === 'grouped') {
       await this.loadGrouped();
     } else {
@@ -390,18 +306,27 @@ export class WatchlistComponent implements OnInit {
     }
   }
 
-  // ------------ UI helpers ------------
-  get hasPreviousPage(): boolean {
-    return this.filters().offset > 0;
+  // ------------ Helpers ------------
+  private async waitForAuthReady(): Promise<void> {
+    // espera a que la sesión esté resuelta (con o sin usuario)
+    while (this.auth.isLoading()) {
+      await new Promise(r => setTimeout(r, 50));
+    }
   }
 
-  // Nota: en modo grouped, hasNextPage es “verdadero” si cualquier sección llenó el límite.
-  get hasNextPage(): boolean {
-    if (this.viewMode() === 'single') {
-      return this.watchlists().length === this.filters().limit;
-    }
-    // grouped
-    return this.groupedRows().some(g => g.items.length === this.filters().limit);
+  private async waitUntilProfilesReady(): Promise<void> {
+    // Si ya tienes perfiles, salir
+    if (this.profilesSvc.profiles()?.length) return;
+
+    // Espera activa pero sin force; chequea cada 50ms y sale cuando loading = false
+    await new Promise<void>(resolve => {
+      const t = setInterval(() => {
+        if (!this.profilesSvc.loading?.()) {
+          clearInterval(t);
+          resolve();
+        }
+      }, 50);
+    });
   }
 
   shortId(id: string): string {
@@ -411,8 +336,7 @@ export class WatchlistComponent implements OnInit {
   formatDate(d: string | null): string {
     if (!d) return '—';
     const date = new Date(d);
-    if (isNaN(date.getTime())) return d;
-    return date.toLocaleString('en-US', {
+    return isNaN(date.getTime()) ? '—' : date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -420,19 +344,4 @@ export class WatchlistComponent implements OnInit {
       minute: '2-digit'
     });
   }
-
-  getHeaderTitle(): string {
-    return this.viewMode() === 'grouped' ? 'My Watchlist by Profile' : 'My Watchlist';
-  }
-
-  getHeaderDescription(): string {
-    return this.viewMode() === 'grouped'
-      ? 'Browse your watchlist organized per profile'
-      : 'Filter your watchlist by a specific profile or all';
-  }
-
-  isProcessing(itemId: string, action: string): boolean {
-    return this.processingAction() === `${action}-${itemId}`;
-  }
-  
 }

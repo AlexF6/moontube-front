@@ -1,12 +1,16 @@
 // src/app/features/watch/watch.ts
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { VideoPlayerPlyr } from '../../shared/components/video-player/video-player';
 import { ContentsService } from '../../core/services/contents.service';
 import { WatchlistService } from '../../core/services/watchlist.service';
-import { ProfilesService } from '../../core/services/profiles.service'; // ⬅️ NEW
+import { ProfilesService } from '../../core/services/profiles.service';
+import { PlaybacksService } from '../../core/services/playbacks.service';
 import type { Content, ContentList } from '../../models/content.model';
+import { AuthService } from '../../core/auth.service';
+import { firstValueFrom } from 'rxjs';
+import { AuthUiService } from '../../core/auth-ui.service';
 
 @Component({
   selector: 'app-watch',
@@ -14,26 +18,36 @@ import type { Content, ContentList } from '../../models/content.model';
   imports: [VideoPlayerPlyr],
   templateUrl: './watch.html',
 })
-export class Watch implements OnInit {
+export class Watch implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private contentsService = inject(ContentsService);
   private watchlist = inject(WatchlistService);
-  private profiles = inject(ProfilesService); // ⬅️ NEW
+  private profiles = inject(ProfilesService);
+  private playbacks = inject(PlaybacksService);
+  private auth = inject(AuthService);
+  private authUi = inject(AuthUiService);
   private sanitizer = inject(DomSanitizer);
 
-  // State
+  // ---- state
+  private startedOnce = false;
+  private tick?: any;
+  private videoRef: HTMLVideoElement | null = null;
+  private _cleanup?: () => void;
+
+  readonly isGuest = computed(() => !this.auth.user());
+  readonly playbackId = signal<string | null>(null);
   readonly videoId = signal<string | null>(null);
+  readonly videoUrl = signal<SafeResourceUrl | null>(null);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly expandedDesc = signal(false);
   readonly relatedLoading = signal(true);
 
   // Watchlist state
-  readonly inWatchlist = signal<boolean | null>(null); // null = loading/unknown
+  readonly inWatchlist = signal<boolean | null>(null);
   readonly savingWatchlist = signal<boolean>(false);
 
-  // If user has multiple profiles and none is active, we’ll ask them to set it in header
   readonly needsActiveProfile = computed(() =>
     this.inWatchlist() === false &&
     this.profiles.hasMultiple() &&
@@ -136,44 +150,227 @@ export class Watch implements OnInit {
     return null;
   });
 
-  ngOnInit() {
-    // If header didn’t already, you can still call it here safely (no-op if loaded)
-    this.profiles.loadMyProfiles();
-
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      this.videoId.set(id);
-      this.loadVideo();
-    });
+  // ----- Invitados: progreso local -----
+  private localProgressKey(contentId: string) {
+    return `guest_progress:${contentId}`;
+  }
+  private loadGuestProgress(contentId: string): number | null {
+    const raw = localStorage.getItem(this.localProgressKey(contentId));
+    const n = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+  private saveGuestProgress(contentId: string, seconds: number) {
+    localStorage.setItem(this.localProgressKey(contentId), String(Math.max(0, Math.floor(seconds))));
   }
 
-  private loadVideo() {
-    const id = this.videoId();
+  // ================= LIFECYCLE =================
+  async ngOnInit() {
+    await this.waitAuthReady();
+    const id = this.route.snapshot.paramMap.get('id');
+    await this.loadById(id || null);
+  }
+
+  private async loadById(id: string | null) {
+    this.resetPlaybackState();
+    this.videoId.set(id);
+    this.loading.set(true);
+    this.error.set(null);
+    this.inWatchlist.set(null);
+    this.relatedLoading.set(true);
+
     if (!id) {
-      this.error.set('Video ID not found');
       this.loading.set(false);
       this.relatedLoading.set(false);
+      this.error.set('Video ID not found');
       return;
     }
 
-    this.loading.set(true);
-    this.error.set(null);
-    this.inWatchlist.set(null); // checking…
+    try {
+      const content = await firstValueFrom(this.contentsService.getSmartContent(id));
+      this.video.set(content);
 
-    this.contentsService.getSmartContent(id).subscribe({
-      next: (video) => {
-        this.video.set(video);
-        this.loading.set(false);
-        this.loadRelatedVideos();
-        this.checkWatchlist(); // after video loaded
-      },
-      error: (err) => {
-        console.error('Failed to load video:', err);
-        this.error.set('Failed to load video. Please try again.');
-        this.loading.set(false);
-        this.relatedLoading.set(false);
+      if (content.video_url) {
+        this.videoUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(content.video_url as any));
+      } else {
+        this.videoUrl.set(null);
+      }
+
+      if (!this.isGuest()) {
+        if (!this.profiles.hasLoadedOnce?.() && !this.profiles.loading?.()) {
+          this.profiles.loadMyProfiles();
+        }
+        await this.checkWatchlist();
+      } else {
         this.inWatchlist.set(false);
       }
+
+      this.loadRelatedVideos();
+    } catch (e: any) {
+      console.error('Failed to load video', e);
+      this.error.set(e?.error?.detail || 'Failed to load video');
+      this.relatedVideos.set([]);
+      this.relatedLoading.set(false);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  // 👉 usado por el template en el botón "Try Again"
+  retry() {
+    this.error.set(null);
+    const id = this.videoId();
+    void this.loadById(id ?? null);
+  }
+
+  private async waitAuthReady(): Promise<void> {
+    while (this.auth.isLoading()) {
+      await new Promise(r => setTimeout(r, 40));
+    }
+  }
+
+  // ================= PLAYER HOOKS =================
+  onPlayerReady(video: HTMLVideoElement) {
+    if (this.startedOnce) return;
+    this.startedOnce = true;
+    this.videoRef = video;
+
+    const contentId = this.videoId();
+    if (!contentId) return;
+
+    if (this.isGuest()) {
+      const saved = this.loadGuestProgress(contentId);
+      if (saved && video.readyState > 0) {
+        try { video.currentTime = saved; } catch {}
+      } else {
+        const onLoaded = () => {
+          const s = this.loadGuestProgress(contentId);
+          if (s) { try { video.currentTime = s; } catch {} }
+          video.removeEventListener('loadedmetadata', onLoaded);
+        };
+        video.addEventListener('loadedmetadata', onLoaded);
+      }
+
+      const onTime = () => this.saveGuestProgress(contentId, video.currentTime || 0);
+      const onEnded = () => this.saveGuestProgress(contentId, video.duration || video.currentTime || 0);
+      video.addEventListener('timeupdate', onTime);
+      video.addEventListener('ended', onEnded);
+
+      this._cleanup = () => {
+        video.removeEventListener('timeupdate', onTime);
+        video.removeEventListener('ended', onEnded);
+      };
+      return;
+    }
+
+    const activePid = this.profiles.activeId();
+    if (!activePid) return;
+
+    const device = (navigator.userAgent || 'unknown').toLowerCase().slice(0, 200);
+
+    this.playbacks.startMyPlayback({
+      profile_id: activePid,
+      content_id: contentId,
+      device
+    }).subscribe({
+      next: (pb) => {
+        this.playbackId.set(pb.id);
+
+        const send = () => {
+          const id = this.playbackId();
+          if (!id) return;
+          const current = Math.floor(video.currentTime || 0);
+          const duration = Math.floor(video.duration || 0) || null;
+
+          this.playbacks.updateMyPlayback(id, {
+            progress_seconds: current,
+            duration_seconds: duration ?? undefined
+          }).subscribe({ error: () => {} });
+        };
+
+        this.tick = setInterval(send, 3000);
+
+        const onTime = () => send();
+        video.addEventListener('timeupdate', onTime);
+
+        const onEnded = () => {
+          const id = this.playbackId();
+          if (!id) return;
+          this.playbacks.updateMyPlayback(id, {
+            progress_seconds: Math.floor(video.duration || 0),
+            duration_seconds: Math.floor(video.duration || 0),
+            completed: true
+          }).subscribe({ complete: () => {} });
+        };
+        video.addEventListener('ended', onEnded);
+
+        this._cleanup = () => {
+          video.removeEventListener('timeupdate', onTime);
+          video.removeEventListener('ended', onEnded);
+          if (this.tick) { clearInterval(this.tick); this.tick = undefined; }
+        };
+      },
+      error: (e) => console.error('startMyPlayback failed', e)
+    });
+  }
+
+  onPlayerPosition(evt: { current: number; duration: number }) {
+    if (this.isGuest()) {
+      const id = this.videoId();
+      if (id) this.saveGuestProgress(id, evt.current);
+      return;
+    }
+    const id = this.playbackId();
+    if (!id) return;
+    this.playbacks.updateMyPlayback(id, {
+      progress_seconds: Math.max(0, evt.current|0),
+      duration_seconds: evt.duration > 0 ? evt.duration|0 : undefined
+    }).subscribe({ error: () => {} });
+  }
+
+  onPlayerEnded(evt: { current: number; duration: number }) {
+    if (this.isGuest()) {
+      const id = this.videoId();
+      if (id) this.saveGuestProgress(id, evt.duration || evt.current || 0);
+      return;
+    }
+    const id = this.playbackId();
+    if (!id) return;
+    this.playbacks.updateMyPlayback(id, {
+      progress_seconds: (evt.duration && evt.duration > 0) ? evt.duration|0 : (evt.current|0),
+      duration_seconds: evt.duration > 0 ? evt.duration|0 : undefined,
+      completed: true
+    }).subscribe({ error: () => {} });
+  }
+
+  ngOnDestroy() {
+    if (this._cleanup) this._cleanup();
+
+    const id = this.playbackId();
+    if (id && this.videoRef && !this.isGuest()) {
+      const current = Math.floor(this.videoRef.currentTime || 0);
+      const duration = Number.isFinite(this.videoRef.duration) ? Math.floor(this.videoRef.duration) : undefined;
+      this.playbacks.updateMyPlayback(id, {
+        progress_seconds: current,
+        duration_seconds: duration
+      }).subscribe({ error: () => {} });
+    }
+  }
+
+  private resetPlaybackState() {
+    if (this._cleanup) this._cleanup();
+    this.startedOnce = false;
+    this.playbackId.set(null);
+    this.videoRef = null;
+  }
+
+  // ================= DATA LOADERS =================
+  private async checkWatchlist() {
+    const contentId = this.videoId();
+    if (!contentId) { this.inWatchlist.set(false); return; }
+    const pid = this.profiles.activeId() ?? undefined;
+    this.watchlist.contains(contentId, pid).subscribe({
+      next: (isIn) => this.inWatchlist.set(isIn),
+      error: () => this.inWatchlist.set(false),
     });
   }
 
@@ -191,36 +388,25 @@ export class Watch implements OnInit {
         this.relatedVideos.set(filtered);
         this.relatedLoading.set(false);
       },
-      error: (err) => {
-        console.error('Failed to load related videos:', err);
+      error: () => {
         this.relatedVideos.set([]);
         this.relatedLoading.set(false);
       }
     });
   }
 
-  private checkWatchlist() {
-    const contentId = this.videoId();
-    if (!contentId) {
-      this.inWatchlist.set(false);
-      return;
-    }
-    // Prefer the active profile if set; falls back to any profile (rare)
-    const pid = this.profiles.activeId() ?? undefined;
-    this.watchlist.contains(contentId, pid).subscribe({
-      next: (isIn) => this.inWatchlist.set(isIn),
-      error: () => this.inWatchlist.set(false),
+  // ================= UI HELPERS =================
+  navigateToVideo(id: string) {
+    if (!id) return;
+    // navegamos y recargamos el estado del componente
+    this.router.navigate(['/watch', id]).then(() => {
+      void this.loadById(id);
     });
   }
 
-  // Navigation helper
-  navigateToVideo(videoId: string) {
-    this.router.navigate(['/watch', videoId]);
-  }
-
-  // Helpers
   getThumbnail(video: ContentList, index: number): string {
     return video.thumbnail || this.fallbackThumbnails[index % this.fallbackThumbnails.length];
+    // (si tu API puede devolver undefined, ya cubrimos con fallback)
   }
 
   formatDuration(seconds?: number): string {
@@ -237,20 +423,20 @@ export class Watch implements OnInit {
     this.expandedDesc.set(!this.expandedDesc());
   }
 
-  retry() {
-    this.loadVideo();
-  }
-
-  // Watchlist actions
   toggleWatchlist() {
     const contentId = this.videoId();
-    if (!contentId || this.savingWatchlist() || this.inWatchlist() === null) return;
+    if (!contentId || this.savingWatchlist()) return;
+
+    // 🚪 Requiere login: si es invitado, abre modal de login y termina
+    if (this.isGuest()) {
+      this.authUi.openLogin();
+      return;
+    }
 
     const activePid = this.profiles.activeId() ?? undefined;
 
-    // If there are multiple profiles and none is active, ask the user to set it in header
+    // Si hay múltiples perfiles y no hay uno activo, pide seleccionar
     if (!activePid && this.profiles.hasMultiple()) {
-      // Surface a tiny hint – the template renders a message
       this.inWatchlist.set(false);
       return;
     }
@@ -258,29 +444,20 @@ export class Watch implements OnInit {
     this.savingWatchlist.set(true);
 
     if (!this.inWatchlist()) {
-      // ➕ Add (backend will pick the only profile if user has 1; otherwise we pass activePid)
+      // ➕ Add
       this.watchlist.createMyWatchlist({
         content_id: contentId,
-        profile_id: activePid, // can be undefined if user has 1 profile
+        profile_id: activePid,
       }).subscribe({
         next: () => { this.inWatchlist.set(true); this.savingWatchlist.set(false); },
-        error: (err) => {
-          console.error('Add to watchlist failed', err);
-          this.savingWatchlist.set(false);
-        }
+        error: (err) => { console.error('Add to watchlist failed', err); this.savingWatchlist.set(false); }
       });
     } else {
-      // 🗑️ Remove — we REQUIRE active profile to know which pair to delete
-      if (!activePid) {
-        this.savingWatchlist.set(false);
-        return;
-      }
+      // 🗑️ Remove — necesita perfil activo
+      if (!activePid) { this.savingWatchlist.set(false); return; }
       this.watchlist.deleteMyByPair(activePid, contentId).subscribe({
         next: () => { this.inWatchlist.set(false); this.savingWatchlist.set(false); },
-        error: (err) => {
-          console.error('Remove from watchlist failed', err);
-          this.savingWatchlist.set(false);
-        }
+        error: (err) => { console.error('Remove from watchlist failed', err); this.savingWatchlist.set(false); }
       });
     }
   }

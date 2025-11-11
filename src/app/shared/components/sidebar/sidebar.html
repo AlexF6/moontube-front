@@ -8,12 +8,30 @@
 <aside
   role="navigation"
   aria-label="Main"
-  data-sidebar="root"
-  class="fixed md:static top-0 left-0 z-50 w-[280px] h-full md:h-auto
+  class="fixed md:relative top-0 left-0 z-50 w-[280px] h-full md:h-auto md:w-full
          bg-black transition-transform duration-300
          flex flex-col px-4 py-[28px]"
   [class.-translate-x-full]="!ui.isSidebarOpen() && !isDesktop"
-  [class.translate-x-0]="ui.isSidebarOpen() || isDesktop">
+  [class.translate-x-0]="ui.isSidebarOpen() || isDesktop"
+  [class.fixed]="!isDesktop"
+  [class.relative]="isDesktop"
+
+  [attr.inert]="blockSidebar() ? '' : null"
+  [attr.aria-busy]="blockSidebar() ? 'true' : null"
+  [class.opacity-60]="blockSidebar()"
+  [class.select-none]="blockSidebar()">
+
+  @if (blockSidebar()) {
+    <div class="absolute inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+      <div class="flex flex-col items-center gap-3 text-orange-300">
+        <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity=".25" stroke-width="4"></circle>
+          <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="4"></path>
+        </svg>
+        <span class="text-sm">Cargando sesión y perfiles…</span>
+      </div>
+    </div>
+  }
 
   <div data-slot="sidebar-header" class="flex text-center items-center justify-center">
     <span class="text-2xl font-bold text-orange-400 tracking-widest pb-4">MOONTUBE</span>
@@ -46,6 +64,7 @@
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
         (click)="navigateToDashboard()"
+        [disabled]="blockSidebar()"
         [attr.aria-current]="isActiveStartsWith('/dashboard') ? 'page' : null"
         class="flex items-center gap-2 p-3 w-full rounded-lg text-white/80 text-lg font-semibold
                transition-colors duration-300 border border-transparent hover:bg-orange-500/60 relative"
@@ -61,24 +80,25 @@
       </button>
     </li>
 
-    <!-- My Playlist -->
+    <!-- My Watchlist -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
-        (click)="navigateToPlaylist()"
-        [attr.aria-current]="isActiveStartsWith('/playlists') ? 'page' : null"
+        (click)="navigateToWatchlist()"
+        [disabled]="blockSidebar()"
+        [attr.aria-current]="isActiveStartsWith('/watchlists') ? 'page' : null"
         class="flex items-center gap-2 p-3 w-full rounded-lg text-white/80 text-lg font-semibold
                transition-colors duration-300 border border-transparent hover:bg-orange-500/60 relative"
-        [class.ring-1]="isActiveStartsWith('/playlists')"
-        [class.ring-orange-500]="isActiveStartsWith('/playlists')"
-        [class.bg-orange-500/10]="isActiveStartsWith('/playlists')"
-        [class.text-orange-300]="isActiveStartsWith('/playlists')"
-        [class.border-orange-400]="isActiveStartsWith('/playlists')">
+        [class.ring-1]="isActiveStartsWith('/watchlists')"
+        [class.ring-orange-500]="isActiveStartsWith('/watchlists')"
+        [class.bg-orange-500/10]="isActiveStartsWith('/watchlists')"
+        [class.text-orange-300]="isActiveStartsWith('/watchlists')"
+        [class.border-orange-400]="isActiveStartsWith('/watchlists')">
         <span class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
-              [class.bg-orange-500]="isActiveStartsWith('/playlists')"></span>
+              [class.bg-orange-500]="isActiveStartsWith('/watchlists')"></span>
         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
           <path d="M80-160v-60h800v60H80Zm89-160v-316h60v316h-60Zm159 0v-480h60v480h-60Zm159 0v-480h60v480h-60Zm275 0L597-600l54-30 162 280-51 30Z"/>
         </svg>
-        <span>My Playlist</span>
+        <span>My Watchlist</span>
       </button>
     </li>
 
@@ -86,6 +106,7 @@
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
         (click)="navigateToSubscriptions()"
+        [disabled]="blockSidebar()"
         [attr.aria-current]="isActiveStartsWith('/subscriptions') ? 'page' : null"
         class="flex items-center gap-2 p-3 w-full rounded-lg text-white/80 text-lg font-semibold
                transition-colors duration-300 border border-transparent hover:bg-orange-500/60 relative"

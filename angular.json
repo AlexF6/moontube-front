@@ -20,15 +20,22 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
-            ],
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public",
+                  "output": "/"
+                },
+                {
+                  "glob": "plyr.css",
+                  "input": "node_modules/plyr/dist",
+                  "output": "assets/"
+                }
+              ],
             "styles": [
               "src/styles.scss"
-            ]
+            ],
+            "allowedCommonJsDependencies": ["plyr", "rangetouch", "loadjs"]
           },
           "configurations": {
             "production": {
@@ -56,6 +63,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+            },
           "configurations": {
             "production": {
               "buildTarget": "moontube:build:production"

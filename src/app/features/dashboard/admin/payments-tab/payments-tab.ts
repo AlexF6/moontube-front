@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { PaymentsService } from '../../../../core/services/payments.service';
 import { UsersService } from '../../../../core/services/users.service';
 import { SubscriptionsService } from '../../../../core/services/subscriptions.service';
+import { PlansService } from '../../../../core/services/plans.service';
 import {
   Payment,
   PaymentCreate,
@@ -13,6 +14,7 @@ import {
 } from '../../../../models/payment.model';
 import type { User } from '../../../../models/user.model';
 import type { Subscription } from '../../../../models/subscription.model';
+import type { PlanList } from '../../../../models/plan.model';
 
 @Component({
   selector: 'app-payments-tab',
@@ -24,6 +26,7 @@ export class PaymentsTabComponent implements OnInit {
   private paymentsService = inject(PaymentsService);
   private usersService = inject(UsersService);
   private subscriptionsService = inject(SubscriptionsService);
+  private plansService = inject(PlansService);
 
   // State
   items = signal<Payment[]>([]);
@@ -36,6 +39,8 @@ export class PaymentsTabComponent implements OnInit {
   // Dropdown data
   users = signal<User[]>([]);
   subscriptions = signal<Subscription[]>([]);
+  plans = signal<PlanList[]>([]);
+  private planNameMap = signal<Record<string, string>>({});
   
   // Forms
   newPayment = signal<PaymentCreate>(this.getDefaultPayment());
@@ -81,6 +86,7 @@ export class PaymentsTabComponent implements OnInit {
   async ngOnInit() {
     await Promise.all([
       this.loadUsers(),
+      this.loadPlans(),
       this.loadSubscriptions(),
       this.loadPayments()
     ]);
@@ -93,6 +99,40 @@ export class PaymentsTabComponent implements OnInit {
     } catch (err: any) {
       this.error.set('Failed to load users');
     }
+  }
+
+  private async loadPlans() {
+    const pageSize = 200;
+    const all: any[] = [];
+    let offset = 0;
+
+    this.error.set(null);
+
+    try {
+      while (true) {
+        // pide por páginas
+        const page = await this.plansService.list({ limit: pageSize, offset }).toPromise();
+        const rows = page || [];
+        all.push(...rows);
+        if (rows.length < pageSize) break; // última página
+        offset += pageSize;
+      }
+
+      await this.buildPlanCache(all);
+    } catch (err: any) {
+      // mensaje claro
+      this.error.set(err?.error?.detail || 'Failed to load plans (paged)');
+    }
+  }
+
+  private async buildPlanCache(plansArr: any[]) {
+    this.plans.set(plansArr as any);
+    const map: Record<string, string> = {};
+    for (const p of plansArr) {
+      const label = p.name ?? p.title ?? (p.id?.slice(0, 8) + '...');
+      map[p.id] = String(label);
+    }
+    this.planNameMap.set(map);
   }
 
   private async loadSubscriptions() {
@@ -268,7 +308,14 @@ export class PaymentsTabComponent implements OnInit {
 
   getSubscriptionInfo(subscriptionId: string): string {
     const subscription = this.subscriptions().find(s => s.id === subscriptionId);
-    return subscription ? `${subscription.id.slice(0, 8)}...` : subscriptionId;
+    if (!subscription) return subscriptionId;
+    const planLabel = this.getPlanName(subscription.plan_id);
+    return `${planLabel}`;
+  }
+
+  getPlanName(planId: string): string {
+    if (!planId) return '—';
+    return this.planNameMap()[planId] ?? (planId.slice(0, 8) + '...');
   }
 
   getUserSubscriptions(userId: string): Subscription[] {
@@ -277,7 +324,6 @@ export class PaymentsTabComponent implements OnInit {
   }
 
   onUserChange(userId: string) {
-    // When user changes, reset subscription selection
     this.newPayment().subscription_id = '';
   }
 }

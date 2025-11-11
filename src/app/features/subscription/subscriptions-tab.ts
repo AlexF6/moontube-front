@@ -8,6 +8,12 @@ import { PlansService } from '../../core/services/plans.service';
 import { PlanList } from '../../models/plan.model';
 import { firstValueFrom } from 'rxjs';
 
+type SubGroup = {
+  planId: string;
+  current: SubscriptionListItem | null;   // suscripción más reciente de ese plan
+  history: SubscriptionListItem[];        // resto (canceladas/anteriores)
+};
+
 @Component({
   selector: 'app-subscriptions-tab',
   standalone: true,
@@ -24,11 +30,43 @@ export class SubscriptionsTabComponent implements OnInit {
     for (const p of this.plans()) map.set(p.id, p);
     return map;
   });
+
   subscriptions = signal<SubscriptionListItem[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
   selectedStatus = signal<SubscriptionStatus | 'ALL'>('ALL');
   processingAction = signal<string | null>(null);
+
+  // === NUEVO: Agrupación por plan ===
+  groupedByPlan = computed<SubGroup[]>(() => {
+    const src = this.subscriptions();
+    const byPlan = new Map<string, SubscriptionListItem[]>();
+
+    for (const s of src) {
+      const arr = byPlan.get(s.plan_id) ?? [];
+      arr.push(s);
+      byPlan.set(s.plan_id, arr);
+    }
+
+    const groups: SubGroup[] = [];
+    for (const [planId, list] of byPlan) {
+      // Ordena por start_date (más reciente primero). Ajusta si usas created_at.
+      list.sort((a, b) => {
+        const ta = new Date(a.start_date ?? 0).getTime();
+        const tb = new Date(b.start_date ?? 0).getTime();
+        return tb - ta;
+      });
+
+      groups.push({
+        planId,
+        current: list[0] ?? null,
+        history: list.slice(1)
+      });
+    }
+
+    // Orden opcional por nombre de plan
+    return groups.sort((a, b) => this.planName(a.planId).localeCompare(this.planName(b.planId)));
+  });
 
   readonly statusOptions = [
     { value: 'ALL', label: 'All Subscriptions' },
@@ -60,10 +98,7 @@ export class SubscriptionsTabComponent implements OnInit {
           ? undefined
           : (this.selectedStatus() as SubscriptionStatus);
 
-      const subscriptions = await this.subscriptionsService
-        .getMySubscriptions(status)
-        .toPromise();
-
+      const subscriptions = await firstValueFrom(this.subscriptionsService.getMySubscriptions(status));
       this.subscriptions.set(subscriptions || []);
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to load subscriptions');
@@ -83,9 +118,8 @@ export class SubscriptionsTabComponent implements OnInit {
     if (!confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) return;
 
     this.processingAction.set(`cancel-${subscription.id}`);
-    
     try {
-      await this.subscriptionsService.cancelMy(subscription.id).toPromise();
+      await firstValueFrom(this.subscriptionsService.cancelMy(subscription.id));
       this.loadSubscriptions(); // Refresh the list
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to cancel subscription');
@@ -99,9 +133,8 @@ export class SubscriptionsTabComponent implements OnInit {
     if (!confirm('Are you sure you want to reactivate this subscription?')) return;
 
     this.processingAction.set(`reactivate-${subscription.id}`);
-    
     try {
-      await this.subscriptionsService.reactivateMy(subscription.id).toPromise();
+      await firstValueFrom(this.subscriptionsService.reactivateMy(subscription.id));
       this.loadSubscriptions(); // Refresh the list
     } catch (err: any) {
       this.error.set(err?.error?.detail || 'Failed to reactivate subscription');
@@ -111,14 +144,20 @@ export class SubscriptionsTabComponent implements OnInit {
     }
   }
 
+  // === NUEVO: helper para validar si ya hay una activa en el plan ===
+  hasActiveForPlan = (planId: string) =>
+    this.subscriptions().some(s => s.plan_id === planId && s.status === SubscriptionStatus.ACTIVE);
+
   formatDate(dateString: string | null | undefined): string {
     if (!dateString) return '—';
     const d = new Date(dateString);
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    return isNaN(d.getTime())
+      ? '—'
+      : d.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
   }
 
   getStatusBadgeClass(status: SubscriptionStatus): string {
