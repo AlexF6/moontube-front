@@ -1,36 +1,29 @@
 export const config = { runtime: 'edge' };
 
 const HOP_BY_HOP = new Set([
-  'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
-  'te', 'trailers', 'transfer-encoding', 'upgrade', 'host', 'content-length'
+  'connection','keep-alive','proxy-authenticate','proxy-authorization',
+  'te','trailers','transfer-encoding','upgrade','host','content-length'
 ]);
 
 export default async function handler(req: Request): Promise<Response> {
   const UPSTREAM = process.env.BACKEND_URL;
   if (!UPSTREAM) {
     return new Response(JSON.stringify({ error: 'Backend URL not configured' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' }
+      status: 500, headers: { 'content-type': 'application/json' }
     });
   }
 
   try {
     const url = new URL(req.url);
-    // /api/foo/bar -> ["api","foo","bar"] => "/foo/bar"
-    const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
-    const path = '/' + segments.join('/');
+    const path = '/' + url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean).join('/');
 
     const target = new URL(UPSTREAM);
-    target.pathname = (target.pathname.replace(/\/+$/, '') + path).replace(/\/{2,}/g, '/'); // sanea dobles /
-    target.search = url.search; // conserva ?query=...
+    target.pathname = (target.pathname.replace(/\/+$/, '') + path).replace(/\/{2,}/g, '/');
+    target.search = url.search;
 
-    // Copia de headers quitando hop-by-hop
     const headers = new Headers();
-    req.headers.forEach((v, k) => {
-      if (!HOP_BY_HOP.has(k.toLowerCase())) headers.set(k, v);
-    });
+    req.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) headers.set(k, v); });
 
-    // Reenvía el body tal cual (stream) para métodos con body
     const method = req.method.toUpperCase();
     const hasBody = method !== 'GET' && method !== 'HEAD';
 
@@ -41,20 +34,13 @@ export default async function handler(req: Request): Promise<Response> {
       redirect: 'manual'
     });
 
-    // Copia de headers de respuesta (sin hop-by-hop)
     const respHeaders = new Headers();
-    upstreamResp.headers.forEach((v, k) => {
-      if (!HOP_BY_HOP.has(k.toLowerCase())) respHeaders.set(k, v);
-    });
+    upstreamResp.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) respHeaders.set(k, v); });
 
-    return new Response(upstreamResp.body, {
-      status: upstreamResp.status,
-      headers: respHeaders
-    });
+    return new Response(upstreamResp.body, { status: upstreamResp.status, headers: respHeaders });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: 'Bad gateway', detail: String(err?.message ?? err) }), {
-      status: 502,
-      headers: { 'content-type': 'application/json' }
+      status: 502, headers: { 'content-type': 'application/json' }
     });
   }
 }
