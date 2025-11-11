@@ -35,7 +35,10 @@ export default async function handler(req: Request): Promise<Response> {
     });
 
     const respHeaders = new Headers();
-    upstreamResp.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) respHeaders.set(k, v); });
+    respHeaders.set('x-proxy-target', target.toString()); // 👈 DEBUG
+    upstreamResp.headers.forEach((v, k) => {
+      if (!HOP_BY_HOP.has(k.toLowerCase())) respHeaders.set(k, v);
+    });
 
     return new Response(upstreamResp.body, { status: upstreamResp.status, headers: respHeaders });
   } catch (err: any) {
