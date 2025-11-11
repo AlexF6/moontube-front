@@ -1,4 +1,3 @@
-// api/_proxy.ts
 export const config = { runtime: 'edge' };
 
 const HOP_BY_HOP = new Set([
@@ -16,7 +15,6 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const url = new URL(req.url);
-    // /api/foo/bar -> /foo/bar
     const path = '/' + url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean).join('/');
     const target = new URL(UPSTREAM);
     target.pathname = (target.pathname.replace(/\/+$/, '') + path).replace(/\/{2,}/g, '/');
@@ -33,7 +31,7 @@ export default async function handler(req: Request): Promise<Response> {
     });
 
     const respHeaders = new Headers();
-    respHeaders.set('x-proxy-target', target.toString()); // debug
+    respHeaders.set('x-proxy-target', target.toString());
     upstream.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) respHeaders.set(k, v); });
 
     return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
