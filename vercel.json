@@ -3,7 +3,7 @@
   "buildCommand": "pnpm ng build --configuration production",
   "outputDirectory": "dist/moontube/browser",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "${BACKEND_URL}/$1" },
+    { "source": "/api/(.*)", "destination": "/api/[...path]" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
