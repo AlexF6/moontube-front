@@ -15,23 +15,22 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const url = new URL(req.url);
-    // /api/foo/bar -> /foo/bar
     const path = '/' + url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean).join('/');
 
     const target = new URL(UPSTREAM);
     target.pathname = (target.pathname.replace(/\/+$/, '') + path).replace(/\/{2,}/g, '/');
     target.search = url.search;
 
-    const headers = new Headers();
-    req.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) headers.set(k, v); });
+    const fwdHeaders = new Headers();
+    req.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) fwdHeaders.set(k, v); });
 
     const method = req.method.toUpperCase();
     const hasBody = method !== 'GET' && method !== 'HEAD';
 
     const upstreamResp = await fetch(target.toString(), {
       method,
-      headers,
-      body: hasBody ? req.body : undefined, // stream passthrough
+      headers: fwdHeaders,
+      body: hasBody ? req.body : undefined,
       redirect: 'manual'
     });
 
