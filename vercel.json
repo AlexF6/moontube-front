@@ -4,6 +4,7 @@
   "outputDirectory": "dist/moontube/browser",
   "routes": [
     { "handle": "filesystem" },
+    { "src": "^/api/.*$", "dest": "/api/_proxy" },
     { "src": "/.*", "dest": "/index.html" }
   ]
 }
