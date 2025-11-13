@@ -1,7 +1,7 @@
 // src/app/core/services/profiles.service.ts
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../enviroments/enviroment';
+import { environment } from '../../../environments/environment';
 import { Observable, tap } from 'rxjs';
 import type {
   Profile,

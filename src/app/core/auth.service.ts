@@ -1,7 +1,7 @@
 // src/app/core/auth.service.ts
 import { computed, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../enviroments/enviroment';
+import { environment } from '../../environments/environment';
 import { tap, catchError, of, firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 
