@@ -1,7 +1,7 @@
 // src/app/core/services/users.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../enviroments/enviroment';
+import { environment } from '../../../environments/environment';
 import type { User, UserAdminCreate, UserAdminUpdate, UserMeUpdate, PasswordChange } from '../../models/user.model';
 
 interface QueryParams {

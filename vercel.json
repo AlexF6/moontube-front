@@ -3,7 +3,7 @@
   "buildCommand": "pnpm ng build --configuration production",
   "outputDirectory": "dist/moontube/browser",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "" },
+    { "source": "/api/:path*", "destination": "https://washer-classification-sets-voluntary.trycloudflare.com/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
