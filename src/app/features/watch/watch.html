@@ -1,14 +1,90 @@
 <div class="flex flex-col lg:flex-row gap-6 p-4 text-white min-h-screen">
   <!-- Main Content -->
   <main class="flex-1 max-w-4xl">
-    <!-- Loading State -->
-    @if (loading()) {
-      <div class="space-y-6">
-        <div class="aspect-video bg-gradient-to-br from-zinc-800 to-zinc-700 rounded-xl animate-pulse"></div>
-        <div class="space-y-3">
-          <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-8 w-3/4 animate-pulse"></div>
-          <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-4 w-1/4 animate-pulse"></div>
+    <!-- 🎥 Contenedor FIJO del reproductor -->
+    <div class="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative">
+      <!-- 🔹 Skeleton mientras carga el video / datos -->
+      @if (videoLoading()) {
+        <div
+          class="absolute inset-0 z-20 animate-pulse bg-gradient-to-br from-zinc-800 to-zinc-700 flex flex-col justify-end p-4 pointer-events-none"
+        >
+          <div class="bg-gradient-to-br from-zinc-700 to-zinc-600 rounded h-6 w-3/4 mb-2"></div>
+          <div class="bg-gradient-to-br from-zinc-700 to-zinc-600 rounded h-4 w-1/2"></div>
         </div>
+      }
+
+
+      <!-- YouTube Embed -->
+      @if (!loading() && videoSource() === 'youtube' && youTubeEmbedUrl()) {
+        <iframe
+          [src]="youTubeEmbedUrl()"
+          class="w-full h-full"
+          frameborder="0"
+          (load)="onEmbedLoaded()"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen
+          [title]="title()"
+        ></iframe>
+      }
+      <!-- Vimeo Embed -->
+      @else if (!loading() && videoSource() === 'vimeo' && vimeoEmbedUrl()) {
+        <iframe
+          [src]="vimeoEmbedUrl()"
+          class="w-full h-full"
+          frameborder="0"
+          (load)="onEmbedLoaded()"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowfullscreen
+          [title]="title()"
+        ></iframe>
+      }
+      <!-- Generic Embed (other platforms) -->
+      @else if (!loading() && videoSource() === 'embed' && safeVideoUrl()) {
+        <iframe
+          [src]="safeVideoUrl()"
+          class="w-full h-full"
+          frameborder="0"
+          (load)="onEmbedLoaded()"
+          allowfullscreen
+          [title]="title()"
+        ></iframe>
+      }
+      <!-- Direct Video Files (MP4, WebM, HLS, etc.) -->
+      @else if (!loading() && videoSource() === 'direct' && video()!.video_url) {
+        <app-video-player
+          class="w-full h-full"
+          [src]="video()?.video_url ?? ''"
+          [poster]="transparentPoster"
+          (ready)="onPlayerReady($event)"
+          (position)="onPlayerPosition($event)"
+          (ended)="onPlayerEnded($event)"
+        ></app-video-player>
+      }
+      <!-- Fallback for unknown/unsupported video sources -->
+      @else if (!loading() && video()) {
+        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-700">
+          <div class="text-center p-6">
+            <div class="text-6xl mb-4">🔗</div>
+            <h3 class="text-xl font-semibold text-white mb-2">Video Link</h3>
+            <p class="text-zinc-400 mb-4">This content is hosted externally</p>
+            <a 
+              [href]="video()!.video_url" 
+              target="_blank"
+              class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+            >
+              Open Video ↗
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Skeleton de título/metadata mientras carga (sin afectar el alto del player) -->
+    @if (loading() && !error()) {
+      <div class="mt-4 space-y-3">
+        <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-8 w-3/4 animate-pulse"></div>
+        <div class="bg-gradient-to-br from-zinc-800 to-zinc-700 rounded h-4 w-1/4 animate-pulse"></div>
       </div>
     }
 
@@ -28,82 +104,13 @@
     }
 
     <!-- Success State -->
-    @if (video() && !loading()) {
-      <div class="space-y-6">
-        <!-- Video Player (unchanged) -->
-        <div class="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
-          <!-- YouTube Embed -->
-          @if (videoSource() === 'youtube' && youTubeEmbedUrl()) {
-            <iframe
-              [src]="youTubeEmbedUrl()"
-              class="w-full h-full"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              referrerpolicy="strict-origin-when-cross-origin"
-              allowfullscreen
-              [title]="title()"
-            ></iframe>
-          }
-          
-          <!-- Vimeo Embed -->
-          @else if (videoSource() === 'vimeo' && vimeoEmbedUrl()) {
-            <iframe
-              [src]="vimeoEmbedUrl()"
-              class="w-full h-full"
-              frameborder="0"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowfullscreen
-              [title]="title()"
-            ></iframe>
-          }
-          
-          <!-- Generic Embed (other platforms) -->
-          @else if (videoSource() === 'embed' && safeVideoUrl()) {
-            <iframe
-              [src]="safeVideoUrl()"
-              class="w-full h-full"
-              frameborder="0"
-              allowfullscreen
-              [title]="title()"
-            ></iframe>
-          }
-          
-          <!-- Direct Video Files (MP4, WebM, HLS, etc.) -->
-          @else if (videoSource() === 'direct' && video()!.video_url) {
-            <app-video-player
-              [src]="video()?.video_url ?? ''"
-              [poster]="video()?.thumbnail ?? ''"
-              (ready)="onPlayerReady($event)"
-              (position)="onPlayerPosition($event)"
-              (ended)="onPlayerEnded($event)"
-            ></app-video-player>
-          }
-          
-          <!-- Fallback for unknown/unsupported video sources -->
-          @else {
-            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-700">
-              <div class="text-center p-6">
-                <div class="text-6xl mb-4">🔗</div>
-                <h3 class="text-xl font-semibold text-white mb-2">Video Link</h3>
-                <p class="text-zinc-400 mb-4">This content is hosted externally</p>
-                <a 
-                  [href]="video()!.video_url" 
-                  target="_blank"
-                  class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors font-medium"
-                >
-                  Open Video ↗
-                </a>
-              </div>
-            </div>
-          }
-        </div>
-
+    @if (video() && !loading() && !error()) {
+      <div class="space-y-6 mt-6">
         <!-- Video Info -->
         <div class="space-y-4">
           <h1 class="text-2xl font-bold text-white leading-tight">{{ title() }}</h1>
 
-          <!-- Actions: Add to My List with skeleton state -->
-          <!-- Actions row (inside Video Info) -->
+          <!-- Actions -->
           <div class="flex flex-wrap items-center gap-3">
             <button
               (click)="toggleWatchlist()"
@@ -112,7 +119,6 @@
               [disabled]="isWatchlistButtonDisabled()"
               aria-label="Toggle watchlist"
             >
-              <!-- Spinner cuando está guardando -->
               @if (savingWatchlist()) {
                 <span class="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin inline-block"></span>
               }
@@ -125,7 +131,6 @@
               </span>
             }
           </div>
-
 
           <!-- Metadata -->
           <div class="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
@@ -181,7 +186,6 @@
   <aside class="w-full lg:w-80 xl:w-96 flex flex-col gap-3">
     <h3 class="text-lg font-semibold text-white mb-2">More Videos</h3>
     
-    <!-- Related Videos Loading -->
     @if (relatedLoading()) {
       <div class="space-y-3">
         @for (item of [1,2,3,4]; track $index) {
@@ -196,7 +200,6 @@
       </div>
     }
 
-    <!-- Related Videos Content -->
     @if (!relatedLoading()) {
       @for (video of relatedVideos(); track video.id; let index = $index) {
         <button
@@ -237,7 +240,6 @@
         </button>
       } 
       
-      <!-- Empty Related Videos State -->
       @if (!hasRelatedVideos()) {
         <div class="text-center py-8">
           <div class="text-4xl mb-3">🎬</div>

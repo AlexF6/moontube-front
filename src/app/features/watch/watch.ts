@@ -43,6 +43,10 @@ export class Watch implements OnInit, OnDestroy {
   readonly error = signal<string | null>(null);
   readonly expandedDesc = signal(false);
   readonly relatedLoading = signal(true);
+  readonly transparentPoster = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+  // 🔹 loading específico del PLAYER (iframe o <video>)
+  readonly videoLoading = signal<boolean>(true);
 
   // Watchlist state
   readonly inWatchlist = signal<boolean | null>(null);
@@ -98,6 +102,13 @@ export class Watch implements OnInit, OnDestroy {
     'https://picsum.photos/seed/video6/640/360',
   ];
 
+  // 🔹 Poster principal para skeleton / preview
+  readonly mainPoster = computed(() => {
+    const thumb = this.video()?.thumbnail?.trim();
+    if (thumb) return thumb;
+    return this.fallbackThumbnails[0];
+  });
+
   // Video source analysis
   readonly videoSource = computed(() => {
     const url = this.video()?.video_url || '';
@@ -126,18 +137,18 @@ export class Watch implements OnInit, OnDestroy {
     return match ? match[1] : null;
   });
 
-  // Safe embed URLs
+  // Safe embed URLs (🔹 ahora con autoplay=1)
   readonly youTubeEmbedUrl = computed((): SafeResourceUrl | null => {
     const id = this.youTubeId();
     if (!id) return null;
-    const url = `https://www.youtube.com/embed/${id}?autoplay=0&rel=0&modestbranding=1`;
+    const url = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   });
 
   readonly vimeoEmbedUrl = computed((): SafeResourceUrl | null => {
     const id = this.vimeoId();
     if (!id) return null;
-    const url = `https://player.vimeo.com/video/${id}?autoplay=0&title=0&byline=0&portrait=0`;
+    const url = `https://player.vimeo.com/video/${id}?autoplay=1&title=0&byline=0&portrait=0`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   });
 
@@ -177,10 +188,12 @@ export class Watch implements OnInit, OnDestroy {
     this.error.set(null);
     this.inWatchlist.set(null);
     this.relatedLoading.set(true);
+    this.videoLoading.set(true); // 👈 empezamos skeleton del player
 
     if (!id) {
       this.loading.set(false);
       this.relatedLoading.set(false);
+      this.videoLoading.set(false);
       this.error.set('Video ID not found');
       return;
     }
@@ -193,6 +206,12 @@ export class Watch implements OnInit, OnDestroy {
         this.videoUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(content.video_url as any));
       } else {
         this.videoUrl.set(null);
+      }
+
+      // Si no hay video real, quitamos skeleton del player
+      const src = this.videoSource();
+      if (src === 'none' || src === 'unknown') {
+        this.videoLoading.set(false);
       }
 
       if (!this.isGuest()) {
@@ -210,6 +229,7 @@ export class Watch implements OnInit, OnDestroy {
       this.error.set(e?.error?.detail || 'Failed to load video');
       this.relatedVideos.set([]);
       this.relatedLoading.set(false);
+      this.videoLoading.set(false);
     } finally {
       this.loading.set(false);
     }
@@ -229,29 +249,76 @@ export class Watch implements OnInit, OnDestroy {
   }
 
   // ================= PLAYER HOOKS =================
+
+  // 🔹 helper para intentar autoplay
+  private tryAutoplay(video: HTMLVideoElement) {
+    video.play().catch(err => {
+      // Navegadores pueden bloquear autoplay si hay audio
+      console.warn('Autoplay blocked or failed:', err);
+    });
+  }
+
+  // 🔹 usado por iframes (YouTube / Vimeo / otros)
+  onEmbedLoaded() {
+    this.videoLoading.set(false);
+  }
+
   onPlayerReady(video: HTMLVideoElement) {
     if (this.startedOnce) return;
     this.startedOnce = true;
     this.videoRef = video;
 
-    const contentId = this.videoId();
-    if (!contentId) return;
+    // 🔹 Controla cuándo se apaga el skeleton del player
+    const markReady = () => {
+      if (this.videoLoading()) {
+        this.videoLoading.set(false);
+      }
+    };
 
+    // Si ya hay frame disponible, quitamos skeleton; si no, esperamos a loadeddata
+    if (video.readyState >= 2) {
+      markReady();
+    } else {
+      const onLoadedData = () => {
+        markReady();
+        video.removeEventListener('loadeddata', onLoadedData);
+      };
+      video.addEventListener('loadeddata', onLoadedData);
+    }
+
+    const contentId = this.videoId();
+    if (!contentId) {
+      // Sin ID de contenido: sólo intentamos autoplay y listos
+      this.tryAutoplay(video);
+      return;
+    }
+
+    // ============ INVITADO ============
     if (this.isGuest()) {
       const saved = this.loadGuestProgress(contentId);
+
       if (saved && video.readyState > 0) {
         try { video.currentTime = saved; } catch {}
+        this.tryAutoplay(video);
       } else {
         const onLoaded = () => {
           const s = this.loadGuestProgress(contentId);
           if (s) { try { video.currentTime = s; } catch {} }
+          this.tryAutoplay(video);
           video.removeEventListener('loadedmetadata', onLoaded);
         };
         video.addEventListener('loadedmetadata', onLoaded);
       }
 
-      const onTime = () => this.saveGuestProgress(contentId, video.currentTime || 0);
-      const onEnded = () => this.saveGuestProgress(contentId, video.duration || video.currentTime || 0);
+      const onTime = () =>
+        this.saveGuestProgress(contentId, video.currentTime || 0);
+
+      const onEnded = () =>
+        this.saveGuestProgress(
+          contentId,
+          video.duration || video.currentTime || 0
+        );
+
       video.addEventListener('timeupdate', onTime);
       video.addEventListener('ended', onEnded);
 
@@ -259,13 +326,21 @@ export class Watch implements OnInit, OnDestroy {
         video.removeEventListener('timeupdate', onTime);
         video.removeEventListener('ended', onEnded);
       };
+
       return;
     }
 
+    // ============ USUARIO LOGUEADO ============
     const activePid = this.profiles.activeId();
-    if (!activePid) return;
+    if (!activePid) {
+      // Sin perfil activo: no trackeamos pero sí intentamos autoplay
+      this.tryAutoplay(video);
+      return;
+    }
 
-    const device = (navigator.userAgent || 'unknown').toLowerCase().slice(0, 200);
+    const device = (navigator.userAgent || 'unknown')
+      .toLowerCase()
+      .slice(0, 200);
 
     this.playbacks.startMyPlayback({
       profile_id: activePid,
@@ -275,43 +350,43 @@ export class Watch implements OnInit, OnDestroy {
       next: (pb) => {
         this.playbackId.set(pb.id);
 
-        const send = () => {
-          const id = this.playbackId();
-          if (!id) return;
-          const current = Math.floor(video.currentTime || 0);
-          const duration = Math.floor(video.duration || 0) || null;
-
-          this.playbacks.updateMyPlayback(id, {
-            progress_seconds: current,
-            duration_seconds: duration ?? undefined
-          }).subscribe({ error: () => {} });
-        };
-
-        this.tick = setInterval(send, 3000);
-
-        const onTime = () => send();
-        video.addEventListener('timeupdate', onTime);
+        // 👇 Ya NO usamos setInterval ni 'timeupdate' para spammear el backend.
+        // Nos apoyamos en onPlayerPosition (que ya viene throttled desde el componente del player)
+        // y aquí sólo marcamos el final explícitamente.
 
         const onEnded = () => {
           const id = this.playbackId();
           if (!id) return;
+
+          const current = Math.floor(video.currentTime || 0);
+          const duration = Number.isFinite(video.duration)
+            ? Math.floor(video.duration)
+            : undefined;
+
           this.playbacks.updateMyPlayback(id, {
-            progress_seconds: Math.floor(video.duration || 0),
-            duration_seconds: Math.floor(video.duration || 0),
+            progress_seconds: duration ?? current,
+            duration_seconds: duration,
             completed: true
           }).subscribe({ complete: () => {} });
         };
+
         video.addEventListener('ended', onEnded);
 
         this._cleanup = () => {
-          video.removeEventListener('timeupdate', onTime);
           video.removeEventListener('ended', onEnded);
-          if (this.tick) { clearInterval(this.tick); this.tick = undefined; }
         };
+
+        // 🔹 Intentamos autoplay cuando ya está todo listo
+        this.tryAutoplay(video);
       },
-      error: (e) => console.error('startMyPlayback failed', e)
+      error: (e) => {
+        console.error('startMyPlayback failed', e);
+        // aunque falle el tracking, intentamos autoplay para no romper UX
+        this.tryAutoplay(video);
+      }
     });
   }
+
 
   onPlayerPosition(evt: { current: number; duration: number }) {
     if (this.isGuest()) {
@@ -361,6 +436,7 @@ export class Watch implements OnInit, OnDestroy {
     this.startedOnce = false;
     this.playbackId.set(null);
     this.videoRef = null;
+    this.videoLoading.set(true); // 👈 nuevo video -> skeleton otra vez
   }
 
   // ================= DATA LOADERS =================
@@ -398,7 +474,6 @@ export class Watch implements OnInit, OnDestroy {
   // ================= UI HELPERS =================
   navigateToVideo(id: string) {
     if (!id) return;
-    // navegamos y recargamos el estado del componente
     this.router.navigate(['/watch', id]).then(() => {
       void this.loadById(id);
     });
@@ -406,7 +481,6 @@ export class Watch implements OnInit, OnDestroy {
 
   getThumbnail(video: ContentList, index: number): string {
     return video.thumbnail || this.fallbackThumbnails[index % this.fallbackThumbnails.length];
-    // (si tu API puede devolver undefined, ya cubrimos con fallback)
   }
 
   formatDuration(seconds?: number): string {
@@ -427,7 +501,6 @@ export class Watch implements OnInit, OnDestroy {
     const contentId = this.videoId();
     if (!contentId || this.savingWatchlist()) return;
 
-    // 🚪 Requiere login: si es invitado, abre modal de login y termina
     if (this.isGuest()) {
       this.authUi.openLogin();
       return;
@@ -435,7 +508,6 @@ export class Watch implements OnInit, OnDestroy {
 
     const activePid = this.profiles.activeId() ?? undefined;
 
-    // Si hay múltiples perfiles y no hay uno activo, pide seleccionar
     if (!activePid && this.profiles.hasMultiple()) {
       this.inWatchlist.set(false);
       return;
@@ -444,7 +516,6 @@ export class Watch implements OnInit, OnDestroy {
     this.savingWatchlist.set(true);
 
     if (!this.inWatchlist()) {
-      // ➕ Add
       this.watchlist.createMyWatchlist({
         content_id: contentId,
         profile_id: activePid,
@@ -453,7 +524,6 @@ export class Watch implements OnInit, OnDestroy {
         error: (err) => { console.error('Add to watchlist failed', err); this.savingWatchlist.set(false); }
       });
     } else {
-      // 🗑️ Remove — necesita perfil activo
       if (!activePid) { this.savingWatchlist.set(false); return; }
       this.watchlist.deleteMyByPair(activePid, contentId).subscribe({
         next: () => { this.inWatchlist.set(false); this.savingWatchlist.set(false); },
