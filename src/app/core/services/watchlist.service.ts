@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../enviroments/enviroment';
+import { environment } from '../../../environments/environment';
 import type { Watchlist, WatchlistList, WatchlistCreate, WatchlistUpdate } from '../../models/watchlist.model';
 import { map, switchMap, of } from 'rxjs';
 

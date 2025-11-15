@@ -134,7 +134,7 @@ export class VideoPlayerPlyr implements AfterViewInit, OnDestroy {
       };
     };
 
-    this.timeUpdateHandler = throttle(emitPosition, 8000);
+    this.timeUpdateHandler = throttle(emitPosition, 9000);
     this.pauseHandler = emitPosition;
     this.endedHandler = () => {
       emitPosition();

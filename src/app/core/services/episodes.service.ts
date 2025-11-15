@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../enviroments/enviroment';
+import { environment } from '../../../environments/environment';
 import type { Episode, EpisodeList, EpisodeCreate, EpisodeUpdate } from '../../models/episode.model';
 
 interface QueryParams {
