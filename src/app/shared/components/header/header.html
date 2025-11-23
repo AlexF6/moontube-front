@@ -6,8 +6,10 @@
   </div>
 }
 
-<header class="sticky top-0 z-50 backdrop-blur-lg bg-black/90 border-b border-zinc-800/80 shadow-lg">
-  <div class="flex items-center justify-between gap-4 px-4 py-3">
+<!-- Header: bg-black sólido, h-[70px] fijo para coincidir con el sidebar -->
+<header class="sticky top-0 z-50 bg-black border-b border-zinc-800/80 shadow-lg h-[70px]">
+  <div class="flex items-center justify-between gap-4 px-4 h-full">
+    
     <!-- Sidebar toggle (mobile) -->
     <button 
       class="md:hidden p-2.5 rounded-xl border border-zinc-600 hover:border-orange-500 hover:bg-orange-500/10 transition-all duration-200 active:scale-95 group"
@@ -29,7 +31,7 @@
                  text-zinc-100 placeholder-zinc-400 
                  focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500
                  transition-all duration-200
-                 hover:border-zinc-500 backdrop-blur-sm"
+                 hover:border-zinc-500"
           [value]="query"
           (input)="onInput($event)"
           (keyup.enter)="onSearch()"

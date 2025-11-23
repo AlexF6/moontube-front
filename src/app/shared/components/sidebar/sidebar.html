@@ -8,19 +8,19 @@
 <aside
   role="navigation"
   aria-label="Main"
-  class="fixed md:relative top-0 left-0 z-50 w-[280px] h-full md:h-auto md:w-full
+  class="fixed md:relative top-0 left-0 z-[60] w-[280px] h-full md:h-auto md:w-full
          bg-black transition-transform duration-300
-         flex flex-col px-4 py-[28px]"
+         flex flex-col px-4 border-r md:border-r-0 border-zinc-800/80"
   [class.-translate-x-full]="!ui.isSidebarOpen() && !isDesktop"
   [class.translate-x-0]="ui.isSidebarOpen() || isDesktop"
   [class.fixed]="!isDesktop"
   [class.relative]="isDesktop"
-
   [attr.inert]="blockSidebar() ? '' : null"
   [attr.aria-busy]="blockSidebar() ? 'true' : null"
   [class.opacity-60]="blockSidebar()"
   [class.select-none]="blockSidebar()">
 
+  <!-- Loading Overlay -->
   @if (blockSidebar()) {
     <div class="absolute inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
       <div class="flex flex-col items-center gap-3 text-orange-300">
@@ -33,13 +33,16 @@
     </div>
   }
 
-  <div data-slot="sidebar-header" class="flex text-center items-center justify-center">
-    <span class="text-2xl font-bold text-orange-400 tracking-widest pb-4">MOONTUBE</span>
+  <!-- Sidebar Header (Logo) - Altura fija de 70px para alinear con Header -->
+  <div data-slot="sidebar-header" 
+       class="flex items-center justify-center h-[70px] shrink-0 border-b border-zinc-800/80">
+    <span class="text-2xl font-bold text-orange-400 tracking-widest">MOONTUBE</span>
   </div>
 
-  <ul data-slot="sidebar-menu" class="flex flex-col gap-1 p-2">
+  <!-- Menu Items - Padding top agregado aquí para separar del logo -->
+  <ul data-slot="sidebar-menu" class="flex flex-col gap-1 pt-4 pb-2">
 
-    <!-- Home (active only on exact "/") -->
+    <!-- Home -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <a
         [routerLink]="['/']"
@@ -60,7 +63,7 @@
       </a>
     </li>
 
-    <!-- Dashboard (admin or user). Uses button + programmatic nav; style as active when URL starts with /dashboard -->
+    <!-- Dashboard -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <button
         (click)="navigateToDashboard()"
@@ -125,7 +128,7 @@
       </button>
     </li>
 
-    <!-- Plans (Public route - direct navigation) -->
+    <!-- Plans -->
     <li data-slot="sidebar-menu-item" class="group/menu-item">
       <a
         [routerLink]="['/plans']"
