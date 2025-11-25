@@ -3,7 +3,7 @@
   "buildCommand": "pnpm ng build --configuration production",
   "outputDirectory": "dist/moontube/browser",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://toolkit-packages-biological-molecular.trycloudflare.com/:path*" },
+    { "source": "/api/:path*", "destination": "https://liz-unions-kansas-weeks.trycloudflare.com/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

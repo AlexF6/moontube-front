@@ -6,19 +6,30 @@
          rounded-2xl border border-zinc-800/60 bg-[#0b0b0b] text-white shadow-xl
          focus:outline-none">
 
-  <div class="p-6 border-b border-zinc-800/60">
+  <button
+    type="button"
+    (click)="authUi.closeLogin()"
+    class="absolute right-4 top-4 z-10 rounded-md p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+  >
+    <span class="sr-only">Close</span>
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </button>
+
+  <div class="p-6 pr-14 border-b border-zinc-800/60">
     <div class="flex items-center justify-between">
       <div>
         <h2 id="login-title" class="text-xl font-semibold">Login to your account</h2>
         <p class="mt-1 text-sm text-zinc-400">
-          Enter your email below to login to your account
+          Enter your email below
         </p>
       </div>
 
       <button
         type="button"
         (click)="authUi.closeLogin(); authUi.openRegister();"
-        class="w-20 text-sm font-medium text-orange-400 hover:underline underline-offset-4"
+        class="shrink-0 ml-4 text-sm font-medium text-orange-400 hover:underline underline-offset-4"
       >
           Sign Up
       </button>
@@ -28,8 +39,7 @@
   <div class="p-6">
     <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-6">
       @if (errorMsg) {
-        <div class="rounded-md bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 text-sm"
-             role="alert">
+        <div class="rounded-md bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 text-sm" role="alert">
           <div class="flex items-center">
             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
@@ -47,11 +57,8 @@
           type="email"
           formControlName="identifier"
           placeholder="example@example.com"
-          class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
-                 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
-                 focus:border-orange-500/60"
+          class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500/60"
           [class.border-red-500]="form.get('identifier')?.touched && form.get('identifier')?.invalid"
-          [class.border-red-500]="errorMsg"
           required
         />
         @if (form.get('identifier')?.dirty && form.get('identifier')?.invalid) {
@@ -68,11 +75,8 @@
           type="password"
           formControlName="password"
           placeholder="••••••••"
-          class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm
-                 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60
-                 focus:border-orange-500/60"
+          class="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900/60 px-3 text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500/60"
           [class.border-red-500]="form.get('password')?.touched && form.get('password')?.invalid"
-          [class.border-red-500]="errorMsg"
           required
         />
         @if (form.get('password')?.touched && form.get('password')?.invalid) {
@@ -84,12 +88,10 @@
         <button
           type="submit"
           [disabled]="isLoading"
-          class="inline-flex h-10 w-full items-center justify-center rounded-md
-                 bg-orange-600 text-white font-medium hover:bg-orange-500 transition
-                 disabled:bg-orange-400 disabled:cursor-not-allowed"
+          class="inline-flex h-10 w-full items-center justify-center rounded-md bg-orange-600 text-white font-medium hover:bg-orange-500 transition disabled:bg-orange-400 disabled:cursor-not-allowed"
         >
           @if (isLoading) {
-            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+             <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
