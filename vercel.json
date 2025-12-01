@@ -3,7 +3,7 @@
   "buildCommand": "pnpm ng build --configuration production",
   "outputDirectory": "dist/moontube/browser",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://justice-cotton-gateway-adventures.trycloudflare.com/:path*" },
+    { "source": "/api/:path*", "destination": "https://perth-attribute-ronald-worlds.trycloudflare.com/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
